@@ -54,22 +54,22 @@ namespace Services.Services
             return newAccessToken;
         }
 
-        public Task LogoutAsync(string refreshToken)
+        public async Task LogoutAsync(string refreshToken)
         {
             var hashedToken = _hashService.ComputeSha256Hash(refreshToken);
-            var tokenEntity = _refreshTokensRepository.GetRefreshTokenAsync(hashedToken).Result;
+            var tokenEntity = await _refreshTokensRepository.GetRefreshTokenAsync(hashedToken);
             if (tokenEntity == null || tokenEntity.Revoked != null)
             {
                 throw new SecurityTokenException("Invalid refresh token");
             }
+
             _jwtService.RevokeRefreshToken(tokenEntity);
-            return Task.CompletedTask;
         }
 
         public async Task<User> RegisterAsync(RegisterRequest request)
         {
-            var user = _userManager.FindByEmailAsync(request.Email).Result;
-            if(user != null)
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user != null)
             {
                 throw new InvalidOperationException("User with this email already exists");
             }
@@ -95,11 +95,11 @@ namespace Services.Services
                 var errors = string.Join("; ", result.Errors.Select(e => e.Description));
                 throw new InvalidOperationException($"User creation failed: {errors}");
             }
+
             await _userManager.AddToRoleAsync(userRecord, "User");
             //verify email logic can be added here
             return userRecord;
         }
-
 
         private async Task<User?> ValidateUserAsync(string email, string password)
         {
