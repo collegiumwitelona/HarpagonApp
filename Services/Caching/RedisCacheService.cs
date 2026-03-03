@@ -16,7 +16,7 @@ namespace Services.Caching
             var data = await _cache.GetStringAsync(key);
             if (data == null)
             {
-                return default(T);
+                return default;
             }   
 
             return JsonSerializer.Deserialize<T>(data)!;

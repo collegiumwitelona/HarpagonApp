@@ -11,7 +11,6 @@ using Data.Seeders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Services.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,12 +18,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
-
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = builder.Configuration.GetConnectionString("Redis");
-    options.InstanceName = "MyApp_";
 });
 
 //Add Identity services
@@ -54,7 +47,6 @@ builder.Services.AddScoped<IModel1Repository, Model1Repository>();
 builder.Services.AddScoped<IRefreshTokensRepository, RefreshTokensRepository>();
 
 //Add services
-builder.Services.AddScoped<IRedisCacheService, RedisCacheService>();
 builder.Services.AddScoped<IModel1Service, Model1Service>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IHashService, HashService>();
