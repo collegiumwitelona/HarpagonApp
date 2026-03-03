@@ -4,14 +4,14 @@ using Data.Context;
 using Data.Models;
 using Services.Interfaces;
 using Services.Services;
-using Services.BackgroundServices;
 using Data.Interfaces;
 using Data.Repositories;
 using Data.Seeders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Services.Caching;
+using Services.Infrastructure.BackgroundServices;
+using Services.Infrastructure.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
 

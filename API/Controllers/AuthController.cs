@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
-using DTO.Requests;
 using Services.Services;
-using Microsoft.AspNetCore.Identity.Data;
+using DTO.Requests.Auth;
+using DTO.Responses;
 
 namespace API.Controllers
 {
@@ -19,7 +19,7 @@ namespace API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] DTO.Requests.RegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             try
             {
@@ -33,34 +33,33 @@ namespace API.Controllers
             }
         }
 
-        //public async Task<Result<T>> Login([FromBody] ...)
-        // For simplicity, we return IActionResult here, but in a real application, consider using a consistent response wrapper
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] DTO.Requests.LoginRequest request)
+        public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
         {
             try
             {
-                var tokens = await _authService.LoginAsync(request.Email, request.Password);
-                return Ok(tokens);
+                var response = await _authService.LoginAsync(request);
+                _logger.LogInformation($"User: {response.User}");
+                return Ok(response);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Login failed for email: {Email}", request.Email);
-                return Unauthorized(new { message = $"Invalid email or password.", details = $"{ex.Message}" });
+                return Unauthorized(new { message = "Invalid email or password." });
             }
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+        public async Task<ActionResult<RefreshResponse>> Refresh([FromBody] RefreshRequest request)
         {
             try
             {
-                var accessToken = await _authService.RefreshAccessTokenAsync(request.RefreshToken);
-                if (accessToken == null)
+                var response = await _authService.RefreshAccessTokenAsync(request);
+                if (response == null)
                 {
                     return Unauthorized();
                 }
-                return Ok(new { AccessToken = accessToken });
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -75,7 +74,7 @@ namespace API.Controllers
         {
             try
             {
-                await _authService.LogoutAsync(request.RefreshToken);
+                await _authService.LogoutAsync(request);
                 return Ok(new { message = "Logged out successfully." });
             }
             catch (Exception ex)

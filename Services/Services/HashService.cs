@@ -6,7 +6,7 @@ namespace Services.Services
 {
     public class HashService : IHashService
     {
-        public string ComputeSha256Hash(string input)
+        public string ComputeHash(string input)
         {
             using var sha256 = SHA256.Create();
             var bytes = Encoding.UTF8.GetBytes(input);

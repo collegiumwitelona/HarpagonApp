@@ -19,6 +19,7 @@ namespace Data.Seeders
                 {
                     Id = Guid.NewGuid(),
                     Name = "Administrator",
+                    Surname = "Admin",
                     CreatedAt = DateTime.UtcNow,
                     LastUpdate = DateTime.UtcNow,
                     Email = adminEmail,
@@ -47,6 +48,7 @@ namespace Data.Seeders
                 {
                     Id = Guid.NewGuid(),
                     Name = "User",
+                    Surname = "User",
                     CreatedAt = DateTime.UtcNow,
                     LastUpdate = DateTime.UtcNow,
                     Email = userEmail,

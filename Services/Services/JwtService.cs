@@ -28,7 +28,7 @@ namespace Services.Services
             _hashService = hashService;
         }
 
-        public async Task<AuthTokensResponse> GenerateTokensAsync(User user)
+        public async Task<AuthResponse> GenerateTokensAsync(User user)
         {
             var accessToken = await GenerateAccessTokenAsync(user);
 
@@ -36,18 +36,24 @@ namespace Services.Services
 
             var rawRefreshToken = refreshTokenEntity.Token;
 
-            refreshTokenEntity.Token = _hashService.ComputeSha256Hash(refreshTokenEntity.Token);
+            refreshTokenEntity.Token = _hashService.ComputeHash(refreshTokenEntity.Token);
 
             await _refreshTokensRepository.AddRefreshTokenAsync(refreshTokenEntity);
 
-            return new AuthTokensResponse
+            return new AuthResponse
             {
                 AccessToken = accessToken,
-                RefreshToken = rawRefreshToken
+                RefreshToken = rawRefreshToken,
+                User = new UserDataResponse
+                {
+                    Id = user.Id.ToString(),
+                    Name = user.Name.ToString(),
+                    Surname = user.Surname.ToString(),
+                    Email = user.Email!
+                }
             };
         }
-
-        public async Task<string> GenerateAccessTokenAsync(User user)
+        internal async Task<string> GenerateAccessTokenAsync(User user)
         {
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -100,7 +106,7 @@ namespace Services.Services
 
         public async Task<RefreshToken> ValidateRefreshTokenAsync(string refreshToken)
         {
-            var hashedToken = _hashService.ComputeSha256Hash(refreshToken);
+            var hashedToken = _hashService.ComputeHash(refreshToken);
             var tokenEntity = await _refreshTokensRepository.GetRefreshTokenAsync(hashedToken);
 
             if (tokenEntity is null)

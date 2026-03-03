@@ -4,11 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DTO.Responses
+namespace DTO.Requests.Auth
 {
-    public class AuthTokensResponse
+    public class LogoutRequest
     {
-        public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
     }
 }

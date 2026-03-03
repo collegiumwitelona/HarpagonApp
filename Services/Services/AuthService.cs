@@ -4,7 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Services.Interfaces;
 using DTO.Responses;
 using Data.Interfaces;
-using DTO.Requests;
+using DTO.Requests.Auth;
 
 namespace Services.Services
 {
@@ -27,17 +27,28 @@ namespace Services.Services
             _hashService = hashService;
         }
 
-        public async Task<AuthTokensResponse> LoginAsync(string email, string password)
+        public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            var user = await ValidateUserAsync(email, password)
-                ?? throw new SecurityTokenException("Invalid credentials");
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if(user == null)
+            {
+                throw new InvalidOperationException("Invalid email or password");
+            }
 
-            return await _jwtService.GenerateTokensAsync(user);
+            var isValid = await _userManager.CheckPasswordAsync(user, request.Password);
+
+            if (!isValid)
+            {
+                throw new InvalidOperationException("Invalid email or password");
+            }
+
+            var response = await _jwtService.GenerateTokensAsync(user);
+            return response;
         }
 
-        public async Task<string?> RefreshAccessTokenAsync(string refreshToken)
+        public async Task<RefreshResponse> RefreshAccessTokenAsync(RefreshRequest request)
         {
-            var tokenEntity = await _jwtService.ValidateRefreshTokenAsync(refreshToken);
+            var tokenEntity = await _jwtService.ValidateRefreshTokenAsync(request.RefreshToken);
             if (tokenEntity == null)
             {
                 throw new SecurityTokenException("Invalid refresh token");
@@ -51,38 +62,49 @@ namespace Services.Services
 
             var newAccessToken = await _jwtService.GenerateAccessTokenAsync(user);
 
-            return newAccessToken;
+            return new RefreshResponse
+            {
+                AccessToken = newAccessToken,
+                User = new UserDataResponse
+                {
+                    Id = user.Id.ToString(),
+                    Name = user.Name,
+                    Surname = user.Surname,
+                    Email = user.Email!
+                }   
+            };
         }
 
-        public async Task LogoutAsync(string refreshToken)
+        public async Task LogoutAsync(LogoutRequest request)
         {
-            var hashedToken = _hashService.ComputeSha256Hash(refreshToken);
+            var hashedToken = _hashService.ComputeHash(request.RefreshToken);
             var tokenEntity = await _refreshTokensRepository.GetRefreshTokenAsync(hashedToken);
-            if (tokenEntity == null || tokenEntity.Revoked != null)
+            if (tokenEntity == null || !tokenEntity.IsActive)
             {
                 throw new SecurityTokenException("Invalid refresh token");
             }
-
             _jwtService.RevokeRefreshToken(tokenEntity);
         }
 
         public async Task<User> RegisterAsync(RegisterRequest request)
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
+
             if (user != null)
             {
-                throw new InvalidOperationException("User with this email already exists");
+                throw new InvalidOperationException("Email is already in use");
             }
 
             var userRecord = new User
             {
                 Id = Guid.NewGuid(),
                 Name = request.Name,
+                Surname = request.Surname ?? string.Empty,
                 CreatedAt = DateTime.UtcNow,
                 LastUpdate = DateTime.UtcNow,
                 Email = request.Email,
                 NormalizedEmail = request.Email.ToUpper(),
-                UserName = request.Name,
+                UserName = $"{request.Name + request.Surname}",
                 NormalizedUserName = request.Name.ToUpper(),
                 EmailConfirmed = false,
                 ConcurrencyStamp = Guid.NewGuid().ToString(),
@@ -99,18 +121,6 @@ namespace Services.Services
             await _userManager.AddToRoleAsync(userRecord, "User");
             //verify email logic can be added here
             return userRecord;
-        }
-
-        private async Task<User?> ValidateUserAsync(string email, string password)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-
-            if (user is null || !await _userManager.CheckPasswordAsync(user, password))
-            {
-                return null;
-            }
-
-            return user;
         }
     }
 }

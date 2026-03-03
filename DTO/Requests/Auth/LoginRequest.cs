@@ -1,19 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DTO.Requests
+namespace DTO.Requests.Auth
 {
-    public class RegisterRequest
+    public class LoginRequest
     {
-        [Required]
         public required string Email { get; set; }
-        [Required]
-        public required string Name { get; set; }
-        [Required]
         public required string Password { get; set; }
     }
 }

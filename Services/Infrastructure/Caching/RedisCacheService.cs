@@ -2,7 +2,7 @@
 using System.Text.Json;
 
 
-namespace Services.Caching
+namespace Services.Infrastructure.Caching
 {
     public class RedisCacheService : IRedisCacheService
     {
@@ -16,7 +16,7 @@ namespace Services.Caching
             var data = await _cache.GetStringAsync(key);
             if (data == null)
             {
-                return default(T);
+                return default;
             }   
 
             return JsonSerializer.Deserialize<T>(data)!;

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Services.Caching
+namespace Services.Infrastructure.Caching
 {
     public interface IRedisCacheService
     {

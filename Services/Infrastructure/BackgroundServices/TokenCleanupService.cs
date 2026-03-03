@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Services.BackgroundServices
+namespace Services.Infrastructure.BackgroundServices
 {
     public class TokenCleanupService : BackgroundService
     {

@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Data.Models;
-using Data.Interfaces;
 using Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Services.Caching;
+using Services.Infrastructure.Email;
+using Services.Infrastructure.Caching;
 
 namespace Api.Controllers
 {
@@ -24,7 +24,6 @@ namespace Api.Controllers
         }
 
         [HttpGet("models/{id}")]
-
         public async Task<ActionResult<Model1>> GetModelById(Guid id)
         {
             try
@@ -44,6 +43,26 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error fetching model with id {Id}", id);
                 return StatusCode(500, $"Internal server error. Details:{ex.Message}");
 
+            }
+        }
+
+        [HttpPost("send-mail")]
+        public async Task<IActionResult> SendMail()
+        {
+            try
+            {
+                await MailSender.SendMailpit(
+                    "stanislav.zhuk@studenci.collegiumwitelona.pl",
+                    "Test Mailpit",
+                    "This is test mail via Mailpit",
+                    "<h1>Test</h1><p>mail via Mailpit</p>"
+                );
+                return Ok("Email sent successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending email");
+                return StatusCode(500, $"Internal server error. Details:{ex.Message}");
             }
         }
     }

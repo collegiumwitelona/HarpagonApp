@@ -1,14 +1,14 @@
 ﻿using Data.Models;
-using DTO.Requests;
+using DTO.Requests.Auth;
 using DTO.Responses;
 
 namespace Services.Interfaces
 {
     public interface IAuthService
     {
-        Task<AuthTokensResponse> LoginAsync(string email, string password);
-        Task LogoutAsync(string refreshToken);
+        Task<AuthResponse> LoginAsync(LoginRequest request);
+        Task LogoutAsync(LogoutRequest request);
         Task<User> RegisterAsync(RegisterRequest request);
-        Task<string?> RefreshAccessTokenAsync(string refreshToken);
+        Task<RefreshResponse> RefreshAccessTokenAsync(RefreshRequest request);
     }
 }

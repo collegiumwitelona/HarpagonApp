@@ -8,6 +8,6 @@ namespace Services.Interfaces
 {
     public interface IHashService
     {
-        string ComputeSha256Hash(string input);
+        string ComputeHash(string input);
     }
 }
