@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Services.Infrastructure.Caching
 {
-    public interface IRedisCacheService
+    public interface ICacheService
     {
         Task<T?> GetData<T>(string key);
         Task SetData<T>(string key, T value);

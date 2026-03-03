@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Services.Infrastructure.Caching
 {
-    public class RedisCacheService : IRedisCacheService
+    public class RedisCacheService : ICacheService
     {
         private readonly IDistributedCache _cache;
         public RedisCacheService(IDistributedCache cache)

@@ -54,7 +54,7 @@ builder.Services.AddScoped<IModel1Repository, Model1Repository>();
 builder.Services.AddScoped<IRefreshTokensRepository, RefreshTokensRepository>();
 
 //Add services
-builder.Services.AddScoped<IRedisCacheService, RedisCacheService>();
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<IModel1Service, Model1Service>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IHashService, HashService>();

@@ -14,9 +14,9 @@ namespace Api.Controllers
     {
         private readonly ILogger<TestModelController> _logger;
         private readonly IModel1Service _testModelService;
-        private readonly IRedisCacheService _cache;
+        private readonly ICacheService _cache;
 
-        public TestModelController(ILogger<TestModelController> logger, IModel1Service testService, IRedisCacheService redis)
+        public TestModelController(ILogger<TestModelController> logger, IModel1Service testService, ICacheService redis)
         {
             _logger = logger;
             _testModelService = testService;
