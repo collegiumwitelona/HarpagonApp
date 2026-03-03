@@ -17,6 +17,7 @@ services:
       - 8080:8080
     environment:
       - ConnectionStrings__DefaultConnection=User ID=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Host=postgres;Port=${POSTGRES_PORT};Database=${POSTGRES_DB};
+      - ConnectionStrings__Redis=${REDIS_HOST}:${REDIS_PORT}
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_ENVIRONMENT=Development
@@ -73,3 +74,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+  redis:
+    image: redis:8.2
+    container_name: redis-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - dev
+    restart: unless-stopped
