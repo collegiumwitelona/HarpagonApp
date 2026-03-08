@@ -12,7 +12,7 @@ services:
       context: .
       dockerfile: API/Dockerfile
       target: final
-    container_name: api-dev
+    container_name: harpagon-api-dev
     ports:
       - 8080:8080
     environment:
@@ -31,7 +31,7 @@ services:
 
   postgres:
     image: postgres:16
-    container_name: postgres
+    container_name: harpagon-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -52,7 +52,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: pgadmin
+    container_name: harpagon-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com 
       PGADMIN_DEFAULT_PASSWORD: admin 
@@ -78,7 +78,7 @@ services:
         condition: service_healthy
   redis:
     image: redis:8.2
-    container_name: redis-dev
+    container_name: harpagon-redis
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -92,7 +92,7 @@ services:
     restart: unless-stopped
   mailpit:
     image: axllent/mailpit:v1.27.9
-    container_name: mailpit-dev
+    container_name: harpagon-mailpit
     hostname: mailpit
     ports:
       - "${MAILPIT_PORT:-8025}:8025"

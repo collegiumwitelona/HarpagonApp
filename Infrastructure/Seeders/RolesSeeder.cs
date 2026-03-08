@@ -9,7 +9,7 @@ namespace Infrastructure.Seeders
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
-            string[] roles = ["Admin", "User"]; // bootstrap
+            string[] roles = ["Admin", "User"];
 
             foreach (var role in roles)
             {

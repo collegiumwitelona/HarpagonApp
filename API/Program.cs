@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -53,12 +52,10 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 //Add repositories
-builder.Services.AddScoped<IModel1Repository, Model1Repository>();
 builder.Services.AddScoped<IRefreshTokensRepository, RefreshTokensRepository>();
 
 //Add services
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
-builder.Services.AddScoped<IModel1Service, Model1Service>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IHashService, HashService>();
 builder.Services.AddScoped<ITokenService, JwtService>();
@@ -120,10 +117,6 @@ using (var scope = app.Services.CreateScope())
         if (userManager.Users.Count() < 2)
         {
             await UsersSeeder.SeedUsers(services);
-        }
-        if (!dbContext.Model1s.Any())
-        {
-            await ModelsSeeder.SeedModels(services);
         }
     }
     catch (Exception ex)

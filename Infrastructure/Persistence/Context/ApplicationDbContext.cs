@@ -12,8 +12,9 @@ namespace Infrastructure.Persistence.Context
             : base(options)
         { }
 
-        public DbSet<Model2> Model2s { get; set; }
-        public DbSet<Model1> Model1s { get; set; }
+        public DbSet<Account> Accounts { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -21,22 +22,33 @@ namespace Infrastructure.Persistence.Context
             base.OnModelCreating(builder);
 
             builder.Entity<RefreshToken>()
-            .HasOne(rt => rt.User)
-            .WithMany(u => u.RefreshTokens)
-            .HasForeignKey(rt => rt.UserId);
+                .HasOne(rt => rt.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(rt => rt.UserId);
+
+            builder.Entity<Account>()
+               .HasOne(a => a.User)
+               .WithMany(u => u.Accounts)
+               .HasForeignKey(a => a.UserId);
+
+            builder.Entity<Category>()
+                .HasOne(c => c.User)
+                .WithMany(u => u.Categories)
+                .HasForeignKey(c => c.UserId);
+
+            builder.Entity<Transaction>()
+                .HasOne(t => t.Account)
+                .WithMany(a => a.Transactions)
+                .HasForeignKey(t => t.AccountId);
+
+             builder.Entity<Transaction>()
+                .HasOne(t => t.Category)
+                .WithMany(c => c.Transactions)
+                .HasForeignKey(t => t.CategoryId);
 
             builder.Entity<RefreshToken>()
                 .HasIndex(rt => rt.Token)
                 .IsUnique();
-
-            builder.Entity<Model1>()
-                .HasMany(m => m.Model2s)
-                .WithOne()
-                .HasForeignKey("Model1Id")
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<Model2>();
-
         }
     }
 }

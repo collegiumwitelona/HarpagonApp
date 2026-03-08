@@ -6,7 +6,7 @@ using Application.Interfaces;
 using Domain.Interfaces;
 using Domain.Models;
 
-namespace Services.Services
+namespace Application.Services
 {
     public class AuthService : IAuthService
     {
