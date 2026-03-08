@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories
 {
-    public class RefreshTokensRepository : IRefreshTokensRepository
+    public class RefreshTokenRepository : IRefreshTokenRepository
     {
         private readonly ApplicationDbContext _context;
-        public RefreshTokensRepository(ApplicationDbContext dbContext)
+        public RefreshTokenRepository(ApplicationDbContext dbContext)
         {
             _context = dbContext;
         }

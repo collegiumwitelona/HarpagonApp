@@ -34,7 +34,8 @@ namespace Infrastructure.Persistence.Context
             builder.Entity<Category>()
                 .HasOne(c => c.User)
                 .WithMany(u => u.Categories)
-                .HasForeignKey(c => c.UserId);
+                .HasForeignKey(c => c.UserId)
+                .IsRequired(false);
 
             builder.Entity<Transaction>()
                 .HasOne(t => t.Account)

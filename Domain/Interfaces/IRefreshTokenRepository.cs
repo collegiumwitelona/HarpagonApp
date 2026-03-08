@@ -2,7 +2,7 @@
 
 namespace Domain.Interfaces
 {
-    public interface IRefreshTokensRepository
+    public interface IRefreshTokenRepository
     {
         Task AddRefreshTokenAsync(RefreshToken token);
         Task DeleteExpiredAndRevokedAsync();

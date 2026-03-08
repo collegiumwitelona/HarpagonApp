@@ -52,13 +52,18 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 //Add repositories
-builder.Services.AddScoped<IRefreshTokensRepository, RefreshTokensRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 //Add services
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IHashService, HashService>();
 builder.Services.AddScoped<ITokenService, JwtService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+builder.Services.AddTransient<IHashService, HashService>();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
@@ -114,9 +119,13 @@ using (var scope = app.Services.CreateScope())
 
         await RolesSeeder.SeedRoles(services);
 
-        if (userManager.Users.Count() < 2)
+        if (!userManager.Users.Any())
         {
             await UsersSeeder.SeedUsers(services);
+        }
+        if(!dbContext.Categories.Any())
+        {
+            await CategorySeeder.SeedCategories(services);
         }
     }
     catch (Exception ex)

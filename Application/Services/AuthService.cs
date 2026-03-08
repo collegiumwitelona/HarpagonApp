@@ -11,13 +11,13 @@ namespace Application.Services
     public class AuthService : IAuthService
     {
         private readonly UserManager<User> _userManager;
-        private readonly IRefreshTokensRepository _refreshTokensRepository;
+        private readonly IRefreshTokenRepository _refreshTokensRepository;
         private readonly ITokenService _jwtService;
         private readonly IHashService _hashService;
 
         public AuthService(
             UserManager<User> userManager,
-            IRefreshTokensRepository refreshTokens,
+            IRefreshTokenRepository refreshTokens,
             ITokenService jwtService,
             IHashService hashService)
         {

@@ -33,8 +33,8 @@ namespace Infrastructure.Identity
 
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty)
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
             };
 
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
