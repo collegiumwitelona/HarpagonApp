@@ -1,15 +1,4 @@
-# Boilerplate: API + PostgreSQL + PGAdmin
-
-This repository provides a ready-to-use local development environment with:
-
-- ASP.NET Core API  
-- PostgreSQL running in Docker  
-- PGAdmin web UI for database management  
-- Swagger for API exploration and testing  
-
-Everything is wired together with Docker Compose for easy setup.
-
----
+# HarpagonApp
 
 ## Tech Stack
 
@@ -18,6 +7,8 @@ Everything is wired together with Docker Compose for easy setup.
 - PGAdmin 4
 - Docker & Docker Compose
 - Entity Framework Core
+- Redis
+- Mailpit(later Mailgun)
 
 ---
 
@@ -40,6 +31,7 @@ Create a `.env` file from the example:
 cp .env.example .env
 ```
 
+
 Build and start all services:
 
 ```bash
@@ -53,3 +45,6 @@ http://localhost:5050/
 
 - Swagger (API docs & testing)
 http://localhost:8080/swagger/index.html
+
+- Mailpit (sending emails testing)
+http://localhost:8025
