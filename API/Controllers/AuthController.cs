@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Services.Interfaces;
 using Services.Services;
-using DTO.Requests.Auth;
-using DTO.Responses;
+using Application.DTO.Requests.Auth;
+using Application.DTO.Responses;
+using Application.Interfaces;
 
 namespace API.Controllers
 {

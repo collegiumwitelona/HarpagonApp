@@ -1,17 +1,20 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Data.Context;
-using Data.Models;
-using Services.Interfaces;
 using Services.Services;
-using Data.Interfaces;
-using Data.Repositories;
-using Data.Seeders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Services.Infrastructure.BackgroundServices;
-using Services.Infrastructure.Caching;
+using Application.Interfaces;
+using Application.Services;
+using Domain.Interfaces;
+using Domain.Models;
+using Infrastructure.BackgroundServices;
+using Infrastructure.Caching;
+using Infrastructure.Seeders;
+using Infrastructure.Persistence.Context;
+using Infrastructure.Persistence.Repositories;
+using Infrastructure.Identity;
+using Infrastructure.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +27,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
-    options.InstanceName = "MyApp_";
+    options.InstanceName = "HarpagonApp";
 });
 
 //Add Identity services
@@ -58,7 +61,7 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<IModel1Service, Model1Service>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IHashService, HashService>();
-builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<ITokenService, JwtService>();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 

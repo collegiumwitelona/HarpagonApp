@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: api
+    env: docker
+    plan: free
+    dockerfilePath: ./API/Dockerfile
+    autoDeploy: true
+
+    envVars:
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: postgres-db
+          property: connectionString
+
+      - key: ConnectionStrings__Redis
+        fromService:
+          name: redis-cache
+          type: redis
+          property: connectionString
+
+      - key: MAILGUN_API_KEY
+        sync: false
+
+      - key: Jwt__SecretKey
+        sync: false
+
+  - type: redis
+    name: redis-cache
+    plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: allow all
+
+
+databases:
+  - name: postgres-db
+    plan: free

@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Data.Models;
-using Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Services.Infrastructure.Email;
-using Services.Infrastructure.Caching;
+using Application.Interfaces;
+using Domain.Models;
+using Infrastructure.Email;
 
 namespace Api.Controllers
 {
@@ -52,10 +51,10 @@ namespace Api.Controllers
             try
             {
                 await MailSender.SendMailpit(
-                    "stanislav.zhuk@studenci.collegiumwitelona.pl",
-                    "Test Mailpit",
-                    "This is test mail via Mailpit",
-                    "<h1>Test</h1><p>mail via Mailpit</p>"
+                    reciever:"reciever@local.dev",
+                    subject:"Test Mailpit",
+                    text:"This is test mail via Mailpit",
+                    html:"<h1>Test</h1><p>mail via Mailpit</p>"
                 );
                 return Ok("Email sent successfully");
             }
