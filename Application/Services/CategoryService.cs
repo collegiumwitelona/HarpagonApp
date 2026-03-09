@@ -2,26 +2,19 @@
 using Application.Interfaces;
 using Domain.Interfaces;
 using Domain.Models;
-using Microsoft.AspNetCore.Http;
-using Application.Extensions;
 
 namespace Application.Services
 {
     public class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _categoryRepository;
-        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CategoryService(ICategoryRepository repository, IHttpContextAccessor httpContext) {
+        public CategoryService(ICategoryRepository repository) {
             _categoryRepository = repository;
-            _httpContextAccessor = httpContext;
         }
 
-        public async Task CreateCategoryAsync(CreateCategoryRequest request)
+        public async Task CreateCategoryAsync(CreateCategoryRequest request, Guid userId)
         {
-            var user = (_httpContextAccessor.HttpContext?.User) ?? throw new UnauthorizedAccessException();
-            var userId = user.GetUserId();
-
             var newCategory = new Category
             {
                 Id = Guid.NewGuid(),
@@ -33,18 +26,13 @@ namespace Application.Services
             await _categoryRepository.AddCategoryAsync(newCategory);
         }
 
-        public async Task DeleteCategoryByIdAsync(Guid categoryId)
+        public async Task DeleteCategoryByIdAsync(Guid categoryId, Guid userId, string userRole)
         {
-            var user = (_httpContextAccessor.HttpContext?.User) 
-                ?? throw new UnauthorizedAccessException();
             var category = await _categoryRepository.GetCategoryByIdAsync(categoryId) 
                 ?? throw new KeyNotFoundException($"Category {categoryId} not found");
-            
-            var userId = user.GetUserId();
-            var role = user.GetRole();
 
             var isOwner = category.UserId == userId;
-            var isAdmin = role == "Admin";
+            var isAdmin = userRole.Equals("Admin");
 
             if (!isOwner && !isAdmin)
                 throw new UnauthorizedAccessException("You do not have permission to delete this category.");
@@ -52,40 +40,36 @@ namespace Application.Services
             await _categoryRepository.DeleteCategoryAsync(categoryId);
         }
 
-        public async Task EditCategoryByIdAsync(Guid categoryId, EditCategoryRequest request)
+        public async Task EditCategoryByIdAsync(EditCategoryRequest request, Guid userId, string userRole)
         {
-            var user = (_httpContextAccessor.HttpContext?.User)
-                ?? throw new UnauthorizedAccessException();
-            var category = await _categoryRepository.GetCategoryByIdAsync(categoryId)
-                ?? throw new KeyNotFoundException($"Category {categoryId} not found");
-
-            var userId = user.GetUserId();
-            var role = user.GetRole();
+            var category = await _categoryRepository.GetCategoryByIdAsync(request.CategoryId)
+                ?? throw new KeyNotFoundException($"Category {request.CategoryId} not found");
 
             var isOwner = category.UserId == userId;
-            var isAdmin = role == "Admin";
+            var isAdmin = userRole == "Admin";
 
             if (!isOwner && !isAdmin)
                 throw new UnauthorizedAccessException("You do not have permission to delete this category.");
 
-            await _categoryRepository.UpdateCategoryAsync(category);
+            var newCategory = new Category
+            {
+                Id = request.CategoryId,
+                UserId = category.UserId,
+                Name = request.CategoryName,
+                Type = request.Type,
+                Description = request.Description
+            };
+
+            await _categoryRepository.UpdateCategoryAsync(newCategory);
         }
 
-        public Task<List<Category>> GetCategoriesAsync()
+        public Task<List<Category>> GetCategoriesAsync(Guid userId)
         {
-            var user = (_httpContextAccessor.HttpContext?.User)
-                ?? throw new UnauthorizedAccessException();
-
-            var userId = user.GetUserId();
             return _categoryRepository.GetAllCategoriesAsync(userId);
         }
 
-        public async Task<Category> GetCategoryByIdAsync(Guid categoryId)
+        public async Task<Category> GetCategoryByIdAsync(Guid categoryId, Guid userId)
         {
-            var user = (_httpContextAccessor.HttpContext?.User) 
-                ?? throw new UnauthorizedAccessException();
-            var userId = user.GetUserId();
-
             var result = await _categoryRepository.GetCategoryByIdAsync(categoryId);
             if (result == null)
             {

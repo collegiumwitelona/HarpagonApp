@@ -1,5 +1,7 @@
-﻿using Application.DTO.Requests.Categories;
+﻿using API.Extensions;
+using Application.DTO.Requests.Categories;
 using Application.Interfaces;
+using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,14 +28,16 @@ namespace API.Controllers
         {
             try
             {
-                //var cachedCategories = _cache.GetData<List<Category>>("categories");
-                //if (cachedCategories != null)
-                //{
-                //    _logger.LogInformation("Categories fetched from cache");
-                //    return Ok(cachedCategories);
-                //}
-                var response = await _categoryService.GetCategoriesAsync();
-                await _cache.SetData("categories", response);
+                var userId = User.GetUserId();
+                var cachedCategories = await _cache.GetDataAsync<List<Category>>($"categories:user:{userId}");
+                if (cachedCategories != null)
+                {
+                    _logger.LogInformation("Categories fetched from cache");
+                    return Ok(cachedCategories);
+                }
+
+                var response = await _categoryService.GetCategoriesAsync(userId);
+                await _cache.SetDataAsync($"categories:user:{userId}", response);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -48,7 +52,8 @@ namespace API.Controllers
         {
             try
             {
-                var response = await _categoryService.GetCategoryByIdAsync(id);
+                var userId = User.GetUserId();
+                var response = await _categoryService.GetCategoryByIdAsync(id,userId);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -63,8 +68,9 @@ namespace API.Controllers
         {
             try
             {
-                await _categoryService.CreateCategoryAsync(request);
-                //_cache.SetData("categories", response);
+                var userId = User.GetUserId();
+                await _categoryService.CreateCategoryAsync(request, userId);
+                await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after adding a new category
                 return Ok();
             }
             catch (Exception ex)
@@ -79,7 +85,10 @@ namespace API.Controllers
         {
             try
             {
-                await _categoryService.DeleteCategoryByIdAsync(id);
+                var userRole = User.GetRole();
+                var userId = User.GetUserId();
+                await _categoryService.DeleteCategoryByIdAsync(id, userId, userRole);
+                await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after deleting a category
                 return Ok();
             }
             catch (Exception ex)
@@ -89,17 +98,20 @@ namespace API.Controllers
             }
         }
 
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> EditCategory(Guid id, [FromBody] EditCategoryRequest request)
+        [HttpPatch]
+        public async Task<IActionResult> EditCategory([FromBody] EditCategoryRequest request)
         {
             try
             {
-                await _categoryService.EditCategoryByIdAsync(id, request);
+                var userRole = User.GetRole();
+                var userId = User.GetUserId();
+                await _categoryService.EditCategoryByIdAsync(request, userId, userRole);
+                await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after editing a category
                 return Ok();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error editing category with id {Id}", id);
+                _logger.LogError(ex, "Error editing category with id {Id}", request.CategoryId);
                 return StatusCode(500, $"Internal server error. Details:{ex.Message}");
             }
         }

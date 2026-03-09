@@ -12,7 +12,13 @@ namespace Infrastructure.Caching
         {
             _cache = cache;
         }
-        public async Task<T?> GetData<T>(string key)
+
+        public async Task RemoveDataAsync(string key)
+        {   
+            await _cache.RemoveAsync(key);
+        }
+
+        public async Task<T?> GetDataAsync<T>(string key)
         {
             var data = await _cache.GetStringAsync(key);
             if (data == null)
@@ -23,7 +29,7 @@ namespace Infrastructure.Caching
             return JsonSerializer.Deserialize<T>(data)!;
         }
 
-        public async Task SetData<T>(string key, T value)
+        public async Task SetDataAsync<T>(string key, T value)
         {
             var options = new DistributedCacheEntryOptions()
                 .SetAbsoluteExpiration(DateTime.Now.AddMinutes(5))

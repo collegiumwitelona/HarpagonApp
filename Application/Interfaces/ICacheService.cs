@@ -8,7 +8,8 @@ namespace Application.Interfaces
 {
     public interface ICacheService
     {
-        Task<T?> GetData<T>(string key);
-        Task SetData<T>(string key, T value);
+        Task<T?> GetDataAsync<T>(string key);
+        Task SetDataAsync<T>(string key, T value);
+        Task RemoveDataAsync(string key);
     }
 }

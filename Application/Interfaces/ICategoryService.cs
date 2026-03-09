@@ -10,10 +10,10 @@ namespace Application.Interfaces
 {
     public interface ICategoryService
     {
-        Task CreateCategoryAsync(CreateCategoryRequest request);
-        Task<Category> GetCategoryByIdAsync(Guid categoryId); // dto response later
-        Task<List<Category>> GetCategoriesAsync(); // dto response later
-        Task DeleteCategoryByIdAsync(Guid categoryId);
-        Task EditCategoryByIdAsync(Guid categoryId, EditCategoryRequest request);
+        Task CreateCategoryAsync(CreateCategoryRequest request, Guid userId);
+        Task<Category> GetCategoryByIdAsync(Guid categoryId, Guid userId); // dto response later
+        Task<List<Category>> GetCategoriesAsync(Guid userId); // dto response later
+        Task DeleteCategoryByIdAsync(Guid categoryId, Guid userId, string userRole);
+        Task EditCategoryByIdAsync(EditCategoryRequest request, Guid userId, string userRole);
     }
 }

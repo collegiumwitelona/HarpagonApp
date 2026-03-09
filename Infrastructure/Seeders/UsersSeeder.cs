@@ -16,7 +16,7 @@ namespace Infrastructure.Seeders
             if (adminUser == null)
             {
                 adminUser = new User
-                {
+                {   
                     Id = Guid.NewGuid(),
                     Name = "Administrator",
                     Surname = "Admin",
