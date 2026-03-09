@@ -1,19 +1,20 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using API.Extensions;
 using Application.Interfaces;
 using Application.Services;
 using Domain.Interfaces;
 using Domain.Models;
 using Infrastructure.BackgroundServices;
 using Infrastructure.Caching;
-using Infrastructure.Seeders;
+using Infrastructure.Identity;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Repositories;
-using Infrastructure.Identity;
+using Infrastructure.Seeders;
 using Infrastructure.Shared;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,7 +68,11 @@ builder.Services.AddTransient<IHashService, HashService>();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -141,7 +146,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
+app.UseExceptionMiddleware();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

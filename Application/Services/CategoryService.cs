@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Requests.Categories;
+using Application.Exceptions;
 using Application.Interfaces;
 using Domain.Interfaces;
 using Domain.Models;
@@ -29,13 +30,13 @@ namespace Application.Services
         public async Task DeleteCategoryByIdAsync(Guid categoryId, Guid userId, string userRole)
         {
             var category = await _categoryRepository.GetCategoryByIdAsync(categoryId) 
-                ?? throw new KeyNotFoundException($"Category {categoryId} not found");
+                ?? throw new NotFoundException($"Category {categoryId} not found");
 
             var isOwner = category.UserId == userId;
             var isAdmin = userRole.Equals("Admin");
 
             if (!isOwner && !isAdmin)
-                throw new UnauthorizedAccessException("You do not have permission to delete this category.");
+                throw new ForbiddenException("You do not have permission to delete this category.");
 
             await _categoryRepository.DeleteCategoryAsync(categoryId);
         }
@@ -43,13 +44,13 @@ namespace Application.Services
         public async Task EditCategoryByIdAsync(EditCategoryRequest request, Guid userId, string userRole)
         {
             var category = await _categoryRepository.GetCategoryByIdAsync(request.CategoryId)
-                ?? throw new KeyNotFoundException($"Category {request.CategoryId} not found");
+                ?? throw new NotFoundException($"Category {request.CategoryId} not found");
 
             var isOwner = category.UserId == userId;
             var isAdmin = userRole == "Admin";
 
             if (!isOwner && !isAdmin)
-                throw new UnauthorizedAccessException("You do not have permission to delete this category.");
+                throw new ForbiddenException("You do not have permission to delete this category.");
 
             var newCategory = new Category
             {
@@ -73,11 +74,11 @@ namespace Application.Services
             var result = await _categoryRepository.GetCategoryByIdAsync(categoryId);
             if (result == null)
             {
-                throw new KeyNotFoundException($"Category {categoryId} not found");
+                throw new NotFoundException($"Category {categoryId} not found");
             }
             if(result.UserId != userId || result.UserId != null)
             {
-                throw new UnauthorizedAccessException("You do not have permission to view this category.");
+                throw new ForbiddenException("You do not have permission to view this category.");
             }
             return result;
         }
