@@ -14,7 +14,7 @@ namespace Infrastructure.Persistence.Repositories
         }
         public async Task AddCategoryAsync(Category category)
         {
-            _context.Categories.Add(category);
+            await _context.Categories.AddAsync(category);
             await _context.SaveChangesAsync();
         }
 
