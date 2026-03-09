@@ -55,6 +55,15 @@ namespace API.Controllers
             await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after adding a new category
             return Ok();
         }
+        [HttpPatch]
+        public async Task<IActionResult> EditCategory([FromBody] EditCategoryRequest request)
+        {
+            var userRole = User.GetRole();
+            var userId = User.GetUserId();
+            await _categoryService.EditCategoryByIdAsync(request, userId, userRole);
+            await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after editing a category
+            return Ok();
+        }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCategory(Guid id)
@@ -63,16 +72,6 @@ namespace API.Controllers
             var userId = User.GetUserId();
             await _categoryService.DeleteCategoryByIdAsync(id, userId, userRole);
             await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after deleting a category
-            return Ok();
-        }
-
-        [HttpPatch]
-        public async Task<IActionResult> EditCategory([FromBody] EditCategoryRequest request)
-        {
-            var userRole = User.GetRole();
-            var userId = User.GetUserId();
-            await _categoryService.EditCategoryByIdAsync(request, userId, userRole);
-            await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after editing a category
             return Ok();
         }
     }

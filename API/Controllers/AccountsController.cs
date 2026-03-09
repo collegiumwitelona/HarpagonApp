@@ -44,20 +44,20 @@ namespace API.Controllers
             return Ok(new { message = "Account created successfully" });
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAccountByIdAsync(Guid id)
-        {
-            var userId = User.GetUserId();
-            await _accountService.DeleteAccountByIdAsync(id, userId);
-            return Ok(new { message = "Account deleted successfully" });
-        }
-
         [HttpPatch]
         public async Task<IActionResult> EditAccountBalanceByIdAsync([FromBody] EditAccountRequest request)
         {
             var userId = User.GetUserId();
             await _accountService.EditAccountBalanceByIdAsync(request.AccountId, request.NewBalance, userId);
             return Ok(new { message = "Account balance updated successfully" });
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAccountByIdAsync(Guid id)
+        {
+            var userId = User.GetUserId();
+            await _accountService.DeleteAccountByIdAsync(id, userId);
+            return Ok(new { message = "Account deleted successfully" });
         }
     }
 }

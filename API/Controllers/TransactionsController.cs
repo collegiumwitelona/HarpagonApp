@@ -20,6 +20,20 @@ namespace API.Controllers
             _transactionService = transactionService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetTransactions()
+        {
+            var userId = User.GetUserId();
+            var response = await _transactionService.GetTransactionsByUserIdAsync(userId);
+            return Ok(response);
+        }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetTransactionById(Guid id)
+        {
+            var userId = User.GetUserId();
+            var response = await _transactionService.GetTransactionByIdAsync(id, userId);
+            return Ok(response);
+        }
 
         [HttpPost]
         public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest request)
@@ -29,33 +43,19 @@ namespace API.Controllers
             return Ok();
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetTransactions()
-        {
-            var userId = User.GetUserId();
-            var response = await _transactionService.GetTransactionsByUserIdAsync(userId);
-            return Ok(response);
-        }
-        [HttpGet("/{id}")]
-        public async Task<IActionResult> GetTransactionById(Guid id)
-        {
-            var userId = User.GetUserId();
-            var response = await _transactionService.GetTransactionByIdAsync(id, userId);
-            return Ok(response);
-        }
-
-        [HttpDelete("/{id}")]
-        public async Task<IActionResult> DeleteTransactionById(Guid id)
-        {
-            var userId = User.GetUserId();
-            await _transactionService.DeleteTransactionByIdAsync(id, userId);
-            return Ok();
-        }
         [HttpPatch]
         public async Task<IActionResult> EditTransactionById([FromBody] EditTransactionRequest request)
         {
             var userId = User.GetUserId();
             await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
+            return Ok();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTransactionById(Guid id)
+        {
+            var userId = User.GetUserId();
+            await _transactionService.DeleteTransactionByIdAsync(id, userId);
             return Ok();
         }
     }
