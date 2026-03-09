@@ -1,0 +1,62 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Domain.Models;
+using Microsoft.AspNetCore.Authorization;
+using Application.Interfaces;
+using Application.DTO.Requests.Transactions;
+using API.Extensions;
+
+namespace API.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    [Authorize]
+    public class TransactionsController : Controller
+    {
+        private readonly ILogger<TransactionsController> _logger;
+        private readonly ITransactionService _transactionService;
+        public TransactionsController(ITransactionService transactionService, ILogger<TransactionsController> logger)
+        {
+            _logger = logger;
+            _transactionService = transactionService;
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest request)
+        {
+            var userId = User.GetUserId();
+            await _transactionService.CreateTransactionAsync(request, userId);
+            return Ok();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTransactions()
+        {
+            var userId = User.GetUserId();
+            var response = await _transactionService.GetTransactionsByUserIdAsync(userId);
+            return Ok(response);
+        }
+        [HttpGet("/{id}")]
+        public async Task<IActionResult> GetTransactionById(Guid id)
+        {
+            var userId = User.GetUserId();
+            var response = await _transactionService.GetTransactionByIdAsync(id, userId);
+            return Ok(response);
+        }
+
+        [HttpDelete("/{id}")]
+        public async Task<IActionResult> DeleteTransactionById(Guid id)
+        {
+            var userId = User.GetUserId();
+            await _transactionService.DeleteTransactionByIdAsync(id, userId);
+            return Ok();
+        }
+        [HttpPatch]
+        public async Task<IActionResult> EditTransactionById([FromBody] EditTransactionRequest request)
+        {
+            var userId = User.GetUserId();
+            await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
+            return Ok();
+        }
+    }
+}

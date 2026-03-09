@@ -35,7 +35,7 @@ namespace Infrastructure.Persistence.Repositories
         public async Task<Category?> GetCategoryByIdAsync(Guid categoryId)
         {
             return await _context.Categories
-                .AsNoTracking()
+                .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.Id == categoryId);
         }
 

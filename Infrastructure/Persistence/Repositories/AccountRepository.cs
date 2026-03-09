@@ -25,12 +25,16 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<Account?> GetAccountByIdAsync(Guid accountId)
         {
-            return await _context.Accounts.FirstOrDefaultAsync(a => a.Id == accountId);
+            return await _context.Accounts
+                .Include(a => a.User)
+                .Include(a => a.Transactions)
+                .FirstOrDefaultAsync(a => a.Id == accountId);
         }
 
         public Task<List<Account>> GetAccountsByUserIdAsync(Guid userId)
         {
-            return _context.Accounts.AsNoTracking()
+            return _context.Accounts
+                .AsNoTracking()
                 .Where(a => a.UserId == userId)
                 .ToListAsync();
         }

@@ -76,7 +76,7 @@ namespace Application.Services
             {
                 throw new NotFoundException($"Category {categoryId} not found");
             }
-            if(result.UserId != userId || result.UserId != null)
+            if(result.UserId != userId && result.UserId != null)
             {
                 throw new ForbiddenException("You do not have permission to view this category.");
             }
