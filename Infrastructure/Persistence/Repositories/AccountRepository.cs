@@ -35,10 +35,10 @@ namespace Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
-        public Task UpdateAccountBalanceAsync(Account account)
+        public async Task UpdateAccountAsync(Account account)
         {
             _context.Accounts.Update(account);
-            return _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Domain.Interfaces
         Task AddAccountAsync(Account account);
         Task<Account?> GetAccountByIdAsync(Guid accountId);
         Task<List<Account>> GetAccountsByUserIdAsync(Guid userId);
-        Task UpdateAccountBalanceAsync(Account account);
+        Task UpdateAccountAsync(Account account);
         Task DeleteAccountAsync(Account account);
     }
 }
