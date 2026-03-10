@@ -7,6 +7,7 @@ using Infrastructure.BackgroundServices;
 using Infrastructure.Caching;
 using Infrastructure.Identity;
 using Infrastructure.Persistence.Context;
+using Infrastructure.Email;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Seeders;
 using Infrastructure.Shared;
@@ -35,6 +36,8 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+    options.TokenLifespan = TimeSpan.FromHours(3));
 
 //jwt configuration
 builder.Services.AddAuthentication(options =>
@@ -65,6 +68,7 @@ builder.Services.AddScoped<ITokenService, JwtService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 builder.Services.AddTransient<IHashService, HashService>();
 

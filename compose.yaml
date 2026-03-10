@@ -23,6 +23,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - MAILGUN_API_KEY=${MAILGUN_API_KEY}
       - Jwt__SecretKey=${Jwt__SecretKey}
+      - Frontend__Url=${Frontend__Url}
     depends_on:
       postgres:
         condition: service_healthy

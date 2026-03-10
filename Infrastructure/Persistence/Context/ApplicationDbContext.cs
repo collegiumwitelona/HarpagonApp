@@ -16,7 +16,6 @@ namespace Infrastructure.Persistence.Context
         public DbSet<Category> Categories { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -24,12 +23,14 @@ namespace Infrastructure.Persistence.Context
             builder.Entity<RefreshToken>()
                 .HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
-                .HasForeignKey(rt => rt.UserId);
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<Account>()
                .HasOne(a => a.User)
                .WithMany(u => u.Accounts)
-               .HasForeignKey(a => a.UserId);
+               .HasForeignKey(a => a.UserId)
+               .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<Category>()
                 .HasOne(c => c.User)

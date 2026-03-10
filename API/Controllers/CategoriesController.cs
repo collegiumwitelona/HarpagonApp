@@ -2,6 +2,7 @@
 using Application.DTO.Requests.Categories;
 using Application.Interfaces;
 using Domain.Models;
+using API.Extensions.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +10,7 @@ namespace API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [RequireConfirmedEmail]
     [Authorize]
     public class CategoriesController : Controller
     {

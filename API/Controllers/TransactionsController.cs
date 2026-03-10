@@ -1,14 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using API.Extensions;
+using API.Extensions.Filters;
+using Application.DTO.Requests.Transactions;
+using Application.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
-using Application.Interfaces;
-using Application.DTO.Requests.Transactions;
-using API.Extensions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [RequireConfirmedEmail()]
     [Authorize]
     public class TransactionsController : Controller
     {

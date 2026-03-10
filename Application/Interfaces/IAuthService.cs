@@ -8,7 +8,9 @@ namespace Application.Interfaces
     {
         Task<AuthResponse> LoginAsync(LoginRequest request);
         Task LogoutAsync(LogoutRequest request);
-        Task<User> RegisterAsync(RegisterRequest request);
+        Task<UserDataResponse> RegisterAsync(RegisterRequest request);
         Task<RefreshResponse> RefreshAccessTokenAsync(RefreshRequest request);
+        Task ConfirmEmailAsync(ConfirmEmailRequest request);
+        Task SendConfirmMailAsync(Guid userId);
     }
 }

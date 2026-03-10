@@ -1,4 +1,5 @@
 ﻿using API.Extensions;
+using API.Extensions.Filters;
 using Application.DTO.Requests.Accounts;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,7 @@ namespace API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [RequireConfirmedEmail]
     [Authorize]
     public class AccountsController : Controller
     {

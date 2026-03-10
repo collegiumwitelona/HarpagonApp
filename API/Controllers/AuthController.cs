@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using API.Extensions;
+using API.Extensions.Filters;
 using Application.DTO.Requests.Auth;
 using Application.DTO.Responses;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
@@ -20,67 +22,54 @@ namespace API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            try
-            {
-                var result = await _authService.RegisterAsync(request);
-                return Ok(new { message = "Registration successful." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Registration failed for email: {Email}", request.Email);
-                return StatusCode(500, new { message = $"An error occurred during registration.", details = $"{ex.Message}" });
-            }
+            var response = await _authService.RegisterAsync(request);
+            return Ok(new { message = "Registration successful.", response });
         }
 
         [HttpPost("login")]
+        [RequireConfirmedEmail]
         public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
         {
-            try
-            {
-                var response = await _authService.LoginAsync(request);
-                _logger.LogInformation($"User: {response.User}");
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Login failed for email: {Email}", request.Email);
-                return Unauthorized(new { message = "Invalid email or password." });
-            }
+            var response = await _authService.LoginAsync(request);
+            //_logger.LogInformation($"User: {response.User}");
+            return Ok(response);
         }
 
         [HttpPost("refresh")]
+        [RequireConfirmedEmail]
         public async Task<ActionResult<RefreshResponse>> Refresh([FromBody] RefreshRequest request)
         {
-            try
-            {
-                var response = await _authService.RefreshAccessTokenAsync(request);
-                if (response == null)
-                {
-                    return Unauthorized();
-                }
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Token refresh failed for refresh token: {RefreshToken}", request.RefreshToken);
-                return Unauthorized(new { message = ex.Message });
-
-            }
+            var response = await _authService.RefreshAccessTokenAsync(request);
+            return Ok(response);
         }
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
-            try
-            {
-                await _authService.LogoutAsync(request);
-                return Ok(new { message = "Logged out successfully." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Logout failed for refresh token: {RefreshToken}", request.RefreshToken);
-                return StatusCode(500, new { message = "An error occurred during logout.", details = $"{ex.Message}" });
-            }
+            await _authService.LogoutAsync(request);
+            return Ok(new { message = "Logged out successfully." });
+        }
+
+        //[HttpPost("forgot-password")]
+        //public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+        //{
+        //    await _authService.ForgotPasswordAsync(request.Email);
+        //    return Ok();
+        //}
+
+        //[HttpPost("reset-password")]
+        //public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        //{
+        //    await _authService.ResetPasswordAsync(request);
+        //    return Ok();
+        //}
+
+        [HttpPost("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailRequest request)
+        {
+            await _authService.ConfirmEmailAsync(request);
+            _logger.LogInformation("Email confirmed");
+            return Ok("Email confirmed");
         }
     }
 }
