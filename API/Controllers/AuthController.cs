@@ -50,6 +50,7 @@ namespace API.Controllers
             return Ok(new { message = "Logged out successfully." });
         }
 
+        //generate link here and send mail like confirm mail method
         //[HttpPost("forgot-password")]
         //public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         //{
@@ -57,6 +58,7 @@ namespace API.Controllers
         //    return Ok();
         //}
 
+        //validate token and changing password
         //[HttpPost("reset-password")]
         //public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         //{
