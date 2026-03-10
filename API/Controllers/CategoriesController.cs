@@ -51,18 +51,18 @@ namespace API.Controllers
         public async Task<IActionResult> AddCategory([FromBody] CreateCategoryRequest request)
         {
             var userId = User.GetUserId();
-            await _categoryService.CreateCategoryAsync(request, userId);
-            await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after adding a new category
-            return Ok();
+            var response = await _categoryService.CreateCategoryAsync(request, userId);
+            await _cache.RemoveDataAsync($"categories:user:{userId}");
+            return Ok(response);
         }
         [HttpPatch]
         public async Task<IActionResult> EditCategory([FromBody] EditCategoryRequest request)
         {
             var userRole = User.GetRole();
             var userId = User.GetUserId();
-            await _categoryService.EditCategoryByIdAsync(request, userId, userRole);
-            await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after editing a category
-            return Ok();
+            var response = await _categoryService.EditCategoryByIdAsync(request, userId, userRole);
+            await _cache.RemoveDataAsync($"categories:user:{userId}");
+            return Ok(response);
         }
 
         [HttpDelete("{id}")]
@@ -71,7 +71,7 @@ namespace API.Controllers
             var userRole = User.GetRole();
             var userId = User.GetUserId();
             await _categoryService.DeleteCategoryByIdAsync(id, userId, userRole);
-            await _cache.RemoveDataAsync($"categories:user:{userId}"); // Invalidate cache after deleting a category
+            await _cache.RemoveDataAsync($"categories:user:{userId}");
             return Ok();
         }
     }

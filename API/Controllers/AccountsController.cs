@@ -40,16 +40,16 @@ namespace API.Controllers
         public async Task<IActionResult> CreateAccountAsync([FromBody] CreateAccountRequest request)
         {
             var userId = User.GetUserId();
-            await _accountService.CreateAccountAsync(userId, request.AccountName, request.InitialBalance);
-            return Ok(new { message = "Account created successfully" });
+            var response = await _accountService.CreateAccountAsync(userId, request.AccountName, request.InitialBalance);
+            return Ok(new { message = "Account created successfully", response });
         }
 
         [HttpPatch]
         public async Task<IActionResult> EditAccountBalanceByIdAsync([FromBody] EditAccountRequest request)
         {
             var userId = User.GetUserId();
-            await _accountService.EditAccountBalanceByIdAsync(request.AccountId, request.NewBalance, userId);
-            return Ok(new { message = "Account balance updated successfully" });
+            var response = await _accountService.EditAccountBalanceByIdAsync(request.AccountId, request.NewBalance, userId);
+            return Ok( new { message = "Account balance updated successfully", response });
         }
 
         [HttpDelete("{id}")]

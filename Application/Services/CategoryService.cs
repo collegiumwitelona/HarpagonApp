@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Requests.Categories;
+using Application.DTO.Responses;
 using Application.Exceptions;
 using Application.Interfaces;
 using Domain.Interfaces;
@@ -14,7 +15,7 @@ namespace Application.Services
             _categoryRepository = repository;
         }
 
-        public async Task CreateCategoryAsync(CreateCategoryRequest request, Guid userId)
+        public async Task<CategoryResponse> CreateCategoryAsync(CreateCategoryRequest request, Guid userId)
         {
             var newCategory = new Category
             {
@@ -25,6 +26,13 @@ namespace Application.Services
                 Description = request.Description
             };
             await _categoryRepository.AddCategoryAsync(newCategory);
+            return new CategoryResponse
+            {
+                Id = newCategory.Id,
+                Name = newCategory.Name,
+                Type = newCategory.Type,
+                Description = newCategory.Description
+            };
         }
 
         public async Task DeleteCategoryByIdAsync(Guid categoryId, Guid userId, string userRole)
@@ -41,7 +49,7 @@ namespace Application.Services
             await _categoryRepository.DeleteCategoryAsync(categoryId);
         }
 
-        public async Task EditCategoryByIdAsync(EditCategoryRequest request, Guid userId, string userRole)
+        public async Task<CategoryResponse> EditCategoryByIdAsync(EditCategoryRequest request, Guid userId, string userRole)
         {
             var category = await _categoryRepository.GetCategoryByIdAsync(request.CategoryId)
                 ?? throw new NotFoundException($"Category {request.CategoryId} not found");
@@ -62,14 +70,29 @@ namespace Application.Services
             };
 
             await _categoryRepository.UpdateCategoryAsync(newCategory);
+
+            return new CategoryResponse
+            {
+                Id = newCategory.Id,
+                Name = newCategory.Name,
+                Type = newCategory.Type,
+                Description = newCategory.Description
+            };
         }
 
-        public Task<List<Category>> GetCategoriesAsync(Guid userId)
+        public async Task<List<CategoryResponse>> GetCategoriesAsync(Guid userId)
         {
-            return _categoryRepository.GetAllCategoriesAsync(userId);
+            var result = await _categoryRepository.GetAllCategoriesAsync(userId);
+            var response = result.Select(c => new CategoryResponse {
+                Id = c.Id,
+                Name = c.Name,
+                Type = c.Type,
+                Description = c.Description ?? string.Empty
+            }).ToList();
+            return response;
         }
 
-        public async Task<Category> GetCategoryByIdAsync(Guid categoryId, Guid userId)
+        public async Task<CategoryResponse> GetCategoryByIdAsync(Guid categoryId, Guid userId)
         {
             var result = await _categoryRepository.GetCategoryByIdAsync(categoryId);
             if (result == null)
@@ -80,7 +103,13 @@ namespace Application.Services
             {
                 throw new ForbiddenException("You do not have permission to view this category.");
             }
-            return result;
+            return new CategoryResponse
+            {
+                Id = categoryId,
+                Name = result.Name,
+                Type = result.Type,
+                Description = result.Description ?? string.Empty
+            };
         }
     }
 }

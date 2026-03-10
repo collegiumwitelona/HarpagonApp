@@ -39,16 +39,16 @@ namespace API.Controllers
         public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest request)
         {
             var userId = User.GetUserId();
-            await _transactionService.CreateTransactionAsync(request, userId);
-            return Ok();
+            var response = await _transactionService.CreateTransactionAsync(request, userId);
+            return Ok(response);
         }
 
         [HttpPatch]
         public async Task<IActionResult> EditTransactionById([FromBody] EditTransactionRequest request)
         {
             var userId = User.GetUserId();
-            await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
-            return Ok();
+            var response = await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
+            return Ok(response);
         }
 
         [HttpDelete("{id}")]

@@ -11,11 +11,19 @@ namespace Infrastructure.Persistence.Repositories
         public AccountRepository(ApplicationDbContext context) {
             _context = context;
         }
-        public async Task AddAccountAsync(Account account)
+        public async Task<Account> AddAccountAsync(Account account)
         {
             await _context.Accounts.AddAsync(account);
             await _context.SaveChangesAsync();
+            return account;
         }
+
+        //public async Task<int> CountTransactionsByAccountIdAsync(Guid accountId, Guid userId)
+        //{
+        //    return await _context.Transactions
+        //        .Where(t => t.AccountId == accountId && t.Account.UserId == userId)
+        //        .CountAsync();
+        //}
 
         public async Task DeleteAccountAsync(Account account)
         {

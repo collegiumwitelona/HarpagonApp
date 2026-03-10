@@ -5,6 +5,7 @@ using Application.Interfaces;
 using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
+using System.Security.Principal;
 
 namespace Application.Services
 {
@@ -54,9 +55,11 @@ namespace Application.Services
             return new TransactionResponse
             {
                 Id = transaction.Id,
-                FromAccountId = transaction.AccountId,
+                AccountId = transaction.AccountId,
+                CategoryId = category.Id,
                 Amount = transaction.Amount,
-                Timestamp = transaction.Date
+                Date = transaction.Date,
+                Description = transaction.Description
             };
         }
 
@@ -81,7 +84,7 @@ namespace Application.Services
             });
         }
 
-        public async Task EditTransactionByIdAsync(Guid transactionId, decimal newAmount, Guid userId)
+        public async Task<TransactionResponse> EditTransactionByIdAsync(Guid transactionId, decimal newAmount, Guid userId)
         {
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
             if (transaction == null)
@@ -103,6 +106,16 @@ namespace Application.Services
                 transaction.Amount = newAmount;
                 await _transactionRepository.UpdateTransactionAsync(transaction);
             });
+
+            return new TransactionResponse
+            {
+                Id = transactionId,
+                Amount = newAmount,
+                CategoryId = category.Id,
+                AccountId = account.Id,
+                Date = transaction.Date,
+                Description = transaction.Description,
+            };
         }
 
         public async Task<TransactionResponse> GetTransactionByIdAsync(Guid transactionId, Guid userId)
@@ -114,10 +127,12 @@ namespace Application.Services
             }
             return new TransactionResponse
             {
-                Id = response.Id,
-                FromAccountId = response.AccountId,
+                Id = transactionId,
                 Amount = response.Amount,
-                Timestamp = response.Date
+                CategoryId = response.CategoryId,
+                AccountId = response.AccountId,
+                Date = response.Date,
+                Description = response.Description,
             };
         }
 
@@ -127,9 +142,11 @@ namespace Application.Services
             return reponse.Select(t => new TransactionResponse
             {
                 Id = t.Id,
-                FromAccountId = t.AccountId,
                 Amount = t.Amount,
-                Timestamp = t.Date
+                CategoryId = t.CategoryId,
+                AccountId = t.AccountId,
+                Date = t.Date,
+                Description = t.Description,
             }).ToList();
         }
 

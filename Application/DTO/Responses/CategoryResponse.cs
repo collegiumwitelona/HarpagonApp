@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,13 +7,11 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Responses
 {
-    public class TransactionResponse
+    public class CategoryResponse
     {
         public Guid Id { get; set; }
-        public decimal Amount { get; set; }
-        public Guid CategoryId { get; set; }
-        public Guid AccountId { get; set; }
-        public DateTime Date { get; set; }
+        public string Name { get; set; }
         public string Description { get; set; }
+        public CategoryType Type { get; set; }
     }
 }
