@@ -194,7 +194,7 @@ namespace Application.Services
             var encodedToken = WebEncoders.Base64UrlEncode(
                 Encoding.UTF8.GetBytes(token));
 
-            var link = _emailSender.BuildFrontendLink("confirm-email", userId, token);
+            var link = _emailSender.BuildFrontendLink("confirm-email", userId, encodedToken);
 
             var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", "ConfirmEmail.html");
             Console.WriteLine(templatePath);
@@ -222,6 +222,54 @@ namespace Application.Services
 
             if (!result.Succeeded)
                 throw new BadRequestException("Email confirmation failed");
+        }
+
+        public async Task ForgotPasswordAsync(string email)
+        { 
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                throw new NotFoundException("User not found");
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var encodedToken = WebEncoders.Base64UrlEncode(
+                Encoding.UTF8.GetBytes(token));
+
+            var link = _emailSender.BuildFrontendLink("forgot-password", user.Id, encodedToken);
+
+            var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", "ForgotPassword.html");
+            Console.WriteLine(templatePath);
+            var htmlTemplate = await File.ReadAllTextAsync(templatePath);
+
+            var htmlBody = htmlTemplate
+                .Replace("{{Email}}", user.Email!)
+                .Replace("{{Link}}", link);
+
+            await _emailSender.SendEmailAsync(user.Email!, "Email confirmation", "", htmlBody);
+        }
+
+        public async Task ResetPasswordAsync(ResetPasswordRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if(user == null)
+            {
+                throw new NotFoundException("User not found");
+            }
+
+            var decodedToken = Encoding.UTF8.GetString(
+                WebEncoders.Base64UrlDecode(request.Token));
+
+            var response = await _userManager.ResetPasswordAsync(user, decodedToken, request.Password);
+            if (!response.Succeeded)
+            {
+                var errors = string.Join(" | ",
+                    response.Errors.Select(e => e.Description));
+
+                throw new BadRequestException(errors);
+            }
         }
     }
 }

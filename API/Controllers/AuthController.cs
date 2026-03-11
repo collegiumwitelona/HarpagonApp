@@ -50,21 +50,21 @@ namespace API.Controllers
             return Ok(new { message = "Logged out successfully." });
         }
 
-        //generate link here and send mail like confirm mail method
-        //[HttpPost("forgot-password")]
-        //public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
-        //{
-        //    await _authService.ForgotPasswordAsync(request.Email);
-        //    return Ok();
-        //}
+        //generate frontend link here and send email
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromQuery]string email)
+        {
+            await _authService.ForgotPasswordAsync(email);
+            return Ok(new { message = "Reset password link was sent to provided email" });
+        }
 
         //validate token and changing password
-        //[HttpPost("reset-password")]
-        //public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
-        //{
-        //    await _authService.ResetPasswordAsync(request);
-        //    return Ok();
-        //}
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            await _authService.ResetPasswordAsync(request);
+            return Ok();
+        }
 
         [HttpPost("confirm-email")]
         public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailRequest request)

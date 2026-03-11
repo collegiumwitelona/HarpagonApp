@@ -29,16 +29,11 @@ namespace Infrastructure.Email
         //    {
         //        Authenticator = new HttpBasicAuthenticator("api", apiKey)
         //    });
-
-        //    var request = new RestRequest("/v3/sandboxaed1251f982e41afb2791225823bd652.mailgun.org/messages", Method.Post);
-        //    request.AlwaysMultipartFormData = true;
-
         //    request.AddParameter("from", "Mailgun Sandbox <postmaster@sandboxaed1251f982e41afb2791225823bd652.mailgun.org>");
         //    request.AddParameter("to", toEmail);
         //    request.AddParameter("subject", subject);
         //    request.AddParameter("text", text);
         //    request.AddParameter("html", html);
-
         //    return await client.ExecuteAsync(request);
         //}
 
