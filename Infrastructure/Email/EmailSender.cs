@@ -42,10 +42,8 @@ namespace Infrastructure.Email
             var frontendUrl = _configuration["Frontend:Url"]?.TrimEnd('/') ?? 
                 throw new NotFoundException("FrontendUrl not found");
 
-            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-
             // /confirm-email, /reset-password etc
-            return $"{frontendUrl}/{action}?userId={userId}&token={encodedToken}";
+            return $"{frontendUrl}/{action}?userId={userId}&token={token}";
         }
 
         public async Task SendEmailAsync(string reciever, string subject, string text, string html)

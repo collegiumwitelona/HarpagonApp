@@ -197,7 +197,6 @@ namespace Application.Services
             var link = _emailSender.BuildFrontendLink("confirm-email", userId, encodedToken);
 
             var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", "ConfirmEmail.html");
-            Console.WriteLine(templatePath);
             var htmlTemplate = await File.ReadAllTextAsync(templatePath);
 
             var htmlBody = htmlTemplate
@@ -227,7 +226,7 @@ namespace Application.Services
         public async Task ForgotPasswordAsync(string email)
         { 
             var user = await _userManager.FindByEmailAsync(email);
-
+                
             if (user == null)
             {
                 throw new NotFoundException("User not found");
@@ -235,19 +234,15 @@ namespace Application.Services
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-            var encodedToken = WebEncoders.Base64UrlEncode(
-                Encoding.UTF8.GetBytes(token));
+            var link = _emailSender.BuildFrontendLink("forgot-password", user.Id, Uri.EscapeDataString(token));
 
-            var link = _emailSender.BuildFrontendLink("forgot-password", user.Id, encodedToken);
 
             var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", "ForgotPassword.html");
-            Console.WriteLine(templatePath);
             var htmlTemplate = await File.ReadAllTextAsync(templatePath);
 
             var htmlBody = htmlTemplate
                 .Replace("{{Email}}", user.Email!)
                 .Replace("{{Link}}", link);
-
             await _emailSender.SendEmailAsync(user.Email!, "Email confirmation", "", htmlBody);
         }
 
@@ -259,8 +254,7 @@ namespace Application.Services
                 throw new NotFoundException("User not found");
             }
 
-            var decodedToken = Encoding.UTF8.GetString(
-                WebEncoders.Base64UrlDecode(request.Token));
+            var decodedToken = Uri.UnescapeDataString(request.Token);
 
             var response = await _userManager.ResetPasswordAsync(user, decodedToken, request.Password);
             if (!response.Succeeded)

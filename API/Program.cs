@@ -5,9 +5,9 @@ using Domain.Interfaces;
 using Domain.Models;
 using Infrastructure.BackgroundServices;
 using Infrastructure.Caching;
+using Infrastructure.Email;
 using Infrastructure.Identity;
 using Infrastructure.Persistence.Context;
-using Infrastructure.Email;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Seeders;
 using Infrastructure.Shared;
@@ -132,16 +132,17 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
 
     try
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
         var userManager = services.GetRequiredService<UserManager<User>>();
-        if(dbContext.Database.GetPendingMigrations().Any())
+        if (dbContext.Database.GetPendingMigrations().Any())
         {
-            Console.WriteLine("Applying pending migrations...");
+            logger.LogInformation("Applying pending migrations...");
             await dbContext.Database.MigrateAsync();
-            Console.WriteLine("Migrations applied successfully.");
+            logger.LogInformation("Migrations applied successfully.");
         }
 
         await RolesSeeder.SeedRoles(services);
@@ -150,14 +151,14 @@ using (var scope = app.Services.CreateScope())
         {
             await UsersSeeder.SeedUsers(services);
         }
-        if(!dbContext.Categories.Any())
+        if (!dbContext.Categories.Any())
         {
             await CategorySeeder.SeedCategories(services);
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"error during migration/seeds: {ex.Message} | {ex.InnerException}");
+        logger.LogError(ex, "error during migration/seeds");
     }
 }
 

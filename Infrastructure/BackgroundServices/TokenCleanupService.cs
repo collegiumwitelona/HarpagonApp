@@ -26,9 +26,9 @@ namespace Infrastructure.BackgroundServices
                     using var scope = _scopeFactory.CreateScope();
                     var _repository = scope.ServiceProvider.GetRequiredService<IRefreshTokenRepository>();
                     await _repository.DeleteExpiredAndRevokedAsync();
-                    Console.WriteLine("Expired and revoked tokens cleaned up.");
+                    _logger.LogInformation("Expired and revoked tokens cleaned up.");
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error during cleaning tokens");
                 }

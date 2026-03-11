@@ -38,7 +38,6 @@ namespace Infrastructure.Seeders
                 }
             }
 
-            Console.WriteLine($"Admin - {adminUser.Id}");
 
             var userEmail = "user@example.pl";
             var normalUser = await userManager.FindByEmailAsync(userEmail);
@@ -66,8 +65,6 @@ namespace Infrastructure.Seeders
                     await userManager.AddToRoleAsync(normalUser, "User");
                 }
             }
-            Console.WriteLine($"Admin - {adminUser.Id}");
-            Console.WriteLine($"User - {normalUser.Id}");
         }
     }
 }
