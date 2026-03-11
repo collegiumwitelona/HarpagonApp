@@ -20,14 +20,30 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 //Add DbContext with PostgreSQL provider
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+
+if (connectionString.StartsWith("postgresql://"))
+{
+    connectionString = ConnectionStringConverter.ConvertPostgresUrl(connectionString);
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(connectionString);
 });
+
+//cache
+var redisUrl = builder.Configuration.GetConnectionString("Redis")!;
+
+if (redisUrl.StartsWith("redis://"))
+{
+    redisUrl = ConnectionStringConverter.ConvertRedisUrl(redisUrl);
+}
+
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.Configuration = redisUrl;
     options.InstanceName = "HarpagonApp";
 });
 
