@@ -22,7 +22,7 @@ namespace API.Middleware
             }
             catch (ApiException ex)
             {
-                _logger.LogWarning(ex, "Handled API exception");
+                _logger.LogInformation("Handled API exception: {Type} - {Message}", ex.GetType().Name, ex.Message); 
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = ex.StatusCode;
 
