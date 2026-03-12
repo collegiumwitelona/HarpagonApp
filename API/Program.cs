@@ -155,6 +155,17 @@ using (var scope = app.Services.CreateScope())
         {
             await CategorySeeder.SeedCategories(services);
         }
+        if (!dbContext.Accounts.Any())
+        {
+            await AccountsSeeder.SeedAccounts(services);
+        }
+        if (app.Environment.IsDevelopment())
+        {
+            if (!dbContext.Transactions.Any())
+            {
+                await TransactionsSeeder.SeedTransactions(services);
+            }
+        }
     }
     catch (Exception ex)
     {
