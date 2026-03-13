@@ -243,7 +243,7 @@ namespace Application.Services
             var htmlBody = htmlTemplate
                 .Replace("{{Email}}", user.Email!)
                 .Replace("{{Link}}", link);
-            await _emailSender.SendEmailAsync(user.Email!, "Email confirmation", "", htmlBody);
+            await _emailSender.SendEmailAsync(user.Email!, "Password reset", "", htmlBody);
         }
 
         public async Task ResetPasswordAsync(ResetPasswordRequest request)
