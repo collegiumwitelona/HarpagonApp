@@ -43,7 +43,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             var response = await _accountService.CreateAccountAsync(userId, request.AccountName, request.InitialBalance);
-            return Ok(new { message = "Account created successfully", response });
+            return Ok(response);
         }
 
         [HttpPatch]
@@ -51,7 +51,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             var response = await _accountService.EditAccountBalanceByIdAsync(request.AccountId, request.NewBalance, userId);
-            return Ok( new { message = "Account balance updated successfully", response });
+            return Ok(response);
         }
 
         [HttpDelete("{id}")]
@@ -59,7 +59,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             await _accountService.DeleteAccountByIdAsync(id, userId);
-            return Ok(new { message = "Account deleted successfully" });
+            return Ok(new { message = "Account was deleted successfully" });
         }
     }
 }

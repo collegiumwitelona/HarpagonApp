@@ -2,7 +2,6 @@
 using API.Extensions.Filters;
 using Application.DTO.Requests.Transactions;
 using Application.Interfaces;
-using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +9,7 @@ namespace API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    [RequireConfirmedEmail()]
+    [RequireConfirmedEmail]
     [Authorize]
     public class TransactionsController : Controller
     {
@@ -58,7 +57,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             await _transactionService.DeleteTransactionByIdAsync(id, userId);
-            return Ok();
+            return Ok(new { message = "Transaction was deleted successfully" });
         }
     }
 }

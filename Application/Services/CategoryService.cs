@@ -58,7 +58,7 @@ namespace Application.Services
             var isAdmin = userRole == "Admin";
 
             if (!isOwner && !isAdmin)
-                throw new ForbiddenException("You do not have permission to delete this category.");
+                throw new ForbiddenException("You do not have permission to edit this category.");
 
             var newCategory = new Category
             {
