@@ -1,0 +1,79 @@
+﻿using API.Extensions;
+using API.Extensions.Filters;
+using Application.DTO.Requests.Auth;
+using Application.DTO.Responses;
+using Application.Interfaces;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Mvc;
+
+namespace API.Controllers
+{
+    [EnableCors("Policy")]
+    [Controller]
+    [Route("[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly ILogger<AuthController> _logger;
+        private readonly IAuthService _authService;
+        public AuthController(ILogger<AuthController> logger, IAuthService authService)
+        {
+            _logger = logger;
+            _authService = authService;
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        {
+            var response = await _authService.RegisterAsync(request);
+            return Ok(new { message = "Registration successful.", response });
+        }
+
+        [HttpPost("login")]
+        [RequireConfirmedEmail]
+        public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
+        {
+            var response = await _authService.LoginAsync(request);
+            //_logger.LogInformation($"User: {response.User}");
+            return Ok(response);
+        }
+
+        [HttpPost("refresh")]
+        [RequireConfirmedEmail]
+        public async Task<ActionResult<RefreshResponse>> Refresh([FromBody] RefreshRequest request)
+        {
+            var response = await _authService.RefreshAccessTokenAsync(request);
+            return Ok(response);
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            await _authService.LogoutAsync(request);
+            return Ok(new { message = "Logged out successfully." });
+        }
+
+        //generate frontend link here and send email
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromQuery]string email)
+        {
+            await _authService.ForgotPasswordAsync(email);
+            return Ok(new { message = "Reset password link was sent to provided email" });
+        }
+
+        //validate token and changing password
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            await _authService.ResetPasswordAsync(request);
+            return Ok();
+        }
+
+        [HttpPost("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailRequest request)
+        {
+            await _authService.ConfirmEmailAsync(request);
+            _logger.LogInformation("Email confirmed");
+            return Ok("Email confirmed");
+        }
+    }
+}
