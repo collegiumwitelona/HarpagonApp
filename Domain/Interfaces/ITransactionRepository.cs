@@ -1,4 +1,5 @@
-﻿using Domain.Models;
+﻿using Domain.Enums;
+using Domain.Models;
 
 namespace Domain.Interfaces
 {
@@ -6,8 +7,10 @@ namespace Domain.Interfaces
     {
         Task AddTransactionAsync(Transaction transaction);
         Task<List<Transaction>> GetTransactionsByUserIdAsync(Guid userId);
-        Task DeleteTransactionAsync(Transaction transaction);
+        Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type);
         Task<Transaction?> GetTransactionByIdAsync(Guid transactionId);
+        Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to);
+        Task DeleteTransactionAsync(Transaction transaction);
         Task UpdateTransactionAsync(Transaction transaction);
         Task ExecuteInTransactionAsync(Func<Task> operations);
     }

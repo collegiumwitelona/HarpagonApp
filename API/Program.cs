@@ -84,6 +84,7 @@ builder.Services.AddScoped<ITokenService, JwtService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 builder.Services.AddTransient<IHashService, HashService>();

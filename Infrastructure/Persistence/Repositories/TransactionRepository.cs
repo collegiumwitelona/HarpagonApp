@@ -1,4 +1,5 @@
-﻿using Domain.Interfaces;
+﻿using Domain.Enums;
+using Domain.Interfaces;
 using Domain.Models;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -66,6 +67,31 @@ namespace Infrastructure.Persistence.Repositories
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to)
+        {
+            var endDateExclusive = to.AddDays(1);
+
+            return await _context.Transactions.AsNoTracking()
+                .Where(t => t.Account.UserId == userId &&
+                       t.Date >= from && t.Date < endDateExclusive)
+                .CountAsync();
+        }
+
+        public async Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type)
+        {
+            var totals = await _context.Transactions
+                .Where(t => t.Category.Type == type)
+                .GroupBy(t => t.CategoryId)
+                .Select(g => new
+                {
+                    CategoryId = g.Key,
+                    TotalAmount = g.Sum(t => t.Amount)
+                })
+                .ToDictionaryAsync(x => x.CategoryId, x => x.TotalAmount);
+
+            return totals;
         }
     }
 }
