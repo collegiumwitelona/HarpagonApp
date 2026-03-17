@@ -1,0 +1,30 @@
+name: .NET CI
+
+on:
+  push:
+    branches:
+      - main
+      - deploy
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0
+
+      - name: Restore dependencies
+        run: dotnet restore HarpagonApp.sln
+
+      - name: Build project
+        run: dotnet build HarpagonApp.sln --no-restore
+
+      - name: Run tests
+        run: dotnet test HarpagonApp.sln --no-build --verbosity normal
