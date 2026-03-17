@@ -12,7 +12,7 @@ namespace API.Controllers
     [Route("[controller]")]
     [RequireConfirmedEmail]
     [Authorize]
-    public class CategoriesController : Controller
+    public class CategoriesController : ControllerBase
     {
         private readonly ILogger<CategoriesController> _logger;
         private readonly ICategoryService _categoryService;

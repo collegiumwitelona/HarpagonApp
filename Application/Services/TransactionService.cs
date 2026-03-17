@@ -5,7 +5,6 @@ using Application.Interfaces;
 using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
-using System.Security.Principal;
 
 namespace Application.Services
 {
@@ -55,8 +54,8 @@ namespace Application.Services
             return new TransactionResponse
             {
                 Id = transaction.Id,
-                AccountId = transaction.AccountId,
-                CategoryId = category.Id,
+                Account = account,
+                Category = category,
                 Amount = transaction.Amount,
                 Date = transaction.Date,
                 Description = transaction.Description
@@ -65,7 +64,7 @@ namespace Application.Services
 
         public async Task DeleteTransactionByIdAsync(Guid transactionId, Guid userId)
         {
-            var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId); 
+            var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
             if (transaction == null)
             {
                 throw new NotFoundException("Transaction not found");
@@ -111,8 +110,8 @@ namespace Application.Services
             {
                 Id = transactionId,
                 Amount = newAmount,
-                CategoryId = category.Id,
-                AccountId = account.Id,
+                Category = category,
+                Account = account,
                 Date = transaction.Date,
                 Description = transaction.Description,
             };
@@ -125,12 +124,15 @@ namespace Application.Services
             {
                 throw new NotFoundException("Transaction not found");
             }
+            var account = await _accountService.GetAccountByIdAsync(response.AccountId, userId);
+            var category = await _categoryService.GetCategoryByIdAsync(response.AccountId, userId);
+
             return new TransactionResponse
             {
                 Id = transactionId,
                 Amount = response.Amount,
-                CategoryId = response.CategoryId,
-                AccountId = response.AccountId,
+                Category = category,
+                Account = account,
                 Date = response.Date,
                 Description = response.Description,
             };
@@ -138,18 +140,28 @@ namespace Application.Services
 
         public async Task<List<TransactionResponse>> GetTransactionsByUserIdAsync(Guid userId)
         {
-            var reponse = await _transactionRepository.GetTransactionsByUserIdAsync(userId);
-            return reponse.Select(t => new TransactionResponse
+            var response = await _transactionRepository.GetTransactionsByUserIdAsync(userId);
+            return response.Select(t => new TransactionResponse
             {
                 Id = t.Id,
                 Amount = t.Amount,
-                CategoryId = t.CategoryId,
-                AccountId = t.AccountId,
                 Date = t.Date,
                 Description = t.Description,
+                Category = new CategoryResponse
+                {
+                    Id = t.Category.Id,
+                    Description = t.Description,
+                    Name = t.Category.Name,
+                    Type = t.Category.Type
+                },
+                Account = new AccountResponse
+                {
+                    Id = t.Account.Id,
+                    UserId = userId,
+                    Name = t.Account.Name,
+                    Balance = t.Account.Balance,
+                }
             }).ToList();
         }
-
-
     }
 }

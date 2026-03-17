@@ -11,7 +11,7 @@ namespace API.Controllers
     [Route("[controller]")]
     [RequireConfirmedEmail]
     [Authorize]
-    public class TransactionsController : Controller
+    public class TransactionsController : ControllerBase
     {
         private readonly ILogger<TransactionsController> _logger;
         private readonly ITransactionService _transactionService;
