@@ -3,10 +3,12 @@ using API.Extensions.Filters;
 using Application.DTO.Requests.Auth;
 using Application.DTO.Responses;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+    [EnableCors("Policy")]
     [Controller]
     [Route("[controller]")]
     public class AuthController : ControllerBase

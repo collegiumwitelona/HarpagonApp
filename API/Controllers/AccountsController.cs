@@ -3,15 +3,17 @@ using API.Extensions.Filters;
 using Application.DTO.Requests.Accounts;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+    [EnableCors("Policy")]
     [ApiController]
     [Route("[controller]")]
     [RequireConfirmedEmail]
     [Authorize]
-    public class AccountsController : Controller
+    public class AccountsController : ControllerBase
     {
         private readonly ILogger<AccountsController> _logger;
         private readonly IAccountService _accountService;

@@ -3,10 +3,12 @@ using API.Extensions.Filters;
 using Application.DTO.Requests.Transactions;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+    [EnableCors("Policy")]
     [ApiController]
     [Route("[controller]")]
     [RequireConfirmedEmail]
