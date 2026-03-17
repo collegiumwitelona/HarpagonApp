@@ -97,12 +97,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
+var frontendUrl = builder.Configuration["Frontend:Url"]
+    ?? throw new InvalidOperationException("Frontend:Url not configured");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Policy", policy =>
     {
-        policy.WithOrigins(Environment.GetEnvironmentVariable("Frontend:Url") 
-            ?? throw new InvalidOperationException("Frontend:Url not configured"))
+        policy.WithOrigins(frontendUrl)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -194,6 +196,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseExceptionMiddleware();
 app.UseHttpsRedirection();
+
+app.UseRouting();
+app.UseCors("Policy");
 
 app.UseAuthentication();
 

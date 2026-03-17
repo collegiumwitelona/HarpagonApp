@@ -17,10 +17,12 @@ namespace API.Controllers
     {
         private readonly ILogger<TransactionsController> _logger;
         private readonly ITransactionService _transactionService;
-        public TransactionsController(ITransactionService transactionService, ILogger<TransactionsController> logger)
+        private readonly ICacheService _cache;
+        public TransactionsController(ITransactionService transactionService, ILogger<TransactionsController> logger, ICacheService cache)
         {
             _logger = logger;
             _transactionService = transactionService;
+            _cache = cache;
         }
 
         [HttpGet]
@@ -43,6 +45,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             var response = await _transactionService.CreateTransactionAsync(request, userId);
+            await _cache.RemoveDataAsync($"dashboard:user:{userId}");
             return Ok(response);
         }
 
@@ -51,6 +54,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             var response = await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
+            await _cache.RemoveDataAsync($"dashboard:user:{userId}");
             return Ok(response);
         }
 
@@ -59,6 +63,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             await _transactionService.DeleteTransactionByIdAsync(id, userId);
+            await _cache.RemoveDataAsync($"dashboard:user:{userId}");
             return Ok(new { message = "Transaction was deleted successfully" });
         }
     }
