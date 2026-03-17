@@ -1,13 +1,15 @@
 ﻿using API.Extensions;
+using API.Extensions.Filters;
 using Application.DTO.Requests.Categories;
 using Application.Interfaces;
 using Domain.Models;
-using API.Extensions.Filters;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+    [EnableCors("Policy")]
     [ApiController]
     [Route("[controller]")]
     [RequireConfirmedEmail]
