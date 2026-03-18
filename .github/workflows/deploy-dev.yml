@@ -4,24 +4,23 @@ on:
   push:
     branches:
       - deploy
+  workflow_dispatch:
 
 jobs:
   deploy-render:
     runs-on: ubuntu-latest
-    environment: development
+    environment: production
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Deploy to Render
-        if: github.ref == 'refs/heads/deploy'
         env:
           deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           echo "Triggering Render deploy via Hook..."
-          curl -s "$deploy_url" 
-
+          RESPONSE=$(curl -s "$deploy_url")
           echo "Render response: $RESPONSE"
 
       - name: Create Deployment
