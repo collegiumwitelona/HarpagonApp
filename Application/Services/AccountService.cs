@@ -82,6 +82,7 @@ namespace Application.Services
             return new AccountResponse
             {
                 Id = account.Id,
+                UserId = userId,
                 Name = account.Name,
                 Balance = account.Balance
             };

@@ -89,7 +89,6 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IFrontendLinkBuilder, FrontendLinkBuilder>();
 
-Console.WriteLine($"Email provider: {builder.Configuration["EMAIL_PROVIDER"]}");
 
 if (builder.Configuration["EMAIL_PROVIDER"] == "MAILGUN") {
     builder.Services.AddScoped<IEmailService, MailgunEmailSender>();
