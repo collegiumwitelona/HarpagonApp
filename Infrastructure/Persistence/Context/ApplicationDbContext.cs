@@ -51,6 +51,15 @@ namespace Infrastructure.Persistence.Context
             builder.Entity<RefreshToken>()
                 .HasIndex(rt => rt.Token)
                 .IsUnique();
+
+            builder.Entity<Account>()
+                .HasIndex(a => a.UserId);
+
+            builder.Entity<Category>()
+                .HasIndex(c => c.UserId);
+
+            builder.Entity<Transaction>()
+                .HasIndex(t => new { t.AccountId, t.Date });
         }
     }
 }

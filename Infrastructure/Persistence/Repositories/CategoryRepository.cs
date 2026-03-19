@@ -27,10 +27,15 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<List<Category>> GetAllCategoriesAsync(Guid userId)
         {
-            return await _context.Categories
-                .AsNoTracking()
-                .Where(c => c.UserId == userId || c.UserId == null)
-                .ToListAsync();
+            var userCategories = _context.Categories
+                .Where(c => c.UserId == userId);
+
+            var globalCategories = _context.Categories
+                .Where(c => c.UserId == null);
+
+            return await userCategories
+                .Union(globalCategories)
+                .AsNoTracking().ToListAsync();
         }
 
         public async Task<Category?> GetCategoryByIdAsync(Guid categoryId)
