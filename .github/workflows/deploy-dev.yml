@@ -3,13 +3,22 @@ name: Deploy to Render
 on:
   push:
     branches:
-      - deploy
+      - main
+
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select environment"
+        required: true
+        type: choice
+        options:
+          - development
+          - production
 
 jobs:
   deploy-render:
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ inputs.environment }}
 
     steps:
       - name: Checkout code
@@ -33,7 +42,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: context.sha,
-              environment: "development",
+              environment: "${{ inputs.environment }}",
               auto_merge: false,
               required_contexts: []
             });
