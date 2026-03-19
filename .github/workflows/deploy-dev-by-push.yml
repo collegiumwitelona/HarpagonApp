@@ -10,7 +10,7 @@ on:
 jobs:
   deploy-render:
     runs-on: ubuntu-latest
-    environment: development
+    environment: Development
 
     steps:
       - name: Checkout code
