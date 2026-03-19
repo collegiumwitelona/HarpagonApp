@@ -1,0 +1,54 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  deploy-render:
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Render
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Render deploy via Hook..."
+          RESPONSE=$(curl -s "$deploy_url")
+          echo "Render response: $RESPONSE"
+
+      - name: Create Deployment
+        id: create_deployment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: "development",
+              auto_merge: false,
+              required_contexts: []
+            });
+            return deployment.data.id;
+
+      - name: Set Deployment URL
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deployment_id = parseInt('${{ steps.create_deployment.outputs.result }}');
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment_id,
+              state: "success",
+              environment_url: "https://harpagonapp.site"
