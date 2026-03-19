@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace Application.Interfaces
 {
-    public interface IEmailSender
+    public interface IFrontendLinkBuilder
     {
-        Task SendEmailAsync(string reciever, string subject, string text, string html);
         string BuildFrontendLink(string action, Guid userId, string token);
     }
 }

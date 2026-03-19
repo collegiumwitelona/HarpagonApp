@@ -16,20 +16,20 @@ namespace Application.Services
         private readonly IRefreshTokenRepository _refreshTokensRepository;
         private readonly ITokenService _jwtService;
         private readonly IHashService _hashService;
-        private readonly IEmailSender _emailSender;
+        private readonly IAuthEmailService _emailService;
 
         public AuthService(
             UserManager<User> userManager,
             IRefreshTokenRepository refreshTokens,
             ITokenService jwtService,
             IHashService hashService,
-            IEmailSender emailSender)
+            IAuthEmailService emailService)
         {
             _userManager = userManager;
             _refreshTokensRepository = refreshTokens;
             _jwtService = jwtService;
             _hashService = hashService;
-            _emailSender = emailSender;
+            _emailService = emailService;
         }
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -42,7 +42,7 @@ namespace Application.Services
 
             if (user.EmailConfirmed != true)
             {
-                await SendConfirmMailAsync(user.Id);
+                await _emailService.SendConfirmEmailAsync(user);
                 throw new UnauthorizedException("Email not confirmed, check your mailbox");
             }
 
@@ -169,7 +169,7 @@ namespace Application.Services
 
             await _userManager.AddToRoleAsync(userRecord, "User");
 
-            await SendConfirmMailAsync(userId);
+            await _emailService.SendConfirmEmailAsync(userRecord);
 
             return new UserDataResponse
             {
@@ -180,7 +180,7 @@ namespace Application.Services
             };
         }
 
-        public async Task SendConfirmMailAsync(Guid userId)
+        public async Task SendConfirmEmailAsync(Guid userId)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
@@ -189,21 +189,7 @@ namespace Application.Services
                 throw new NotFoundException("User not found");
             }
 
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-
-            var encodedToken = WebEncoders.Base64UrlEncode(
-                Encoding.UTF8.GetBytes(token));
-
-            var link = _emailSender.BuildFrontendLink("confirm-email", userId, encodedToken);
-
-            var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", "ConfirmEmail.html");
-            var htmlTemplate = await File.ReadAllTextAsync(templatePath);
-
-            var htmlBody = htmlTemplate
-                .Replace("{{Email}}", user.Email!)
-                .Replace("{{Link}}", link);
-
-            await _emailSender.SendEmailAsync(user.Email!, "Email confirmation", "", htmlBody);
+            await _emailService.SendConfirmEmailAsync(user);
         }
 
         public async Task ConfirmEmailAsync(ConfirmEmailRequest request)
@@ -223,7 +209,7 @@ namespace Application.Services
                 throw new BadRequestException("Email confirmation failed");
         }
 
-        public async Task ForgotPasswordAsync(string email)
+        public async Task SendResetPasswordEmailAsync(string email)
         { 
             var user = await _userManager.FindByEmailAsync(email);
                 
@@ -231,19 +217,7 @@ namespace Application.Services
             {
                 throw new NotFoundException("User not found");
             }
-
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-            var link = _emailSender.BuildFrontendLink("forgot-password", user.Id, Uri.EscapeDataString(token));
-
-
-            var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", "ForgotPassword.html");
-            var htmlTemplate = await File.ReadAllTextAsync(templatePath);
-
-            var htmlBody = htmlTemplate
-                .Replace("{{Email}}", user.Email!)
-                .Replace("{{Link}}", link);
-            await _emailSender.SendEmailAsync(user.Email!, "Password reset", "", htmlBody);
+            await _emailService.SendResetPasswordEmailAsync(user);
         }
 
         public async Task ResetPasswordAsync(ResetPasswordRequest request)

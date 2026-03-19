@@ -24,6 +24,7 @@ services:
       - MAILGUN_API_KEY=${MAILGUN_API_KEY}
       - Jwt__SecretKey=${Jwt__SecretKey}
       - Frontend__Url=${Frontend__Url}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER}
     depends_on:
       postgres:
         condition: service_healthy
