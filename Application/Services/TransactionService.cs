@@ -11,30 +11,43 @@ namespace Application.Services
     public class TransactionService : ITransactionService
     {
         private readonly ITransactionRepository _transactionRepository;
-        private readonly ICategoryService _categoryService;
-        private readonly IAccountService _accountService;
+        private readonly IAccountRepository _accountRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public TransactionService(ITransactionRepository repository, ICategoryService categoryService, IAccountService accountService)
+        public TransactionService(
+            ITransactionRepository transactionRepository,
+            IAccountRepository accountRepository,
+            ICategoryRepository categoryRepository)
         {
-            _transactionRepository = repository;
-            _categoryService = categoryService;
-            _accountService = accountService;
+            _transactionRepository = transactionRepository;
+            _accountRepository = accountRepository;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task<TransactionResponse> CreateTransactionAsync(CreateTransactionRequest request, Guid userId)
         {
-            var account = await _accountService.GetAccountByIdAsync(request.AccountId, userId);
-            var category = await _categoryService.GetCategoryByIdAsync(request.CategoryId, userId);
-            if (account.Balance - request.Amount < 0 && category.Type == CategoryType.Expense)
-            {
-                throw new BadRequestException("Insufficient funds in the account.");
-            }
-            account.Balance += category.Type switch
+            var account = await _accountRepository.GetAccountByIdAsync(request.AccountId);
+
+            if (account == null || account.UserId != userId)
+                throw new NotFoundException("Account not found");
+
+            var category = await _categoryRepository.GetCategoryByIdAsync(request.CategoryId);
+
+            if (category == null || (category.UserId != null && category.UserId != userId))
+                throw new NotFoundException("Category not found");
+
+            var delta = category.Type switch
             {
                 CategoryType.Expense => -request.Amount,
                 CategoryType.Income => request.Amount,
                 _ => 0
             };
+
+            var newBalance = account.Balance + delta;
+
+            if (category.Type == CategoryType.Expense && newBalance < 0)
+                throw new BadRequestException("Insufficient funds");
+
             var transaction = new Transaction
             {
                 Id = Guid.NewGuid(),
@@ -45,40 +58,59 @@ namespace Application.Services
                 Description = request.Description
             };
 
+            account.Balance = newBalance;
+
             await _transactionRepository.ExecuteInTransactionAsync(async () =>
             {
-                await _accountService.EditAccountBalanceByIdAsync(account.Id, account.Balance, userId);
+                await _accountRepository.UpdateAccountAsync(account);
                 await _transactionRepository.AddTransactionAsync(transaction);
             });
 
             return new TransactionResponse
             {
                 Id = transaction.Id,
-                Account = account,
-                Category = category,
                 Amount = transaction.Amount,
                 Date = transaction.Date,
-                Description = transaction.Description
+                Description = transaction.Description,
+
+                Account = new AccountResponse
+                {
+                    Id = account.Id,
+                    UserId = account.UserId,
+                    Name = account.Name,
+                    Balance = account.Balance
+                },
+
+                Category = new CategoryResponse
+                {
+                    Id = category.Id,
+                    Name = category.Name,
+                    Type = category.Type
+                }
             };
         }
 
         public async Task DeleteTransactionByIdAsync(Guid transactionId, Guid userId)
         {
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
-            if (transaction == null)
-            {
+
+            if (transaction == null || transaction.Account.UserId != userId)
                 throw new NotFoundException("Transaction not found");
-            }
-            transaction.Account.Balance += transaction.Category.Type switch
+
+            var account = transaction.Account;
+
+            var delta = transaction.Category.Type switch
             {
                 CategoryType.Expense => transaction.Amount,
                 CategoryType.Income => -transaction.Amount,
                 _ => 0
             };
 
+            account.Balance += delta;
+
             await _transactionRepository.ExecuteInTransactionAsync(async () =>
             {
-                await _accountService.EditAccountBalanceByIdAsync(transaction.AccountId, transaction.Account.Balance, userId);
+                await _accountRepository.UpdateAccountAsync(account);
                 await _transactionRepository.DeleteTransactionAsync(transaction);
             });
         }
@@ -86,34 +118,48 @@ namespace Application.Services
         public async Task<TransactionResponse> EditTransactionByIdAsync(Guid transactionId, decimal newAmount, Guid userId)
         {
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
-            if (transaction == null)
+
+            if (transaction == null || transaction.Account.UserId != userId)
                 throw new NotFoundException("Transaction not found");
 
-            var account = await _accountService.GetAccountByIdAsync(transaction.AccountId, userId);
-            var category = await _categoryService.GetCategoryByIdAsync(transaction.CategoryId, userId);
+            var account = transaction.Account;
 
-            var amountDifference = newAmount - transaction.Amount;
+            var diff = newAmount - transaction.Amount;
+            var newBalance = account.Balance - diff;
 
-            if (account.Balance - amountDifference < 0 && category.Type == CategoryType.Expense)
-                throw new BadRequestException("Insufficient funds in the account.");
+            if (transaction.Category.Type == CategoryType.Expense && newBalance < 0)
+                throw new BadRequestException("Insufficient funds");
 
-            account.Balance -= amountDifference;
+            account.Balance = newBalance;
+            transaction.Amount = newAmount;
 
             await _transactionRepository.ExecuteInTransactionAsync(async () =>
             {
-                await _accountService.EditAccountBalanceByIdAsync(account.Id, account.Balance, userId);
-                transaction.Amount = newAmount;
+                await _accountRepository.UpdateAccountAsync(account);
                 await _transactionRepository.UpdateTransactionAsync(transaction);
             });
 
             return new TransactionResponse
             {
-                Id = transactionId,
-                Amount = newAmount,
-                Category = category,
-                Account = account,
+                Id = transaction.Id,
+                Amount = transaction.Amount,
                 Date = transaction.Date,
                 Description = transaction.Description,
+
+                Account = new AccountResponse
+                {
+                    Id = transaction.Account.Id,
+                    UserId = transaction.Account.UserId,
+                    Name = transaction.Account.Name,
+                    Balance = transaction.Account.Balance
+                },
+
+                Category = new CategoryResponse
+                {
+                    Id = transaction.Category.Id,
+                    Name = transaction.Category.Name,
+                    Type = transaction.Category.Type
+                }
             };
         }
 
@@ -124,17 +170,28 @@ namespace Application.Services
             {
                 throw new NotFoundException("Transaction not found");
             }
-            var account = await _accountService.GetAccountByIdAsync(response.AccountId, userId);
-            var category = await _categoryService.GetCategoryByIdAsync(response.AccountId, userId);
 
             return new TransactionResponse
             {
-                Id = transactionId,
+                Id = response.Id,
                 Amount = response.Amount,
-                Category = category,
-                Account = account,
                 Date = response.Date,
                 Description = response.Description,
+
+                Category = response.Category == null ? null : new CategoryResponse
+                {
+                    Id = response.Category.Id,
+                    Name = response.Category.Name,
+                    Type = response.Category.Type,
+                },
+
+                Account = new AccountResponse
+                {
+                    Id = response.Account.Id,
+                    UserId = response.Account.UserId,
+                    Name = response.Account.Name,
+                    Balance = response.Account.Balance,
+                }
             };
         }
 

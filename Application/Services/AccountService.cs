@@ -93,7 +93,7 @@ namespace Application.Services
             var response = accounts.Select(a => new AccountResponse 
             {
                 Id = a.Id, 
-                UserId = a.UserId, 
+                UserId = userId, 
                 Name = a.Name, 
                 Balance = a.Balance, 
             }).ToList(); 
