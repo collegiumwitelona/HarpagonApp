@@ -1,41 +1,19 @@
 ﻿using Application.Exceptions;
 using Application.Interfaces;
 using MailKit.Net.Smtp;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
-using RestSharp;
-using RestSharp.Authenticators;
-using System.Text;
-
 
 namespace Infrastructure.Email
 {
-    public class EmailSender : IEmailSender
+    public class MailpitEmailSender : IEmailService
     {
         private readonly IConfiguration _configuration;
 
-        public EmailSender(IConfiguration configuration)
+        public MailpitEmailSender(IConfiguration configuration)
         {
             _configuration = configuration;
         }
-
-        //public static async Task<RestResponse> SendMailgun(string toEmail, string subject, string text, string html)
-        //{
-        //    var apiKey = Environment.GetEnvironmentVariable("MAILGUN_API_KEY")
-        //                 ?? throw new Exception("No Mailgun API key provided.");
-
-        //    var client = new RestClient(new RestClientOptions("https://api.mailgun.net")
-        //    {
-        //        Authenticator = new HttpBasicAuthenticator("api", apiKey)
-        //    });
-        //    request.AddParameter("from", "Mailgun Sandbox <postmaster@sandboxaed1251f982e41afb2791225823bd652.mailgun.org>");
-        //    request.AddParameter("to", toEmail);
-        //    request.AddParameter("subject", subject);
-        //    request.AddParameter("text", text);
-        //    request.AddParameter("html", html);
-        //    return await client.ExecuteAsync(request);
-        //}
 
         public string BuildFrontendLink(string action, Guid userId, string token)
         {

@@ -56,7 +56,7 @@ namespace API.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromQuery]string email)
         {
-            await _authService.ForgotPasswordAsync(email);
+            await _authService.SendResetPasswordEmailAsync(email);
             return Ok(new { message = "Reset password link was sent to provided email" });
         }
 
