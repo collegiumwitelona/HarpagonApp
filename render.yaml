@@ -30,6 +30,9 @@ services:
       - key: Jwt__SecretKey
         sync: false
 
+      - key: Frontend__Url
+        sync: false
+
   - type: redis
     name: redis-cache
     plan: free
