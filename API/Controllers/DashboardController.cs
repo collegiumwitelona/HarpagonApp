@@ -28,19 +28,25 @@ namespace API.Controllers
             _logger = logger;
         }
 
+
+        /// <summary>
+        /// Expected type of Date in request = year/month/day
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetDashboardInfo([FromQuery] DashboardRequest request)
         {
             var userId = User.GetUserId();
-            var cachedDashboard = await _cache.GetDataAsync<DashboardResponse>($"dashboard:user:{userId}");
+            var cacheKey = await _cache.BuildDashboardKeyVersionAsync(userId, request.FromDate, request.ToDate);
+
+            var cachedDashboard = await _cache.GetDataAsync<DashboardResponse>(cacheKey);
             if (cachedDashboard != null)
             {
-                _logger.LogInformation("Dashboard fetched from cache");
+                _logger.LogInformation($"Dashboard fetched from cache, key:{cacheKey}");
                 return Ok(cachedDashboard);
             }
 
             var response = await _dashboardService.GetDashboard(userId, request.FromDate, request.ToDate);
-            await _cache.SetDataAsync($"dashboard:user:{userId}", response);
+            await _cache.SetDataAsync(cacheKey, response);
             return Ok(response);
         }
     }
