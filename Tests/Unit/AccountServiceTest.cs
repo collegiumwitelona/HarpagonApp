@@ -4,7 +4,7 @@ using Domain.Interfaces;
 using Domain.Models;
 using Moq;
 
-namespace Tests
+namespace Tests.Unit
 {
     public class AccountServiceTest
     {
@@ -95,14 +95,14 @@ namespace Tests
                 .ReturnsAsync(existingAccount);
 
             repositoryMock
-                .Setup(r => r.DeleteAccountAsync(It.IsAny<Account>()))
+                .Setup(r => r.DeleteAccountAsync(existingAccount.Id))
                 .Returns(Task.CompletedTask);
 
             var service = new AccountService(repositoryMock.Object);
 
             await service.DeleteAccountByIdAsync(existingAccount.Id, existingAccount.UserId);
 
-            repositoryMock.Verify(r => r.DeleteAccountAsync(It.Is<Account>(a => a.Id == accountId)), Times.Once);
+            repositoryMock.Verify(r => r.DeleteAccountAsync(accountId), Times.Once);
         }
 
         [Fact]
@@ -121,7 +121,7 @@ namespace Tests
             await Assert.ThrowsAsync<NotFoundException>(() =>
                 service.DeleteAccountByIdAsync(accountId, userId));
 
-            repositoryMock.Verify(r => r.DeleteAccountAsync(It.IsAny<Account>()), Times.Never);
+            repositoryMock.Verify(r => r.DeleteAccountAsync(accountId), Times.Never);
         }
 
         [Fact]
