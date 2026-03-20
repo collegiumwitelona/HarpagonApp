@@ -4,7 +4,7 @@ services:
     env: docker
     plan: free
     dockerfilePath: ./API/Dockerfile
-    autoDeploy: true
+    autoDeploy: false
 
     envVars:
       - key: ASPNETCORE_URLS
