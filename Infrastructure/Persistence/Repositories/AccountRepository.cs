@@ -20,9 +20,9 @@ namespace Infrastructure.Persistence.Repositories
             return account;
         }
 
-        public async Task DeleteAccountAsync(Account account)
+        public async Task DeleteAccountAsync(Guid accountId)
         {
-            _context.Accounts.Remove(account);
+            _context.Accounts.Remove(_context.Accounts.Find(accountId)!);
             await _context.SaveChangesAsync();
         }
 

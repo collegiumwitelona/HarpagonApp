@@ -8,7 +8,7 @@ namespace Domain.Interfaces
         Task<Account?> GetAccountByIdAsync(Guid accountId);
         Task<List<Account>> GetAccountsByUserIdAsync(Guid userId);
         Task UpdateAccountAsync(Account account);
-        Task DeleteAccountAsync(Account account);
+        Task DeleteAccountAsync(Guid accountId);
         //Task<int> CountTransactionsByAccountIdAsync(Guid accountId, Guid userId);
     }
 }

@@ -43,7 +43,7 @@ namespace Application.Services
             {
                 throw new ForbiddenException("You do not have permission to delete this account");
             }
-            await _accountRepository.DeleteAccountAsync(account);
+            await _accountRepository.DeleteAccountAsync(accountId);
         }
 
         public async Task<AccountResponse> EditAccountBalanceByIdAsync(Guid accountId, decimal newBalance, Guid userId)
