@@ -37,5 +37,31 @@ namespace Infrastructure.Caching
 
             await _cache.SetStringAsync(key, JsonSerializer.Serialize(value), options);
         }
+
+        private async Task<int> GetVersionAsync(Guid userId)
+        {
+            var value = await _cache.GetStringAsync($"dashboard:user:{userId}:meta");
+            return int.TryParse(value, out var v) ? v : 1;
+        }
+
+        public async Task InvalidateDashboardAsync(Guid userId)
+        {
+            var key = $"dashboard:user:{userId}:meta";
+
+            var current = await _cache.GetStringAsync(key);
+
+            int version = int.TryParse(current, out var v) ? v : 1;
+
+            version++;
+
+            await _cache.SetStringAsync(key, version.ToString());
+        }
+
+        public async Task<string> BuildDashboardKeyVersionAsync(Guid userId, DateOnly from, DateOnly to)
+        {
+            var version = await GetVersionAsync(userId);
+
+            return $"dashboard:user:{userId}:v{version}:{from}:{to}";
+        }
     }
 }

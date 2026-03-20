@@ -45,7 +45,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             var response = await _transactionService.CreateTransactionAsync(request, userId);
-            await _cache.RemoveDataAsync($"dashboard:user:{userId}");
+            await _cache.InvalidateDashboardAsync(userId);
             return Ok(response);
         }
 
@@ -54,7 +54,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             var response = await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
-            await _cache.RemoveDataAsync($"dashboard:user:{userId}");
+            await _cache.InvalidateDashboardAsync(userId);
             return Ok(response);
         }
 
@@ -63,7 +63,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             await _transactionService.DeleteTransactionByIdAsync(id, userId);
-            await _cache.RemoveDataAsync($"dashboard:user:{userId}");
+            await _cache.InvalidateDashboardAsync(userId);
             return Ok(new { message = "Transaction was deleted successfully" });
         }
     }

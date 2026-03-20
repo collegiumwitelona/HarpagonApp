@@ -49,17 +49,17 @@ http://localhost:8080/swagger/index.html
 - Mailpit (sending emails testing)
 http://localhost:8025
 
-# Deployment guide (Render + Mailgun + GitHub Actions)
+## Deployment guide (Render + Mailgun + GitHub Actions)
 
 This guide explains how to deploy the project using **Render.com**, set up **Mailgun email service**, and configure required infrastructure (PostgreSQL, Redis, API service).
 
 ---
 
-## 1. Mailgun setup (required before deployment)
+### 1. Mailgun setup (required before deployment)
 
 Before deploying the backend, you must configure email sending in **Mailgun**.
 
-### Steps:
+#### Steps:
 
 1. Go to https://www.mailgun.com/
 2. Create an account
@@ -75,18 +75,18 @@ Before deploying the backend, you must configure email sending in **Mailgun**.
 
 ---
 
-## 2. Render infrastructure setup
+### 2. Render infrastructure setup
 
 We will use `render.yaml` to automatically create services.
 
-### Services created:
+#### Services created:
 - PostgreSQL database
 - Redis instance
 - API backend service
 
 ---
 
-## 3. Deploying via render.yaml
+### 3. Deploying via render.yaml
 
 1. Push your project to GitHub
 2. Connect repository to Render:
@@ -100,7 +100,7 @@ We will use `render.yaml` to automatically create services.
 
 ---
 
-## 4. API environment variables
+### 4. API environment variables
 
 After the API service is created in Render, go to:
 
@@ -112,14 +112,14 @@ MAILGUN_API_KEY=your_mailgun_api_key_here
 Frontend__Url=https://your-frontend-domain.com
 Jwt__SecretKey=your_secure_jwt_secret
 
-### Notes:
+#### Notes:
 - `MAILGUN_API_KEY` → from Mailgun (step 1)
 - `Frontend__Url` → URL of your frontend
 - `Jwt__SecretKey` → long random secure string (use password generator)
 
 ---
 
-## 5. Disable auto-deploy (important)
+### 5. Disable auto-deploy (important)
 
 To prevent unwanted redeployments:
 
@@ -129,7 +129,7 @@ To prevent unwanted redeployments:
 
 ---
 
-## 6. Create Deploy Hook (for manual deployments)
+### 6. Create Deploy Hook (for manual deployments)
 
 1. In Render:
    - Go to your API service
@@ -139,7 +139,7 @@ To prevent unwanted redeployments:
 
 ---
 
-## 7. GitHub Actions secrets configuration
+### 7. GitHub Actions secrets configuration
 
 1. Go to your GitHub repository
 2. Navigate to:
@@ -152,7 +152,7 @@ RENDER_DEPLOY_HOOK_URL = <your deploy hook url>
 
 ---
 
-## 8. How deployment works now
+### 8. How deployment works now
 
 After setup:
 
@@ -163,7 +163,7 @@ After setup:
 
 ---
 
-## 9. Checklist
+### 9. Checklist
 
 - [ ] Domain added in Mailgun (Namecheap DNS configured)
 - [ ] Mailgun API key saved
@@ -177,6 +177,6 @@ After setup:
 
 ---
 
-## Done 🎉
+### Done 🎉
 
 Your backend is now fully configured for deployment on Render.
