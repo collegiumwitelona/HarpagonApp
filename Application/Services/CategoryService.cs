@@ -29,6 +29,7 @@ namespace Application.Services
             return new CategoryResponse
             {
                 Id = newCategory.Id,
+                OwnerId = userId,
                 Name = newCategory.Name,
                 Type = newCategory.Type,
                 Description = newCategory.Description
@@ -74,6 +75,7 @@ namespace Application.Services
             return new CategoryResponse
             {
                 Id = newCategory.Id,
+                OwnerId = newCategory.UserId,
                 Name = newCategory.Name,
                 Type = newCategory.Type,
                 Description = newCategory.Description
@@ -85,6 +87,7 @@ namespace Application.Services
             var result = await _categoryRepository.GetAllCategoriesAsync(userId);
             var response = result.Select(c => new CategoryResponse {
                 Id = c.Id,
+                OwnerId = c.UserId,
                 Name = c.Name,
                 Type = c.Type,
                 Description = c.Description ?? string.Empty
@@ -106,6 +109,7 @@ namespace Application.Services
             return new CategoryResponse
             {
                 Id = categoryId,
+                OwnerId = result.UserId,
                 Name = result.Name,
                 Type = result.Type,
                 Description = result.Description ?? string.Empty

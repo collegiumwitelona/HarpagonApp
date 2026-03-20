@@ -7,6 +7,7 @@ using Infrastructure.BackgroundServices;
 using Infrastructure.Caching;
 using Infrastructure.Email;
 using Infrastructure.Identity;
+using Infrastructure.Persistence;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Seeders;
@@ -80,6 +81,7 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
 //Add services
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAuthEmailService, AuthEmailService>();
 builder.Services.AddScoped<ITokenService, JwtService>();
@@ -89,7 +91,6 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IFrontendLinkBuilder, FrontendLinkBuilder>();
 
-Console.WriteLine($"Email provider: {builder.Configuration["EMAIL_PROVIDER"]}");
 
 if (builder.Configuration["EMAIL_PROVIDER"] == "MAILGUN") {
     builder.Services.AddScoped<IEmailService, MailgunEmailSender>();

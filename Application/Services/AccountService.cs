@@ -43,7 +43,7 @@ namespace Application.Services
             {
                 throw new ForbiddenException("You do not have permission to delete this account");
             }
-            await _accountRepository.DeleteAccountAsync(account);
+            await _accountRepository.DeleteAccountAsync(accountId);
         }
 
         public async Task<AccountResponse> EditAccountBalanceByIdAsync(Guid accountId, decimal newBalance, Guid userId)
@@ -82,6 +82,7 @@ namespace Application.Services
             return new AccountResponse
             {
                 Id = account.Id,
+                UserId = userId,
                 Name = account.Name,
                 Balance = account.Balance
             };
@@ -92,7 +93,7 @@ namespace Application.Services
             var response = accounts.Select(a => new AccountResponse 
             {
                 Id = a.Id, 
-                UserId = a.UserId, 
+                UserId = userId, 
                 Name = a.Name, 
                 Balance = a.Balance, 
             }).ToList(); 

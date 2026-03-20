@@ -10,8 +10,7 @@ namespace Domain.Interfaces
         Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type);
         Task<Transaction?> GetTransactionByIdAsync(Guid transactionId);
         Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to);
-        Task DeleteTransactionAsync(Transaction transaction);
+        Task DeleteTransactionAsync(Guid transactionId);
         Task UpdateTransactionAsync(Transaction transaction);
-        Task ExecuteInTransactionAsync(Func<Task> operations);
     }
 }

@@ -1,8 +1,10 @@
-﻿using Domain.Enums;
+﻿using Application.Exceptions;
+using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Principal;
 
 namespace Infrastructure.Persistence.Repositories
 {
@@ -34,15 +36,16 @@ namespace Infrastructure.Persistence.Repositories
             return result;
         }
 
-        public async Task DeleteTransactionAsync(Transaction transaction)
+        public async Task DeleteTransactionAsync(Guid transactionId)
         {
-            _context.Transactions.Remove(transaction);
+            _context.Transactions.Remove(_context.Transactions.Find(transactionId)!);
             await _context.SaveChangesAsync();
         }
 
         public async Task<Transaction?> GetTransactionByIdAsync(Guid transactionId)
         {
             return await _context.Transactions
+                .AsNoTracking()
                 .Include(t => t.Account)
                 .Include(t => t.Category)
                 .FirstOrDefaultAsync(t => t.Id == transactionId);
@@ -50,38 +53,32 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task UpdateTransactionAsync(Transaction transaction)
         {
-            _context.Transactions.Update(transaction);
-            await _context.SaveChangesAsync();
-        }
+            var existing = await _context.Transactions
+                .FirstOrDefaultAsync(t => t.Id == transaction.Id);
 
-        public async Task ExecuteInTransactionAsync(Func<Task> operations)
-        {
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                await operations();
-                await transaction.CommitAsync();
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            if (existing == null)
+                throw new NotFoundException("Transaction not found");
+
+            existing.Amount = transaction.Amount;
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to)
         {
             var endDateExclusive = to.AddDays(1);
 
-            return await _context.Transactions.AsNoTracking()
-                .Where(t => t.Account.UserId == userId &&
-                       t.Date >= from && t.Date < endDateExclusive)
+            return await _context.Transactions
+                .AsNoTracking()
+                .Where(t => t.Account.UserId == userId && 
+                t.Date >= from && t.Date < endDateExclusive)
                 .CountAsync();
         }
 
         public async Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type)
         {
             var totals = await _context.Transactions
+                .AsNoTracking()
                 .Where(t => t.Category.Type == type)
                 .GroupBy(t => t.CategoryId)
                 .Select(g => new

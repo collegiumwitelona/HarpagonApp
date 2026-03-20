@@ -1,6 +1,8 @@
-﻿using Domain.Interfaces;
+﻿using Application.Exceptions;
+using Domain.Interfaces;
 using Domain.Models;
 using Infrastructure.Persistence.Context;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories
@@ -18,24 +20,16 @@ namespace Infrastructure.Persistence.Repositories
             return account;
         }
 
-        //public async Task<int> CountTransactionsByAccountIdAsync(Guid accountId, Guid userId)
-        //{
-        //    return await _context.Transactions
-        //        .Where(t => t.AccountId == accountId && t.Account.UserId == userId)
-        //        .CountAsync();
-        //}
-
-        public async Task DeleteAccountAsync(Account account)
+        public async Task DeleteAccountAsync(Guid accountId)
         {
-            _context.Accounts.Remove(account);
+            _context.Accounts.Remove(_context.Accounts.Find(accountId)!);
             await _context.SaveChangesAsync();
         }
 
         public async Task<Account?> GetAccountByIdAsync(Guid accountId)
         {
             return await _context.Accounts
-                .Include(a => a.User)
-                .Include(a => a.Transactions)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.Id == accountId);
         }
 
@@ -49,7 +43,15 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task UpdateAccountAsync(Account account)
         {
-            _context.Accounts.Update(account);
+            var existing = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.Id == account.Id);
+
+            if (existing == null)
+                throw new NotFoundException("Account not found");
+
+            existing.Name = account.Name;
+            existing.Balance = account.Balance;
+
             await _context.SaveChangesAsync();
         }
     }
