@@ -13,15 +13,18 @@ namespace Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IAccountRepository _accountRepository;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public TransactionService(
             ITransactionRepository transactionRepository,
             IAccountRepository accountRepository,
-            ICategoryRepository categoryRepository)
+            ICategoryRepository categoryRepository,
+            IUnitOfWork unitOfWork)
         {
             _transactionRepository = transactionRepository;
             _accountRepository = accountRepository;
             _categoryRepository = categoryRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<TransactionResponse> CreateTransactionAsync(CreateTransactionRequest request, Guid userId)
@@ -60,7 +63,7 @@ namespace Application.Services
 
             account.Balance = newBalance;
 
-            await _transactionRepository.ExecuteInTransactionAsync(async () =>
+            await _unitOfWork.ExecuteAsync(async () =>
             {
                 await _accountRepository.UpdateAccountAsync(account);
                 await _transactionRepository.AddTransactionAsync(transaction);
@@ -97,7 +100,12 @@ namespace Application.Services
             if (transaction == null || transaction.Account.UserId != userId)
                 throw new NotFoundException("Transaction not found");
 
-            var account = transaction.Account;
+            var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
+
+            if(account == null)
+            {
+                throw new NotFoundException("Account not found");
+            }
 
             var delta = transaction.Category.Type switch
             {
@@ -108,10 +116,10 @@ namespace Application.Services
 
             account.Balance += delta;
 
-            await _transactionRepository.ExecuteInTransactionAsync(async () =>
+            await _unitOfWork.ExecuteAsync(async () =>
             {
                 await _accountRepository.UpdateAccountAsync(account);
-                await _transactionRepository.DeleteTransactionAsync(transaction);
+                await _transactionRepository.DeleteTransactionAsync(transactionId);
             });
         }
 
@@ -122,7 +130,12 @@ namespace Application.Services
             if (transaction == null || transaction.Account.UserId != userId)
                 throw new NotFoundException("Transaction not found");
 
-            var account = transaction.Account;
+            var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
+
+            if (account == null)
+            {
+                throw new NotFoundException("Account not found");
+            }
 
             var diff = newAmount - transaction.Amount;
             var newBalance = account.Balance - diff;
@@ -133,7 +146,7 @@ namespace Application.Services
             account.Balance = newBalance;
             transaction.Amount = newAmount;
 
-            await _transactionRepository.ExecuteInTransactionAsync(async () =>
+            await _unitOfWork.ExecuteAsync(async () =>
             {
                 await _accountRepository.UpdateAccountAsync(account);
                 await _transactionRepository.UpdateTransactionAsync(transaction);

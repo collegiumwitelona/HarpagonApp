@@ -36,9 +36,9 @@ namespace Infrastructure.Persistence.Repositories
             return result;
         }
 
-        public async Task DeleteTransactionAsync(Transaction transaction)
+        public async Task DeleteTransactionAsync(Guid transactionId)
         {
-            _context.Transactions.Remove(transaction);
+            _context.Transactions.Remove(_context.Transactions.Find(transactionId)!);
             await _context.SaveChangesAsync();
         }
 
@@ -62,21 +62,6 @@ namespace Infrastructure.Persistence.Repositories
             existing.Amount = transaction.Amount;
 
             await _context.SaveChangesAsync();
-        }
-
-        public async Task ExecuteInTransactionAsync(Func<Task> operations)
-        {
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                await operations();
-                await transaction.CommitAsync();
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
         }
 
         public async Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to)
