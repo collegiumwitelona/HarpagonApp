@@ -33,6 +33,9 @@ services:
       - key: Frontend__Url
         sync: false
 
+      - key: EMAIL_PROVIDER
+        value: Mailgun
+
   - type: redis
     name: redis-cache
     plan: free
