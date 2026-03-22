@@ -178,11 +178,29 @@ namespace Application.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ConfirmEmail-en-US.html.
+        /// </summary>
+        public static string EmailConfirmation_html {
+            get {
+                return ResourceManager.GetString("EmailConfirmation_html", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The email confirmation token is invalid..
         /// </summary>
         public static string EmailConfirmation_InvalidToken {
             get {
                 return ResourceManager.GetString("EmailConfirmation_InvalidToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm your email address..
+        /// </summary>
+        public static string EmailConfirmation_Subject {
+            get {
+                return ResourceManager.GetString("EmailConfirmation_Subject", resourceCulture);
             }
         }
         
@@ -241,6 +259,15 @@ namespace Application.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ForgotPassword-en-US.html.
+        /// </summary>
+        public static string ResetPassword_html {
+            get {
+                return ResourceManager.GetString("ResetPassword_html", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The reset password token is invalid..
         /// </summary>
         public static string ResetPassword_InvalidToken {
@@ -259,6 +286,15 @@ namespace Application.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Reset your password..
+        /// </summary>
+        public static string ResetPassword_Subject {
+            get {
+                return ResourceManager.GetString("ResetPassword_Subject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Password reset successfully..
         /// </summary>
         public static string ResetPassword_Success {
@@ -268,8 +304,7 @@ namespace Application.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 
-        ///There are insufficient funds in the provided account..
+        ///   Looks up a localized string similar to There are insufficient funds in the provided account..
         /// </summary>
         public static string Transaction_InsufficientFunds {
             get {

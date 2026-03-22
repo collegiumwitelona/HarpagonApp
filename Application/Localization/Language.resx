@@ -121,8 +121,7 @@
     <value>Account not found.</value>
   </data>
   <data name="Transaction_InsufficientFunds" xml:space="preserve">
-    <value>
-There are insufficient funds in the provided account.</value>
+    <value>There are insufficient funds in the provided account.</value>
   </data>
   <data name="Transaction_NotFound" xml:space="preserve">
     <value>Transaction not found.</value>
@@ -198,5 +197,17 @@ There are insufficient funds in the provided account.</value>
   </data>
   <data name="User_Registered" xml:space="preserve">
     <value>We've sent a confirmation email. Please verify your email to activate your account.</value>
+  </data>
+  <data name="EmailConfirmation_html" xml:space="preserve">
+    <value>ConfirmEmail-en-US.html</value>
+  </data>
+  <data name="ResetPassword_html" xml:space="preserve">
+    <value>ForgotPassword-en-US.html</value>
+  </data>
+  <data name="EmailConfirmation_Subject" xml:space="preserve">
+    <value>Confirm your email address.</value>
+  </data>
+  <data name="ResetPassword_Subject" xml:space="preserve">
+    <value>Reset your password.</value>
   </data>
 </root>
