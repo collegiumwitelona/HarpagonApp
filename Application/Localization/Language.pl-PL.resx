@@ -198,4 +198,16 @@
   <data name="User_Registered" xml:space="preserve">
     <value>Wysłaliśmy wiadomość z potwierdzeniem na Twój adres e-mail. Prosimy o jej zweryfikowanie, aby aktywować konto.</value>
   </data>
+  <data name="EmailConfirmation_html" xml:space="preserve">
+    <value>ConfirmEmail-pl-PL.html</value>
+  </data>
+  <data name="ResetPassword_html" xml:space="preserve">
+    <value>ForgotPassword-pl-PL.html</value>
+  </data>
+  <data name="EmailConfirmation_Subject" xml:space="preserve">
+    <value>Potwierdź swój adres e-mail.</value>
+  </data>
+  <data name="ResetPassword_Subject" xml:space="preserve">
+    <value>Zresetuj swoje hasło.</value>
+  </data>
 </root>
