@@ -2,9 +2,11 @@
 using Application.DTO.Responses;
 using Application.Exceptions;
 using Application.Interfaces;
+using Application.Localization;
 using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
+using Microsoft.Extensions.Localization;
 
 namespace Application.Services
 {
@@ -32,12 +34,12 @@ namespace Application.Services
             var account = await _accountRepository.GetAccountByIdAsync(request.AccountId);
 
             if (account == null || account.UserId != userId)
-                throw new NotFoundException("Account not found");
+                throw new NotFoundException("Account_NotFound");
 
             var category = await _categoryRepository.GetCategoryByIdAsync(request.CategoryId);
 
             if (category == null || (category.UserId != null && category.UserId != userId))
-                throw new NotFoundException("Category not found");
+                throw new NotFoundException("Category_NotFound");
 
             var delta = category.Type switch
             {
@@ -49,7 +51,7 @@ namespace Application.Services
             var newBalance = account.Balance + delta;
 
             if (category.Type == CategoryType.Expense && newBalance < 0)
-                throw new BadRequestException("Insufficient funds");
+                throw new BadRequestException("Transaction_InsufficientFunds");
 
             var transaction = new Transaction
             {
@@ -98,13 +100,13 @@ namespace Application.Services
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
 
             if (transaction == null || transaction.Account.UserId != userId)
-                throw new NotFoundException("Transaction not found");
+                throw new NotFoundException("Transaction_NotFound");
 
             var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
 
             if(account == null)
             {
-                throw new NotFoundException("Account not found");
+                throw new NotFoundException("Account_NotFound");
             }
 
             var delta = transaction.Category.Type switch
@@ -128,20 +130,20 @@ namespace Application.Services
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
 
             if (transaction == null || transaction.Account.UserId != userId)
-                throw new NotFoundException("Transaction not found");
+                throw new NotFoundException("Transaction_NotFound");
 
             var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
 
             if (account == null)
             {
-                throw new NotFoundException("Account not found");
+                throw new NotFoundException("Account_NotFound");
             }
 
             var diff = newAmount - transaction.Amount;
             var newBalance = account.Balance - diff;
 
             if (transaction.Category.Type == CategoryType.Expense && newBalance < 0)
-                throw new BadRequestException("Insufficient funds");
+                throw new BadRequestException("Transaction_InsufficientFunds");
 
             account.Balance = newBalance;
             transaction.Amount = newAmount;
@@ -181,7 +183,7 @@ namespace Application.Services
             var response = await _transactionRepository.GetTransactionByIdAsync(transactionId);
             if (response == null || response.Account.UserId != userId)
             {
-                throw new NotFoundException("Transaction not found");
+                throw new NotFoundException("Transaction_NotFound");
             }
 
             return new TransactionResponse

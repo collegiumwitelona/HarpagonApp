@@ -61,7 +61,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             await _accountService.DeleteAccountByIdAsync(id, userId);
-            return Ok(new { message = "Account was deleted successfully" });
+            return Ok();
         }
     }
 }

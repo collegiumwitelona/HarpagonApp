@@ -33,7 +33,7 @@ namespace Application.Services
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user == null) {
-                throw new NotFoundException("User not found");
+                throw new NotFoundException("User_NotFound");
             }
 
             var from = fromDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);

@@ -37,20 +37,20 @@ namespace Application.Services
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                throw new UnauthorizedException("Invalid email");
-            }
-
-            if (user.EmailConfirmed != true)
-            {
-                await _emailService.SendConfirmEmailAsync(user);
-                throw new UnauthorizedException("Email not confirmed, check your mailbox");
+                throw new UnauthorizedException("Auth_InvalidCredentials");
             }
 
             var isValid = await _userManager.CheckPasswordAsync(user, request.Password);
 
             if (!isValid)
             {
-                throw new UnauthorizedException("Invalid password");
+                throw new UnauthorizedException("Auth_InvalidCredentials");
+            }
+
+            if (user.EmailConfirmed != true)
+            {
+                await _emailService.SendConfirmEmailAsync(user);
+                throw new UnauthorizedException("Auth_EmailNotConfirmed");
             }
 
             var accessToken = await _jwtService.GenerateAccessTokenAsync(user);
@@ -81,7 +81,7 @@ namespace Application.Services
             var tokenEntity = await _refreshTokensRepository.GetRefreshTokenAsync(hashedToken);
             if (tokenEntity == null)
             {
-                throw new NotFoundException("Invalid refresh token");
+                throw new NotFoundException("Auth_InvalidRefreshToken");
             }
 
             if (!tokenEntity.IsActive)
@@ -91,7 +91,7 @@ namespace Application.Services
                     tokenEntity.Revoked = DateTime.UtcNow;
                     await _refreshTokensRepository.UpdateAsync(tokenEntity);
                 }
-                throw new RefreshTokenException("Refresh token has expired");
+                throw new RefreshTokenException("Auth_ExpiredRefreshToken");
             }
 
             if (tokenEntity.Expires < DateTime.UtcNow.AddHours(12))
@@ -103,7 +103,7 @@ namespace Application.Services
             var user = await _userManager.FindByIdAsync(tokenEntity.UserId.ToString());
             if (user == null)
             {
-                throw new UnauthorizedException("User not found");
+                throw new UnauthorizedException("User_NotFound");
             }
 
             var newAccessToken = await _jwtService.GenerateAccessTokenAsync(user);
@@ -127,7 +127,7 @@ namespace Application.Services
             var tokenEntity = await _refreshTokensRepository.GetRefreshTokenAsync(hashedToken);
             if (tokenEntity == null || !tokenEntity.IsActive)
             {
-                throw new NotFoundException("Invalid refresh token");
+                throw new NotFoundException("Auth_InvalidRefreshToken");
             }
 
             await _refreshTokensRepository.RevokeTokenAsync(tokenEntity);
@@ -139,7 +139,7 @@ namespace Application.Services
 
             if (user != null)
             {
-                throw new BadRequestException("Email is already in use");
+                throw new BadRequestException("Auth_EmailIsAlreadyTaken");
             }
 
             var userId = Guid.NewGuid();
@@ -160,11 +160,12 @@ namespace Application.Services
                 SecurityStamp = Guid.NewGuid().ToString()
             };
 
-            var result = await _userManager.CreateAsync(userRecord, request.Password);
-            if (!result.Succeeded)
+            var response = await _userManager.CreateAsync(userRecord, request.Password);
+            if (!response.Succeeded)
             {
-                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
-                throw new BadRequestException($"User creation failed: {errors}");
+                var errors = response.Errors.Select(e => e.Code).ToList();
+
+                throw new BadRequestException("", errors);
             }
 
             await _userManager.AddToRoleAsync(userRecord, "User");
@@ -186,7 +187,7 @@ namespace Application.Services
 
             if (user == null)
             {
-                throw new NotFoundException("User not found");
+                throw new NotFoundException("User_NotFound");
             }
 
             await _emailService.SendConfirmEmailAsync(user);
@@ -195,18 +196,23 @@ namespace Application.Services
         public async Task ConfirmEmailAsync(ConfirmEmailRequest request)
         {
 
-            var user = await _userManager.FindByIdAsync(request.UserId);
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
 
             if (user == null)
-                throw new NotFoundException("User not found");
+                throw new NotFoundException("User_NotFound");
 
             var decodedToken = Encoding.UTF8.GetString(
                 WebEncoders.Base64UrlDecode(request.Token));
 
-            var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+            var response = await _userManager.ConfirmEmailAsync(user, decodedToken);
 
-            if (!result.Succeeded)
-                throw new BadRequestException("Email confirmation failed");
+            if (!response.Succeeded)
+            {
+                var errors = response.Errors.Select(e => e.Code == "InvalidToken" ? $"EmailConfirmation_{e.Code}" : e.Code)
+                    .ToList();
+
+                throw new BadRequestException("", errors);
+            }
         }
 
         public async Task SendResetPasswordEmailAsync(string email)
@@ -215,7 +221,7 @@ namespace Application.Services
                 
             if (user == null)
             {
-                throw new NotFoundException("User not found");
+                throw new NotFoundException("User_NotFound");
             }
             await _emailService.SendResetPasswordEmailAsync(user);
         }
@@ -225,7 +231,7 @@ namespace Application.Services
             var user = await _userManager.FindByIdAsync(request.UserId.ToString());
             if(user == null)
             {
-                throw new NotFoundException("User not found");
+                throw new NotFoundException("User_NotFound");
             }
 
             var decodedToken = Uri.UnescapeDataString(request.Token);
@@ -233,10 +239,10 @@ namespace Application.Services
             var response = await _userManager.ResetPasswordAsync(user, decodedToken, request.Password);
             if (!response.Succeeded)
             {
-                var errors = string.Join(" | ",
-                    response.Errors.Select(e => e.Description));
+                var errors = response.Errors.Select(e => e.Code == "InvalidToken" ? $"ResetPassword_{e.Code}" : e.Code)
+                    .ToList();
 
-                throw new BadRequestException(errors);
+                throw new BadRequestException("", errors);
             }
         }
     }

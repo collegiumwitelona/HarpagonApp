@@ -3,8 +3,10 @@ using API.Extensions.Filters;
 using Application.DTO.Requests.Auth;
 using Application.DTO.Responses;
 using Application.Interfaces;
+using Application.Localization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace API.Controllers
 {
@@ -15,17 +17,19 @@ namespace API.Controllers
     {
         private readonly ILogger<AuthController> _logger;
         private readonly IAuthService _authService;
-        public AuthController(ILogger<AuthController> logger, IAuthService authService)
+        private readonly IStringLocalizer<Language> _localizer;
+        public AuthController(ILogger<AuthController> logger, IAuthService authService, IStringLocalizer<Language> localizer)
         {
             _logger = logger;
             _authService = authService;
+            _localizer = localizer;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var response = await _authService.RegisterAsync(request);
-            return Ok(new { message = "Registration successful.", response });
+            return Accepted(new { message = _localizer["User_Registered"].Value, data = response });
         }
 
         [HttpPost("login")]
@@ -49,7 +53,7 @@ namespace API.Controllers
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
             await _authService.LogoutAsync(request);
-            return Ok(new { message = "Logged out successfully." });
+            return Ok();
         }
 
         //generate frontend link here and send email
@@ -57,7 +61,7 @@ namespace API.Controllers
         public async Task<IActionResult> ForgotPassword([FromQuery]string email)
         {
             await _authService.SendResetPasswordEmailAsync(email);
-            return Ok(new { message = "Reset password link was sent to provided email" });
+            return Ok(new { message = _localizer["ResetPassword_LinkWasSent"].Value });
         }
 
         //validate token and changing password
@@ -65,7 +69,7 @@ namespace API.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
             await _authService.ResetPasswordAsync(request);
-            return Ok();
+            return Ok(new {message = _localizer["ResetPassword_Success"].Value });
         }
 
         [HttpPost("confirm-email")]
@@ -73,7 +77,7 @@ namespace API.Controllers
         {
             await _authService.ConfirmEmailAsync(request);
             _logger.LogInformation("Email confirmed");
-            return Ok("Email confirmed");
+            return Ok(new { message = _localizer["EmailConfirmed"].Value});
         }
     }
 }

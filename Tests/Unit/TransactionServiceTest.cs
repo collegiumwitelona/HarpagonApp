@@ -69,7 +69,7 @@ namespace Tests.Unit
                 .Setup(x => x.GetAccountByIdAsync(accountId))
                 .ReturnsAsync(account);
 
-            Transaction captured = null;
+            Transaction? captured = null;
 
             _transactionRepositoryMock
                 .Setup(x => x.AddTransactionAsync(It.IsAny<Transaction>()))
@@ -131,7 +131,7 @@ namespace Tests.Unit
             var result = await _service.EditTransactionByIdAsync(transaction.Id, 300, userId);
 
             Assert.Equal(300, result.Amount);
-            Assert.Equal(900, result.Account.Balance); // 1000 - (300-200)
+            Assert.Equal(900, result.Account!.Balance); // 1000 - (300-200)
 
             _accountRepositoryMock.Verify(x => x.UpdateAccountAsync(account), Times.Once);
             _transactionRepositoryMock.Verify(x => x.UpdateTransactionAsync(transaction), Times.Once);
@@ -175,7 +175,21 @@ namespace Tests.Unit
                 _service.EditTransactionByIdAsync(transaction.Id, 500, userId));
             // 500 > 100 + 200 => balance
 
-            Assert.Equal("Insufficient funds", exception.Message);
+            _transactionRepositoryMock.Verify(
+                x => x.GetTransactionByIdAsync(transaction.Id),
+                Times.Once);
+
+            _accountRepositoryMock.Verify(
+                x => x.GetAccountByIdAsync(accountId),
+                Times.Once);
+
+            _transactionRepositoryMock.Verify(
+                x => x.UpdateTransactionAsync(It.IsAny<Transaction>()),
+                Times.Never);
+
+            _accountRepositoryMock.Verify(
+                x => x.UpdateAccountAsync(It.IsAny<Account>()),
+                Times.Never);
         }
 
         [Fact]
@@ -261,7 +275,7 @@ namespace Tests.Unit
 
             Assert.NotNull(result);
             Assert.Equal(transaction.Id, result.Id);
-            Assert.Equal(account.Id, result.Account.Id);
+            Assert.Equal(account.Id, result.Account!.Id);
             Assert.Equal(transaction.Amount, result.Amount);
             Assert.Equal(result.Account.Balance, result.Account.Balance);
 
@@ -350,7 +364,7 @@ namespace Tests.Unit
                 Assert.Contains(result, r => r.Id == transaction.Id);
             }
 
-            Assert.DoesNotContain(result, r => r.Account.UserId != userId);
+            Assert.DoesNotContain(result, r => r.Account!.UserId != userId);
 
             _transactionRepositoryMock.Verify(r => r.GetTransactionsByUserIdAsync(userId), Times.Once);
         }
