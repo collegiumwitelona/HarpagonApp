@@ -15,8 +15,11 @@ using Infrastructure.Shared;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -104,12 +107,16 @@ builder.Services.AddTransient<IHashService, HashService>();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
+
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
+
+//CORS
 var frontendUrl = builder.Configuration["Frontend:Url"]
     ?? throw new InvalidOperationException("Frontend:Url not configured");
 
@@ -122,6 +129,8 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+builder.Services.AddLocalization();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -207,14 +216,23 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+//Localization
+var supportedCultures = new[] { "en-US", "pl-PL" };
+var localizeOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("pl-PL")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizeOptions);
+
 app.UseExceptionMiddleware();
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
 app.UseCors("Policy");
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();

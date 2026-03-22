@@ -37,11 +37,11 @@ namespace Application.Services
             var account = await _accountRepository.GetAccountByIdAsync(accountId);
             if (account == null)
             {
-                throw new NotFoundException("Account not found");
+                throw new NotFoundException("Account_NotFound");
             }
             if(account.UserId != userId)
             {
-                throw new ForbiddenException("You do not have permission to delete this account");
+                throw new ForbiddenException("Account_DeletePermissionDenied");
             }
             await _accountRepository.DeleteAccountAsync(accountId);
         }
@@ -51,11 +51,11 @@ namespace Application.Services
             var account = await _accountRepository.GetAccountByIdAsync(accountId);
             if (account == null)
             {
-                throw new NotFoundException("Account not found");
+                throw new NotFoundException("Account_NotFound");
             }
             if(account.UserId != userId)
             {
-                throw new ForbiddenException("You do not have permission to edit this account");
+                throw new ForbiddenException("Account_EditPermissionDenied");
             }
             account.Balance = newBalance;
             await _accountRepository.UpdateAccountAsync(account);
@@ -73,11 +73,11 @@ namespace Application.Services
             var account = await _accountRepository.GetAccountByIdAsync(accountId);
             if (account == null)
             {
-                throw new NotFoundException("Account not found");
+                throw new NotFoundException("Account_NotFound");
             }
             if(account.UserId != userId)
             {
-                throw new ForbiddenException("You do not have permission to view this account");
+                throw new ForbiddenException("Account_ViewPermissionDenied");
             }
             return new AccountResponse
             {

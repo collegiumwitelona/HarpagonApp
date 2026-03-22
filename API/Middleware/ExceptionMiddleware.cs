@@ -1,5 +1,7 @@
 ﻿using Application.Exceptions;
+using Microsoft.Extensions.Localization;
 using System.Text.Json;
+using Application.Localization;
 
 namespace API.Middleware
 {
@@ -7,11 +9,13 @@ namespace API.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionMiddleware> _logger;
+        private readonly IStringLocalizer<Language> _localizer;
 
-        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IStringLocalizer<Language> localizer)
         {
             _next = next;
             _logger = logger;
+            _localizer = localizer;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -26,7 +30,20 @@ namespace API.Middleware
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = ex.StatusCode;
 
-                var response = new { message = ex.Message };
+                List<string>? errors = new List<string>();
+                if(ex.Errors != null && ex.Errors.Count != 0)
+                {
+                    foreach (var error in ex.Errors) {
+                        errors.Add(_localizer[error]);
+                    }
+                }
+
+                var response = new
+                {
+                    message = _localizer[ex.Message].Value,
+                    code = ex.StatusCode,
+                    errors = errors.ToArray()
+                };
                 await context.Response.WriteAsync(JsonSerializer.Serialize(response));
             }
             catch (Exception ex)

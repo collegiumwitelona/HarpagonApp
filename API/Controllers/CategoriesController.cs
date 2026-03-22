@@ -76,7 +76,7 @@ namespace API.Controllers
             var userId = User.GetUserId();
             await _categoryService.DeleteCategoryByIdAsync(id, userId, userRole);
             await _cache.RemoveDataAsync($"categories:user:{userId}");
-            return Ok(new { message = "Category was deleted successfully" });
+            return Ok();
         }
     }
 }

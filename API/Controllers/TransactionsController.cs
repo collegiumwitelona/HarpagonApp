@@ -64,7 +64,7 @@ namespace API.Controllers
             var userId = User.GetUserId();
             await _transactionService.DeleteTransactionByIdAsync(id, userId);
             await _cache.InvalidateDashboardAsync(userId);
-            return Ok(new { message = "Transaction was deleted successfully" });
+            return Ok();
         }
     }
 }

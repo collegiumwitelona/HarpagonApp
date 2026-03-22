@@ -114,7 +114,7 @@ namespace Tests.Unit
 
             repositoryMock
                 .Setup(r => r.GetAccountByIdAsync(accountId))
-                .ReturnsAsync((Account)null);
+                .ReturnsAsync((Account)null!);
 
             var service = new AccountService(repositoryMock.Object);
 

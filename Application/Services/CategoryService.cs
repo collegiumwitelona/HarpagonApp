@@ -2,8 +2,10 @@
 using Application.DTO.Responses;
 using Application.Exceptions;
 using Application.Interfaces;
+using Application.Localization;
 using Domain.Interfaces;
 using Domain.Models;
+using Microsoft.Extensions.Localization;
 
 namespace Application.Services
 {
@@ -39,13 +41,13 @@ namespace Application.Services
         public async Task DeleteCategoryByIdAsync(Guid categoryId, Guid userId, string userRole)
         {
             var category = await _categoryRepository.GetCategoryByIdAsync(categoryId) 
-                ?? throw new NotFoundException($"Category {categoryId} not found");
+                ?? throw new NotFoundException("Category_NotFound");
 
             var isOwner = category.UserId == userId;
             var isAdmin = userRole.Equals("Admin");
 
             if (!isOwner && !isAdmin)
-                throw new ForbiddenException("You do not have permission to delete this category.");
+                throw new ForbiddenException("Category_DeletePermissionDenied");
 
             await _categoryRepository.DeleteCategoryAsync(categoryId);
         }
@@ -53,13 +55,13 @@ namespace Application.Services
         public async Task<CategoryResponse> EditCategoryByIdAsync(EditCategoryRequest request, Guid userId, string userRole)
         {
             var category = await _categoryRepository.GetCategoryByIdAsync(request.CategoryId)
-                ?? throw new NotFoundException($"Category {request.CategoryId} not found");
+                ?? throw new NotFoundException($"Category_NotFound");
 
             var isOwner = category.UserId == userId;
             var isAdmin = userRole == "Admin";
 
             if (!isOwner && !isAdmin)
-                throw new ForbiddenException("You do not have permission to edit this category.");
+                throw new ForbiddenException("Category_EditPermissionDenied");
 
             var newCategory = new Category
             {
@@ -100,11 +102,11 @@ namespace Application.Services
             var result = await _categoryRepository.GetCategoryByIdAsync(categoryId);
             if (result == null)
             {
-                throw new NotFoundException($"Category {categoryId} not found");
+                throw new NotFoundException($"Category_NotFound");
             }
             if(result.UserId != userId && result.UserId != null)
             {
-                throw new ForbiddenException("You do not have permission to view this category.");
+                throw new ForbiddenException("Category_ViewPermissionDenied");
             }
             return new CategoryResponse
             {
