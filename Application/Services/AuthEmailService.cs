@@ -1,7 +1,9 @@
 ﻿using Application.Interfaces;
+using Application.Localization;
 using Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Localization;
 using System.Text;
 
 namespace Application.Services
@@ -11,12 +13,15 @@ namespace Application.Services
         private readonly IEmailService _emailSender;
         private readonly IFrontendLinkBuilder _linkBuilder;
         private readonly UserManager<User> _userManager;
+        private readonly IStringLocalizer<Language> _localizer;
 
-        public AuthEmailService(IEmailService emailSender, IFrontendLinkBuilder linkBuilder, UserManager<User> userManager)
+        public AuthEmailService(IEmailService emailSender, IFrontendLinkBuilder linkBuilder, 
+            UserManager<User> userManager, IStringLocalizer<Language> localizer)
         {
             _emailSender = emailSender;
             _linkBuilder = linkBuilder;
             _userManager = userManager;
+            _localizer = localizer;
         }
 
         public async Task SendConfirmEmailAsync(User user)
@@ -28,14 +33,14 @@ namespace Application.Services
 
             var link = _linkBuilder.BuildFrontendLink("confirm-email", user.Id, encodedToken);
 
-            var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", "ConfirmEmail.html");
+            var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", _localizer["EmailConfirmation_html"]);
             var htmlTemplate = await File.ReadAllTextAsync(templatePath);
 
             var htmlBody = htmlTemplate
                 .Replace("{{Email}}", user.Email!)
                 .Replace("{{Link}}", link);
 
-            await _emailSender.SendEmailAsync(user.Email!, "Email confirmation", "", htmlBody);
+            await _emailSender.SendEmailAsync(user.Email!, _localizer["EmailConfirmation_Subject"], "", htmlBody);
         }
 
         public async Task SendResetPasswordEmailAsync(User user)
@@ -45,13 +50,13 @@ namespace Application.Services
             var link = _linkBuilder.BuildFrontendLink("forgot-password", user.Id, Uri.EscapeDataString(token));
 
 
-            var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", "ForgotPassword.html");
+            var templatePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Email", "EmailTemplates", _localizer["ResetPassword_html"]);
             var htmlTemplate = await File.ReadAllTextAsync(templatePath);
 
             var htmlBody = htmlTemplate
                 .Replace("{{Email}}", user.Email!)
                 .Replace("{{Link}}", link);
-            await _emailSender.SendEmailAsync(user.Email!, "Password reset", "", htmlBody);
+            await _emailSender.SendEmailAsync(user.Email!, _localizer["ResetPassword_Subject"], "", htmlBody);
         }
     }
 }
