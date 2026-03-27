@@ -1,7 +1,8 @@
 ﻿using API.Extensions;
 using API.Extensions.Filters;
 using Application.DTO.Requests.Categories;
-using Application.Interfaces;
+using Application.Interfaces.Core;
+using Application.Interfaces.Infrastructure;
 using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -76,7 +77,7 @@ namespace API.Controllers
             var userId = User.GetUserId();
             await _categoryService.DeleteCategoryByIdAsync(id, userId, userRole);
             await _cache.RemoveDataAsync($"categories:user:{userId}");
-            return Ok();
+            return NoContent();
         }
     }
 }

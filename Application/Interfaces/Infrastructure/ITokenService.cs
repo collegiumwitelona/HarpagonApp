@@ -1,7 +1,6 @@
-﻿
-using Domain.Models;
+﻿using Domain.Models;
 
-namespace Application.Interfaces
+namespace Application.Interfaces.Infrastructure
 {
     public interface ITokenService
     {

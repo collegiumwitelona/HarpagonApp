@@ -1,7 +1,8 @@
 ﻿using API.Extensions;
 using API.Extensions.Filters;
 using Application.DTO.Requests.Transactions;
-using Application.Interfaces;
+using Application.Interfaces.Core;
+using Application.Interfaces.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -64,7 +65,7 @@ namespace API.Controllers
             var userId = User.GetUserId();
             await _transactionService.DeleteTransactionByIdAsync(id, userId);
             await _cache.InvalidateDashboardAsync(userId);
-            return Ok();
+            return NoContent();
         }
     }
 }

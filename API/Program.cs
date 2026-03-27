@@ -1,5 +1,6 @@
 using API.Extensions;
-using Application.Interfaces;
+using Application.Interfaces.Core;
+using Application.Interfaces.Infrastructure;
 using Application.Services;
 using Domain.Interfaces;
 using Domain.Models;

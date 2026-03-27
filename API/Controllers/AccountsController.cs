@@ -1,7 +1,7 @@
 ﻿using API.Extensions;
 using API.Extensions.Filters;
 using Application.DTO.Requests.Accounts;
-using Application.Interfaces;
+using Application.Interfaces.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -61,7 +61,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             await _accountService.DeleteAccountByIdAsync(id, userId);
-            return Ok();
+            return NoContent();
         }
     }
 }

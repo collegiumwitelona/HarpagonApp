@@ -1,7 +1,8 @@
 ﻿using Application.DTO.Requests.Transactions;
 using Application.DTO.Responses;
 using Application.Exceptions;
-using Application.Interfaces;
+using Application.Interfaces.Core;
+using Application.Interfaces.Infrastructure;
 using Application.Localization;
 using Domain.Enums;
 using Domain.Interfaces;

@@ -1,6 +1,6 @@
 ﻿using Application.DTO.Responses;
 
-namespace Application.Interfaces
+namespace Application.Interfaces.Core
 {
     public interface IAccountService
     {

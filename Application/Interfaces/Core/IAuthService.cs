@@ -2,7 +2,7 @@
 using Application.DTO.Responses;
 using Domain.Models;
 
-namespace Application.Interfaces
+namespace Application.Interfaces.Core
 {
     public interface IAuthService
     {

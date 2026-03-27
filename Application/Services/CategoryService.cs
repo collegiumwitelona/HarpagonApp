@@ -1,11 +1,9 @@
 ﻿using Application.DTO.Requests.Categories;
 using Application.DTO.Responses;
 using Application.Exceptions;
-using Application.Interfaces;
-using Application.Localization;
+using Application.Interfaces.Core;
 using Domain.Interfaces;
 using Domain.Models;
-using Microsoft.Extensions.Localization;
 
 namespace Application.Services
 {

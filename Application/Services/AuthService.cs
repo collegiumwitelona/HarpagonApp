@@ -1,7 +1,8 @@
 ﻿using Application.DTO.Requests.Auth;
 using Application.DTO.Responses;
 using Application.Exceptions;
-using Application.Interfaces;
+using Application.Interfaces.Core;
+using Application.Interfaces.Infrastructure;
 using Domain.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Identity;

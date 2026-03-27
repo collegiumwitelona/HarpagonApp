@@ -2,7 +2,8 @@
 using API.Extensions.Filters;
 using Application.DTO.Requests;
 using Application.DTO.Responses;
-using Application.Interfaces;
+using Application.Interfaces.Core;
+using Application.Interfaces.Infrastructure;
 using Application.Services;
 using Domain.Models;
 using Microsoft.AspNetCore.Authorization;

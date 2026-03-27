@@ -1,6 +1,6 @@
 ﻿using Application.DTO.Requests.Transactions;
 using Application.Exceptions;
-using Application.Interfaces;
+using Application.Interfaces.Infrastructure;
 using Application.Services;
 using Domain.Enums;
 using Domain.Interfaces;

@@ -1,6 +1,6 @@
 ﻿using Application.DTO.Responses;
 using Application.Exceptions;
-using Application.Interfaces;
+using Application.Interfaces.Core;
 using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;

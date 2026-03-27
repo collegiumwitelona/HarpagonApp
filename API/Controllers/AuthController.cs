@@ -2,7 +2,7 @@
 using API.Extensions.Filters;
 using Application.DTO.Requests.Auth;
 using Application.DTO.Responses;
-using Application.Interfaces;
+using Application.Interfaces.Core;
 using Application.Localization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -29,6 +29,11 @@ namespace API.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var response = await _authService.RegisterAsync(request);
+            return Created("users/{id}", new
+            {
+                message = _localizer["User_Registered"].Value,
+                data = response
+            });
             return Accepted(new { message = _localizer["User_Registered"].Value, data = response });
         }
 
@@ -53,7 +58,7 @@ namespace API.Controllers
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
             await _authService.LogoutAsync(request);
-            return Ok();
+            return NoContent();
         }
 
         //generate frontend link here and send email
