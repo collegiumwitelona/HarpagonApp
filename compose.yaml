@@ -21,10 +21,13 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_ENVIRONMENT=Development
-      - MAILGUN_API_KEY=${MAILGUN_API_KEY}
+      - MAILGUN_APIKEY=${MAILGUN_APIKEY}
       - Jwt__SecretKey=${Jwt__SecretKey}
       - Frontend__Url=${Frontend__Url}
       - EMAIL_PROVIDER=${EMAIL_PROVIDER}
+      - TrueLayer__ClientID=${TRUELAYER_CLIENTID}
+      - TrueLayer__ClientSecret=${TRUELAYER_CLIENTSECRET}
+      - TrueLayer__RedirectionUrl=${TRUELAYER_REDIRECTURL}
     depends_on:
       postgres:
         condition: service_healthy

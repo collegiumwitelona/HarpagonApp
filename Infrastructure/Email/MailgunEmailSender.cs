@@ -16,7 +16,7 @@ namespace Infrastructure.Email
 
         public async Task SendEmailAsync(string reciever, string subject, string text, string html)
         {
-            var apiKey = Environment.GetEnvironmentVariable("MAILGUN_API_KEY")
+            var apiKey = Environment.GetEnvironmentVariable("MAILGUN_APIKEY")
                          ?? throw new Exception("No Mailgun API key provided.");
 
             var client = new RestClient(new RestClientOptions("https://api.eu.mailgun.net")

@@ -108,6 +108,8 @@ builder.Services.AddTransient<IHashService, HashService>();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
+builder.Services.AddHttpClient<TrueLayerService>();
+
 
 
 builder.Services.AddControllers()

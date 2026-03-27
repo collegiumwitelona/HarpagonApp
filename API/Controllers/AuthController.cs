@@ -38,7 +38,6 @@ namespace API.Controllers
         }
 
         [HttpPost("login")]
-        [RequireConfirmedEmail]
         public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
         {
             var response = await _authService.LoginAsync(request);

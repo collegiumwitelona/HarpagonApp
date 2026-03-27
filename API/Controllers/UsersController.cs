@@ -36,9 +36,11 @@ namespace Api.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMe([FromQuery] Guid userId)
+        public async Task<IActionResult> DeleteMe()
         {
-            await _userService.DeleteUserAsync(userId);
+            var userId = User.GetUserId();
+            var userRole = User.GetRole();
+            await _userService.DeleteUserAsync(userId, userRole);
             return NoContent();
         }
     }
