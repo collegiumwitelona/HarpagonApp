@@ -10,7 +10,7 @@ namespace Infrastructure.TrueLayer
 {
     public static class FromTrueLayerMapper
     {
-        public static Transaction FromTrueLayer(JsonElement json, Guid accountId, Func<string, Guid> mapCategory)
+        public static Transaction MapTransaction(JsonElement json, Guid accountId, Func<string, Guid> mapCategory)
         {
             var providerCategory = json.GetProperty("meta")
                                        .GetProperty("provider_transaction_category")

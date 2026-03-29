@@ -1,5 +1,9 @@
 ﻿using Application.DTO.Responses;
+using Infrastructure.TrueLayer.DTO;
+using Infrastructure.TrueLayer.DTO.Account;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -9,11 +13,13 @@ namespace Infrastructure.TrueLayer
     {
         private readonly HttpClient _http;
         private readonly IConfiguration _config;
+        private readonly ILogger<TrueLayerHttpClient> _logger;
 
-        public TrueLayerHttpClient(HttpClient http, IConfiguration config)
+        public TrueLayerHttpClient(HttpClient http, IConfiguration config, ILogger<TrueLayerHttpClient> logger)
         {
             _http = http;
             _config = config;
+            _logger = logger;
         }
 
         public string GetAuthUrl(string state, bool sandbox = true)
@@ -38,7 +44,7 @@ namespace Infrastructure.TrueLayer
                       $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
                       $"&state={Uri.EscapeDataString(state)}" +
                       $"&providers={Uri.EscapeDataString(providers)}";
-
+            _logger.LogInformation($"Generated TrueLayer Auth URL: {url}");
             return url;
         }
 
@@ -66,24 +72,28 @@ namespace Infrastructure.TrueLayer
             return JsonSerializer.Deserialize<TokenResponse>(json);
         }
 
-        public async Task<string> GetLinkedAccounts(string token)
+        public async Task<ApiResponse<AccountDto>> GetLinkedAccounts(string token)
         {
             _http.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
             var res = await _http.GetAsync("https://api.truelayer-sandbox.com/data/v1/accounts");
-            return await res.Content.ReadAsStringAsync();
+            //map to account object maybe
+            res.EnsureSuccessStatusCode();
+            var json = await res.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResponse<AccountDto>>(json);
         }
 
-        public async Task<string> GetTransactionsFromLinkedAccounts(string token, string accountId)
+        public async Task<ApiResponse<string>> GetTransactionsFromLinkedAccounts(string token, string accountId)
         {
             _http.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
-            var res = await _http.GetAsync(
-                $"https://api.truelayer-sandbox.com/data/v1/accounts/{accountId}/transactions");
-
-            return await res.Content.ReadAsStringAsync();
+            var res = await _http.GetAsync( $"https://api.truelayer-sandbox.com/data/v1/accounts/{accountId}/transactions");
+            //map to transaction object maybe
+            res.EnsureSuccessStatusCode();
+            var json = await res.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResponse<string>>(json);
         }
     }
 }

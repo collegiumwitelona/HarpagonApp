@@ -1,10 +1,10 @@
-﻿namespace Application.DTO.Responses
+﻿using System.Text.Json.Serialization;
+
+namespace Application.DTO.Responses
 {
     public class AuthResponse
     {
-        public string AccessToken { get; set; } = string.Empty;
-        public string RefreshToken { get; set; } = string.Empty;
-
+        public TokenResponse Tokens { get; set; }
         public required UserDataResponse User { get; set; }
     }
 }

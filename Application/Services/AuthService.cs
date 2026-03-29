@@ -64,8 +64,14 @@ namespace Application.Services
 
             return new AuthResponse
             {
-                AccessToken = accessToken,
-                RefreshToken = rawRefreshToken,
+                Tokens = new TokenResponse
+                {
+
+                    AccessToken = accessToken,
+                    RefreshToken = rawRefreshToken,
+                    TokenType = "Bearer",
+                    ExpiresIn = 3600
+                },
                 User = new UserDataResponse
                 {
                     Id = user.Id,

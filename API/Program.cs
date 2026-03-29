@@ -13,6 +13,7 @@ using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Seeders;
 using Infrastructure.Shared;
+using Infrastructure.TrueLayer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -108,7 +109,7 @@ builder.Services.AddTransient<IHashService, HashService>();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
-builder.Services.AddHttpClient<TrueLayerService>();
+builder.Services.AddHttpClient<TrueLayerHttpClient>();
 
 
 

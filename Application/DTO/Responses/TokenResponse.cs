@@ -1,10 +1,20 @@
-﻿namespace Application.DTO.Responses
+﻿using System.Text.Json.Serialization;
+
+namespace Application.DTO.Responses
 {
     public class TokenResponse
     {
-        public string access_token { get; set; }
-        public string refresh_token { get; set; }
-        public string token_type { get; set; }
-        public int expires_in { get; set; }
+        [JsonPropertyName("access_token")]
+        public string AccessToken { get; set; }
+
+        [JsonPropertyName("refresh_token")]
+        public string RefreshToken { get; set; }
+
+        [JsonPropertyName("token_type")]
+        public string TokenType { get; set; }
+
+        [JsonPropertyName("expires_in")]
+        public int ExpiresIn { get; set; }
+
     }
 }
