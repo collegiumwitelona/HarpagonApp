@@ -13,47 +13,40 @@ namespace Api.Controllers
     [Authorize]
     public class OpenBankingController : ControllerBase
     {
-        private readonly TrueLayerHttpClient _service;
+        private readonly OpenBankingHttpClient _service;
         private readonly ICacheService _cache;
 
-        public OpenBankingController(TrueLayerHttpClient service, ICacheService cache)
+        public OpenBankingController(OpenBankingHttpClient service, ICacheService cache)
         {
             _service = service;
             _cache = cache;
         }
 
-        [HttpGet("connect")]
-        public async Task<IActionResult> Connect()
+        [HttpPost("createuser")]
+        public async Task<IActionResult> CreateUser()
         {
-            var state = Guid.NewGuid().ToString();
+            var userId = User.GetUserId();
+            var res = await _service.CreateTinkUser(userId);
+            //save code in db with user id
+            return Ok(res);
+        }
 
-            await _cache.SetDataAsync<Guid?>($"openbanking:{state}", User.GetUserId());
-
-            var url = _service.GetAuthUrl(state);
+        [HttpGet("connect-accounts")]
+        public IActionResult ConnectAccounts(string code, string state)
+        {
+            //fetch saved code from db
+            var url = _service.GetConnectionLink(code, state);
             return Redirect(url);
         }
 
         [HttpGet("callback")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Callback([FromQuery] string code, [FromQuery] string state)
+        public async Task<IActionResult> ExchangeToken([FromQuery]string code)
         {
-            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state))
-                return BadRequest();
-            Console.WriteLine($"Received code: {code} and state: {state}");
-            var userId = await _cache.GetDataAsync<Guid?>($"openbanking:{state}");
-
-            if (userId == null)
-            {
-                return BadRequest(new { message = "Invalid state" });
-            }
-
-            await _cache.RemoveDataAsync($"openbanking:{state}");
-
-            var tokens = await _service.GetOAuthTokensAsync(code);
-            //save tokens
-            return Ok(tokens);
+            var userId = User.GetUserId();
+            var res = await _service.ExchangeCode(userId.ToString());
+            return Ok(res);
         }
-        
+
         [HttpGet("accounts")]
         public async Task<IActionResult> Accounts([FromQuery] string token)
         {

@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="TrueLayer\DTO\Transactions\" />
+    <Folder Include="OpenBanking\DTO\Transactions\" />
   </ItemGroup>
 
 </Project>

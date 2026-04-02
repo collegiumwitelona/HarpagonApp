@@ -26,8 +26,6 @@ namespace Infrastructure.TrueLayer
                 Amount = Math.Abs(json.GetProperty("amount").GetDecimal()), //
                 Description = json.GetProperty("description").GetString(),
                 CategoryId = categoryId,
-                ProviderTransactionId = json.GetProperty("provider_transaction_id").GetString(),
-                NormalisedProviderTransactionId = json.GetProperty("normalised_provider_transaction_id").GetString()
             };
         }
     }

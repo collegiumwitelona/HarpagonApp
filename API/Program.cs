@@ -109,7 +109,7 @@ builder.Services.AddTransient<IHashService, HashService>();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
-builder.Services.AddHttpClient<TrueLayerHttpClient>();
+builder.Services.AddHttpClient<OpenBankingHttpClient>();
 
 
 

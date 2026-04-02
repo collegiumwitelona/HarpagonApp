@@ -25,9 +25,9 @@ services:
       - Jwt__SecretKey=${Jwt__SecretKey}
       - Frontend__Url=${Frontend__Url}
       - EMAIL_PROVIDER=${EMAIL_PROVIDER}
-      - TrueLayer__ClientID=${TRUELAYER_CLIENTID}
-      - TrueLayer__ClientSecret=${TRUELAYER_CLIENTSECRET}
-      - TrueLayer__RedirectionUrl=${TRUELAYER_REDIRECTURL}
+      - OpenBanking__ClientID=${OPENBANKING_CLIENTID}
+      - OpenBanking__ClientSecret=${OPENBANKING_CLIENTSECRET}
+      - OpenBanking__RedirectUri=${OPENBANKING_REDIRECTURL}
     depends_on:
       postgres:
         condition: service_healthy
