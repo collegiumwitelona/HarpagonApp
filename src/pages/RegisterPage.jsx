@@ -10,13 +10,13 @@ const RegisterPage = () => {
       <Navbar />
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
         
-        <div className="relative z-10 max-w-md w-full bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100">
+        <div className="relative z-10 max-w-sm w-full bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100">
           
           <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
             Dołącz do <span className="text-violet-700">Harpagon</span>
           </h2>
 
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-1" onSubmit={(e) => e.preventDefault()}>
             <div className="flex flex-col gap-1.5 text-left">
               <label className="text-sm font-semibold text-slate-700 ml-1">
                 E-mail
