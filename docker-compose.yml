@@ -1,0 +1,7 @@
+services:
+  harpagon-front:
+    build: .
+    container_name: harpagon_frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped

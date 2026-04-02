@@ -1,5 +1,13 @@
 import { createBrowserRouter } from "react-router-dom";
-import Dashboard from "../pages/Dashboard";
+import LandingPage from "../pages/LandingPage";
+import LoginPage from "../pages/LoginPage";
+import RegisterPage from "../pages/RegisterPage";
+import DashboardPage from "../pages/DashboardPage";
+
 export const router = createBrowserRouter([
-    { path: "/", element:<Dashboard/>},
+    { path: "/", element:<LandingPage/>},
+    { path: "/landing", element:<LandingPage/>},
+    {path: "/login", element:<LoginPage/>},
+    {path: "/register", element:<RegisterPage/>},
+    {path: "/dashboard", element:<DashboardPage/>}
 ]);
