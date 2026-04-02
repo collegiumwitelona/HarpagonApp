@@ -95,8 +95,7 @@ const DashboardPage = () => {
         </div>
       </Navbar>
 
-<main className="grow pt-0 px-4 pb-4 lg:pt-0 lg:px-6 lg:pb-6 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 max-w-4xl mx-auto w-full min-h-0">        
-        <section className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-200 flex flex-col min-h-0">
+<main className="grow pt-0 px-4 pb-4 lg:px-6 lg:pb-6 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 max-w-400 mx-auto w-full min-h-0">        <section className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-200 flex flex-col min-h-0">
           <h2 className="text-xl font-bold mb-4 tracking-tight">Transakcje</h2>
           
           <form onSubmit={handleAddTransaction} className="space-y-3 mb-6 bg-slate-50 p-4 rounded-3xl border border-slate-100">
