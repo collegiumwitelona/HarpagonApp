@@ -7,6 +7,19 @@ volumes:
   pgadmin-data: {}
 
 services:
+  harpagon-front:
+    build: 
+      context: .
+      dockerfile: src/Dockerfile
+      target: final
+    container_name: harpagon-frontend-dev
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - dev
   api:
     build:
       context: .
