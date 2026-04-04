@@ -40,21 +40,17 @@ docker compose up --build
 
  Services & URLs
 
-- PGAdmin (PostgreSQL UI)
-http://localhost:5050/
-
 - Swagger (API docs & testing)
 http://localhost:8080/swagger/index.html
 
+- Frontend
+http://localhost:80 or http://localhost
+
+- PGAdmin (PostgreSQL UI)
+http://localhost:5050/
+
 - Mailpit (sending emails testing)
 http://localhost:8025
-
-# Frontend
-uruchamianie z obrazu:  
-docker load -i harpagon_front.tar  
-docker run -p 8080:80 harpagon_front  
-
-strona dostępna na localhost:8081/
 
 ## Deployment guide (Render + Mailgun + GitHub Actions)
 
