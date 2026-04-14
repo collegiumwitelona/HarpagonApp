@@ -331,6 +331,8 @@ namespace Tests.Unit
                 }
             };
 
+            var mockQueryable = data.BuildMock().AsQueryable();
+
             _transactionRepositoryMock
                 .Setup(r => r.GetAllTransactionsByUserIdAsync(userId))
                 .ReturnsAsync(data);
