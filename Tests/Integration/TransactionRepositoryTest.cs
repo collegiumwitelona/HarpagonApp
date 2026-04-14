@@ -1,6 +1,7 @@
 ﻿using Domain.Models;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Tests.Seeders;
 
 
@@ -48,7 +49,8 @@ namespace Tests.Integration
 
             var otherUserTransaction = TestSeeder.SeedTransactionAsync(context, category.Id, account.Id);
 
-            var result = await repo.GetTransactionsByUserIdAsync(user.Id);
+            var result = await repo.GetTransactionsByUserId(user.Id).ToListAsync();
+
 
             Assert.All(result, t =>
                 Assert.True(t.Account.UserId == user.Id)

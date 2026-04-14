@@ -22,18 +22,14 @@ namespace Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<Transaction>> GetTransactionsByUserIdAsync(Guid userId)
+        public IQueryable<Transaction> GetTransactionsByUserId(Guid userId)
         {
             var transactions = _context.Transactions.AsNoTracking()
                 .Include(t => t.Account)
                 .Include(t => t.Category)
-                .Where(t => t.Account.UserId == userId)
-                .AsQueryable();
+                .Where(t => t.Account.UserId == userId);
 
-            //pagination/filtering place
-
-            var result = await transactions.ToListAsync();
-            return result;
+            return transactions.AsQueryable();
         }
 
         public async Task DeleteTransactionAsync(Guid transactionId)

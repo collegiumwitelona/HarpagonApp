@@ -1,5 +1,6 @@
 ﻿using API.Extensions;
 using API.Extensions.Filters;
+using Application.DTO.Requests.Filtering;
 using Application.DTO.Requests.Transactions;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -26,12 +27,13 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTransactions()
+        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest? request = null)
         {
             var userId = User.GetUserId();
-            var response = await _transactionService.GetTransactionsByUserIdAsync(userId);
+            var response = await _transactionService.GetTransactionsByUserIdAsync(userId, request);
             return Ok(response);
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTransactionById(Guid id)
         {
