@@ -331,17 +331,12 @@ namespace Tests.Unit
                 }
             };
 
-            var mockQueryable = data.BuildMock().AsQueryable();
-
             _transactionRepositoryMock
-                .Setup(r => r.GetTransactionsByUserId(userId))
-                .Returns(mockQueryable);
+                .Setup(r => r.GetAllTransactionsByUserIdAsync(userId))
+                .ReturnsAsync(data);
 
             // Act
-            var result = await _service.GetTransactionsByUserIdAsync(
-                userId,
-                new DataTableRequest()
-            );
+            var result = await _service.GetAllTransactionsByUserIdAsync(userId);
 
             // Assert
             Assert.NotNull(result);
@@ -351,7 +346,7 @@ namespace Tests.Unit
                 Assert.Equal(userId, t.Account!.UserId));
 
             _transactionRepositoryMock.Verify(
-                r => r.GetTransactionsByUserId(userId),
+                r => r.GetAllTransactionsByUserIdAsync(userId),
                 Times.Once);
         }
     }

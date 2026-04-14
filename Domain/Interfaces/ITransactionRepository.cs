@@ -6,7 +6,8 @@ namespace Domain.Interfaces
     public interface ITransactionRepository
     {
         Task AddTransactionAsync(Transaction transaction);
-        IQueryable<Transaction> GetTransactionsByUserId(Guid userId);
+        IQueryable<Transaction> GetUserTransactionsQuery(Guid userId);
+        Task<List<Transaction>> GetAllTransactionsByUserIdAsync(Guid userId);
         Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type);
         Task<Transaction?> GetTransactionByIdAsync(Guid transactionId);
         Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to);

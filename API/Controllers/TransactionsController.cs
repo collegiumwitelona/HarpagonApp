@@ -2,6 +2,7 @@
 using API.Extensions.Filters;
 using Application.DTO.Requests.Filtering;
 using Application.DTO.Requests.Transactions;
+using Application.DTO.Responses;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -27,10 +28,18 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest? request = null)
+        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest request)
         {
             var userId = User.GetUserId();
-            var response = await _transactionService.GetTransactionsByUserIdAsync(userId, request);
+            var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request);
+            return Ok(response);
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllTransactions()
+        {
+            var userId = User.GetUserId();
+            var response = await _transactionService.GetAllTransactionsByUserIdAsync(userId);
             return Ok(response);
         }
 

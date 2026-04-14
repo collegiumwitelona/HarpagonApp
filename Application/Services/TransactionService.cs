@@ -212,16 +212,48 @@ namespace Application.Services
             };
         }
 
-        public async Task<List<TransactionResponse>> GetTransactionsByUserIdAsync(Guid userId, DataTableRequest? request = null)
+        public async Task<List<TransactionResponse>> GetAllTransactionsByUserIdAsync(Guid userId)
         {
-            var transactions = _transactionRepository.GetTransactionsByUserId(userId).AsNoTracking();
+            var transactions = await _transactionRepository
+                .GetAllTransactionsByUserIdAsync(userId);
 
-            //todo filtering
-            transactions = ApplyFiltering(transactions, request?.Filters);
+            return transactions.Select(t => new TransactionResponse
+                {
+                    Id = t.Id,
+                    Amount = t.Amount,
+                    Date = t.Date,
+                    Description = t.Description,
+                    Category = new CategoryResponse
+                    {
+                        Id = t.Category.Id,
+                        Description = t.Category.Description,
+                        Name = t.Category.Name,
+                        Type = t.Category.Type
+                    },
+                    Account = new AccountResponse
+                    {
+                        Id = t.Account.Id,
+                        UserId = userId,
+                        Name = t.Account.Name,
+                        Balance = t.Account.Balance,
+                    }
+                }).ToList();
+        }
 
-            // search
-            transactions = ApplySearch(transactions, request?.Search?.Value);
+        public async Task<DataTableResponse<TransactionResponse>> GetFilteredTransactionsByUserIdAsync(Guid userId, DataTableRequest? request = null)
+        {
+            var query = _transactionRepository
+                .GetUserTransactionsQuery(userId)
+                .AsNoTracking();
 
+            var recordsTotal = await query.CountAsync();
+            query = ApplyFiltering(query, request?.Filters);
+            query = ApplySearch(query, request?.Search?.Value);
+
+            // filtered count
+            var recordsFiltered = await query.CountAsync();
+
+            // sorting
             bool hasOrder = request?.Order != null && request.Order.Count > 0;
 
             if (hasOrder)
@@ -232,19 +264,18 @@ namespace Application.Services
                     ? request.Columns[order.Column].Data
                     : null;
 
-                transactions = ApplySorting(transactions, sortColumn, order.Dir);
+                query = ApplySorting(query, sortColumn, order.Dir);
             }
             else
             {
-                transactions = transactions.OrderBy(x => x.Date);
+                query = query.OrderBy(x => x.Date);
             }
 
             // pagination
             int skip = request?.Start ?? 0;
-            int take = request?.Length ?? transactions.Count();
+            int take = request?.Length ?? 10;
 
-
-            return await transactions
+            var data = await query
                 .Skip(skip)
                 .Take(take)
                 .Select(t => new TransactionResponse
@@ -271,6 +302,14 @@ namespace Application.Services
                     }
                 })
                 .ToListAsync();
+
+            return new DataTableResponse<TransactionResponse>
+            {
+                Draw = request?.Draw ?? 0,
+                RecordsTotal = recordsTotal,
+                RecordsFiltered = recordsFiltered,
+                Data = data
+            };
         }
 
         private IQueryable<Transaction> ApplySorting(IQueryable<Transaction> query, string? sortColumn, string? sortDirection)
@@ -340,5 +379,6 @@ namespace Application.Services
             }
             return query;
         }
+
     }
 }
