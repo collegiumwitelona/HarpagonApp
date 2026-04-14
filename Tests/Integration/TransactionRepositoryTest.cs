@@ -49,7 +49,7 @@ namespace Tests.Integration
 
             var otherUserTransaction = TestSeeder.SeedTransactionAsync(context, category.Id, account.Id);
 
-            var result = await repo.GetTransactionsByUserId(user.Id).ToListAsync();
+            var result = await repo.GetAllTransactionsByUserIdAsync(user.Id);
 
 
             Assert.All(result, t =>

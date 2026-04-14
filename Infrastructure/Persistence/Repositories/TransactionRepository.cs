@@ -22,7 +22,7 @@ namespace Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public IQueryable<Transaction> GetTransactionsByUserId(Guid userId)
+        public IQueryable<Transaction> GetUserTransactionsQuery(Guid userId)
         {
             var transactions = _context.Transactions.AsNoTracking()
                 .Include(t => t.Account)
@@ -30,6 +30,15 @@ namespace Infrastructure.Persistence.Repositories
                 .Where(t => t.Account.UserId == userId);
 
             return transactions.AsQueryable();
+        }
+
+        public async Task<List<Transaction>> GetAllTransactionsByUserIdAsync(Guid userId)
+        { 
+            return await _context.Transactions.AsNoTracking()
+                .Include(t => t.Account)
+                .Include(t => t.Category)
+                .Where(t => t.Account.UserId == userId)
+                .ToListAsync();
         }
 
         public async Task DeleteTransactionAsync(Guid transactionId)
