@@ -1,4 +1,5 @@
-﻿using Application.DTO.Requests.Transactions;
+﻿using Application.DTO.Requests.Filtering;
+using Application.DTO.Requests.Transactions;
 using Application.DTO.Responses;
 using Application.Exceptions;
 using Application.Interfaces;
@@ -6,7 +7,9 @@ using Application.Localization;
 using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Application.Services
 {
@@ -104,7 +107,7 @@ namespace Application.Services
 
             var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
 
-            if(account == null)
+            if (account == null)
             {
                 throw new NotFoundException("Account_NotFound");
             }
@@ -210,30 +213,96 @@ namespace Application.Services
             };
         }
 
-        public async Task<List<TransactionResponse>> GetTransactionsByUserIdAsync(Guid userId)
+        public async Task<List<TransactionResponse>> GetTransactionsByUserIdAsync( Guid userId, FilteringRequest? request = null)
         {
-            var response = await _transactionRepository.GetTransactionsByUserIdAsync(userId);
-            return response.Select(t => new TransactionResponse
+            var transactions = _transactionRepository.GetTransactionsByUserId(userId).AsNoTracking();
+
+            //todo filtering
+
+            // search
+            transactions = ApplySearch(transactions, request?.search?.value);
+
+            bool hasOrder = request?.order != null && request.order.Count > 0;
+
+            if (hasOrder)
             {
-                Id = t.Id,
-                Amount = t.Amount,
-                Date = t.Date,
-                Description = t.Description,
-                Category = new CategoryResponse
+                var order = request!.order[0];
+
+                string? sortColumn = request.columns?.Count > order.column
+                    ? request.columns[order.column].data
+                    : null;
+
+                transactions = ApplySorting(transactions, sortColumn, order.dir);
+            }
+            else
+            {
+                transactions = transactions.OrderBy(x => x.Date);
+            }
+
+            // pagination
+            int skip = request?.start ?? 0;
+            int take = request?.length ?? transactions.Count();
+
+
+            return await transactions
+                .Skip(skip)
+                .Take(take)
+                .Select(t => new TransactionResponse
                 {
-                    Id = t.Category.Id,
+                    Id = t.Id,
+                    Amount = t.Amount,
+                    Date = t.Date,
                     Description = t.Description,
-                    Name = t.Category.Name,
-                    Type = t.Category.Type
-                },
-                Account = new AccountResponse
-                {
-                    Id = t.Account.Id,
-                    UserId = userId,
-                    Name = t.Account.Name,
-                    Balance = t.Account.Balance,
-                }
-            }).ToList();
+
+                    Category = new CategoryResponse
+                    {
+                        Id = t.Category.Id,
+                        Description = t.Category.Description,
+                        Name = t.Category.Name,
+                        Type = t.Category.Type
+                    },
+
+                    Account = new AccountResponse
+                    {
+                        Id = t.Account.Id,
+                        UserId = userId,
+                        Name = t.Account.Name,
+                        Balance = t.Account.Balance,
+                    }
+                })
+                .ToListAsync();
+        }
+
+        private IQueryable<Transaction> ApplySorting(IQueryable<Transaction> query, string? sortColumn, string? sortDirection)
+        {
+            if (string.IsNullOrEmpty(sortColumn) || string.IsNullOrEmpty(sortDirection))
+                return query;
+            bool ascending = sortDirection.ToLower() == "asc";
+            return sortColumn.ToLower() switch
+            {
+                "date" => ascending
+                    ? query.OrderBy(x => x.Date)
+                    : query.OrderByDescending(x => x.Date),
+                "amount" => ascending
+                    ? query.OrderBy(x => x.Amount)
+                    : query.OrderByDescending(x => x.Amount),
+                _ => query
+            };
+        }
+
+        private IQueryable<Transaction> ApplySearch(IQueryable<Transaction> query, string? search)
+        {
+            if (string.IsNullOrWhiteSpace(search))
+                return query;
+
+            string searchLower = search.ToLower();
+
+            return query.Where(t =>
+                (!string.IsNullOrEmpty(t.Description) && t.Description.ToLower().Contains(searchLower)) ||
+                (t.Category != null &&
+                 !string.IsNullOrEmpty(t.Category.Name) &&
+                 t.Category.Name.ToLower().Contains(searchLower))
+            );
         }
     }
 }
