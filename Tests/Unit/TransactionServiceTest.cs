@@ -1,13 +1,14 @@
-﻿using Application.DTO.Requests.Transactions;
+﻿using Application.DTO.Requests.Filtering;
+using Application.DTO.Requests.Transactions;
 using Application.Exceptions;
 using Application.Interfaces;
 using Application.Services;
 using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
+using MockQueryable;
+using MockQueryable.Moq;
 using Moq;
-using System.Security.Principal;
-using System.Text.RegularExpressions;
 
 namespace Tests.Unit
 {
@@ -287,11 +288,10 @@ namespace Tests.Unit
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var accountId = Guid.NewGuid();
 
             var account = new Account
             {
-                Id = accountId,
+                Id = Guid.NewGuid(),
                 Name = "Test",
                 UserId = userId,
                 Balance = 1000
@@ -305,68 +305,54 @@ namespace Tests.Unit
                 Type = CategoryType.Expense
             };
 
-            var userTransactions = new List<Transaction>
+            var data = new List<Transaction>
             {
                 new Transaction
                 {
                     Id = Guid.NewGuid(),
-                    AccountId = accountId,
+                    AccountId = account.Id,
+                    Account = account,
                     CategoryId = category.Id,
-                    Amount = 200,
-                    Date = DateTime.UtcNow,
-                    Description = "Test1",
                     Category = category,
-                    Account = account
+                    Amount = 100,
+                    Date = DateTime.UtcNow,
+                    Description = "T1"
                 },
                 new Transaction
                 {
                     Id = Guid.NewGuid(),
-                    AccountId = accountId,
+                    AccountId = account.Id,
+                    Account = account,
                     CategoryId = category.Id,
-                    Amount = 400,
-                    Date = DateTime.UtcNow,
-                    Description = "Test2",
                     Category = category,
-                    Account = account
-                },
-            };
-
-            var otherUserTransaction = new Transaction {
-                Id = Guid.NewGuid(),
-                AccountId = accountId,
-                CategoryId = category.Id,
-                Amount = 400,
-                Date = DateTime.UtcNow,
-                Description = "Test2",
-                Category = category,
-                Account = new Account
-                {
-                    Id = Guid.NewGuid(),
-                    Balance = 1000,
-                    UserId = Guid.Empty,
-                    Name = "Other"
+                    Amount = 200,
+                    Date = DateTime.UtcNow,
+                    Description = "T2"
                 }
             };
 
+            var mockQueryable = data.BuildMock().AsQueryable();
+
             _transactionRepositoryMock
-                .Setup(r => r.GetTransactionsByUserIdAsync(userId))
-                .ReturnsAsync(userTransactions);
+                .Setup(r => r.GetTransactionsByUserId(userId))
+                .Returns(mockQueryable);
 
             // Act
-            var result = await _service.GetTransactionsByUserIdAsync(userId);
+            var result = await _service.GetTransactionsByUserIdAsync(
+                userId,
+                new DataTableRequest()
+            );
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(userTransactions.Count, result.Count);
+            Assert.Equal(2, result.Count);
 
-            foreach (var transaction in userTransactions)
-            {
-                Assert.Contains(result, r => r.Id == transaction.Id);
-            }
+            Assert.All(result, t =>
+                Assert.Equal(userId, t.Account!.UserId));
 
-            Assert.DoesNotContain(result, r => r.Account!.UserId != userId);
-
-            _transactionRepositoryMock.Verify(r => r.GetTransactionsByUserIdAsync(userId), Times.Once);
+            _transactionRepositoryMock.Verify(
+                r => r.GetTransactionsByUserId(userId),
+                Times.Once);
         }
     }
 }
