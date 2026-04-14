@@ -27,7 +27,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTransactions([FromQuery] FilteringRequest? request = null)
+        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest? request = null)
         {
             var userId = User.GetUserId();
             var response = await _transactionService.GetTransactionsByUserIdAsync(userId, request);

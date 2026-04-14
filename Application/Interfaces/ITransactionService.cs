@@ -7,7 +7,7 @@ namespace Application.Interfaces
     public interface ITransactionService
     {
         Task<TransactionResponse> CreateTransactionAsync(CreateTransactionRequest request, Guid userId);
-        Task<List<TransactionResponse>> GetTransactionsByUserIdAsync(Guid userId, FilteringRequest? request = null);
+        Task<List<TransactionResponse>> GetTransactionsByUserIdAsync(Guid userId, DataTableRequest? request = null);
         Task DeleteTransactionByIdAsync(Guid transactionId, Guid userId);
         Task<TransactionResponse> EditTransactionByIdAsync(Guid transactionId, decimal newAmount, Guid userId);
         Task<TransactionResponse> GetTransactionByIdAsync(Guid transactionId, Guid userId);

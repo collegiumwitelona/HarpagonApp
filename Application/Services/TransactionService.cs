@@ -9,7 +9,6 @@ using Domain.Interfaces;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Application.Services
 {
@@ -213,26 +212,27 @@ namespace Application.Services
             };
         }
 
-        public async Task<List<TransactionResponse>> GetTransactionsByUserIdAsync( Guid userId, FilteringRequest? request = null)
+        public async Task<List<TransactionResponse>> GetTransactionsByUserIdAsync(Guid userId, DataTableRequest? request = null)
         {
             var transactions = _transactionRepository.GetTransactionsByUserId(userId).AsNoTracking();
 
             //todo filtering
+            transactions = ApplyFiltering(transactions, request?.Filters);
 
             // search
-            transactions = ApplySearch(transactions, request?.search?.value);
+            transactions = ApplySearch(transactions, request?.Search?.Value);
 
-            bool hasOrder = request?.order != null && request.order.Count > 0;
+            bool hasOrder = request?.Order != null && request.Order.Count > 0;
 
             if (hasOrder)
             {
-                var order = request!.order[0];
+                var order = request!.Order[0];
 
-                string? sortColumn = request.columns?.Count > order.column
-                    ? request.columns[order.column].data
+                string? sortColumn = request.Columns?.Count > order.Column
+                    ? request.Columns[order.Column].Data
                     : null;
 
-                transactions = ApplySorting(transactions, sortColumn, order.dir);
+                transactions = ApplySorting(transactions, sortColumn, order.Dir);
             }
             else
             {
@@ -240,8 +240,8 @@ namespace Application.Services
             }
 
             // pagination
-            int skip = request?.start ?? 0;
-            int take = request?.length ?? transactions.Count();
+            int skip = request?.Start ?? 0;
+            int take = request?.Length ?? transactions.Count();
 
 
             return await transactions
@@ -303,6 +303,42 @@ namespace Application.Services
                  !string.IsNullOrEmpty(t.Category.Name) &&
                  t.Category.Name.ToLower().Contains(searchLower))
             );
+        }
+
+        private IQueryable<Transaction> ApplyFiltering(IQueryable<Transaction> query, FilteringRequest? request) {
+
+            if (request is null)
+            {
+                return query;
+            }
+
+            if (!string.IsNullOrEmpty(request.CategoryName))
+            {
+                query = query.Where(t => t.Category.Name == request.CategoryName);
+            }
+
+            if (request.FromDate is not null)
+            {
+                var from = request.FromDate.Value.ToDateTime(TimeOnly.MinValue);
+                query = query.Where(t => t.Date >= from);
+            }
+
+            if (request.ToDate is not null)
+            {
+                var to = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue);
+                query = query.Where(t => t.Date <= to);
+            }
+
+            if (request.FromAmount is not null)
+            {
+                query = query.Where(t => t.Amount >= request.FromAmount.Value);
+            }
+
+            if (request.ToAmount is not null)
+            {
+                query = query.Where(t => t.Amount <= request.ToAmount.Value);
+            }
+            return query;
         }
     }
 }
