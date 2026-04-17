@@ -42,12 +42,15 @@ services:
     ipAllowList:
       - source: 0.0.0.0/0
         description: allow all
+        
   - type: web
     name: frontend
     env: docker
     plan: free
     dockerfilePath: ./src/Dockerfile
     autoDeploy: false
+    buildArgs:
+      VITE_API_URL: https://api.harpagonapp.site
 
 
 databases:
