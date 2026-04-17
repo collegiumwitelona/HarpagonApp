@@ -213,4 +213,7 @@
   <data name="User_DeleteFailed" xml:space="preserve">
     <value>Nie udało się usunąć użytkownika.</value>
   </data>
+  <data name="User_DeleteAdminNotAllowed" xml:space="preserve">
+    <value>Próba usunięcia użytkownika z rolą administratora jest niedozwolona.</value>
+  </data>
 </root>

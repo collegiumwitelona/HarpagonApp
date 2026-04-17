@@ -40,11 +40,10 @@ namespace Application.Services
             var to = toDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
             var transactionsCount = await _transactionRepository.GetTransactionsCountByUserIdAsync(userId, from, to);
 
-            var rawExpensesByCategory = await _transactionRepository.GetTotalsByCategoryIdAsync(CategoryType.Expense);
-            var raweIncomesByCategory = await _transactionRepository.GetTotalsByCategoryIdAsync(CategoryType.Income);
+            var rawExpensesByCategory = await _transactionRepository.GetTotalsByCategoryIdAsync(CategoryType.Expense, from, to);
+            var raweIncomesByCategory = await _transactionRepository.GetTotalsByCategoryIdAsync(CategoryType.Income, from, to);
 
             var categories = await _categoryRepository.GetAllCategoriesAsync(userId);
-
 
             var expensesByCategory = rawExpensesByCategory.ToDictionary(
                 t => categories.First(c => c.Id == t.Key).Name,

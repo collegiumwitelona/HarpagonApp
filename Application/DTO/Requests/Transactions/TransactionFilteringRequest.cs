@@ -1,6 +1,6 @@
 ﻿namespace Application.DTO.Requests.Filtering
 {
-    public class FilteringRequest
+    public class TransactionFilteringRequest
     {
         public string? CategoryName { get; set; } = null;
         public DateOnly? FromDate { get; set; } = null;

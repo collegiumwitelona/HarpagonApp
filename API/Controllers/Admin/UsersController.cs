@@ -1,4 +1,5 @@
 ﻿using API.Extensions.Filters;
+using Application.DTO.Requests.Filtering;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -32,6 +33,13 @@ namespace Api.Controllers.Admin
         public async Task<IActionResult> GetUserByEmail(string email)
         {
             var response = await _userService.GetUserByEmailAsync(email);
+            return Ok(response);
+        }
+
+        [HttpGet()]
+        public async Task<IActionResult> GetUsers([FromQuery]DataTableRequest request)
+        {
+            var response = await _userService.GetFilteredUsersAsync(request);
             return Ok(response);
         }
 

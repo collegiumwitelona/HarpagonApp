@@ -28,10 +28,10 @@ namespace Api.Controllers.User
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest request)
+        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest request, [FromQuery] TransactionFilteringRequest filters)
         {
             var userId = User.GetUserId();
-            var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request);
+            var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request, filters);
             return Ok(response);
         }
 

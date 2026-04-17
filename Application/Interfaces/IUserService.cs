@@ -1,4 +1,5 @@
-﻿using Application.DTO.Responses;
+﻿using Application.DTO.Requests.Filtering;
+using Application.DTO.Responses;
 
 namespace Application.Interfaces
 {
@@ -6,6 +7,7 @@ namespace Application.Interfaces
     {
         Task<UserDataResponse> GetUserByEmailAsync(string email);
         Task<UserDataResponse> GetUserByIdAsync(Guid userId);
+        Task<DataTableResponse<UserDataResponse>> GetFilteredUsersAsync(DataTableRequest request);
         Task<List<UserDataResponse>> GetAllUsersAsync();
         Task DeleteUserByIdAsync(Guid userId);
     }

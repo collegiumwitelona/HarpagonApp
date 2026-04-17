@@ -80,11 +80,13 @@ namespace Infrastructure.Persistence.Repositories
                 .CountAsync();
         }
 
-        public async Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type)
+        public async Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type, DateTime from, DateTime to)
         {
+            var endDateExclusive = to.AddDays(1);
+
             var totals = await _context.Transactions
                 .AsNoTracking()
-                .Where(t => t.Category.Type == type)
+                .Where(t => t.Category.Type == type && t.Date >= from && t.Date < endDateExclusive)
                 .GroupBy(t => t.CategoryId)
                 .Select(g => new
                 {

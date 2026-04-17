@@ -27,9 +27,10 @@ namespace Api.Controllers.Admin
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest request, Guid userId)
+        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest request, 
+            [FromQuery] TransactionFilteringRequest filters, Guid userId)
         {
-            var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request);
+            var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request, filters);
             return Ok(response);
         }
 

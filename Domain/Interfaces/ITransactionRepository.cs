@@ -8,7 +8,7 @@ namespace Domain.Interfaces
         Task AddTransactionAsync(Transaction transaction);
         IQueryable<Transaction> GetUserTransactionsQuery(Guid userId);
         Task<List<Transaction>> GetAllTransactionsByUserIdAsync(Guid userId);
-        Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type);
+        Task<Dictionary<Guid, decimal>> GetTotalsByCategoryIdAsync(CategoryType type, DateTime from, DateTime to);
         Task<Transaction?> GetTransactionByIdAsync(Guid transactionId);
         Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to);
         Task DeleteTransactionAsync(Guid transactionId);
