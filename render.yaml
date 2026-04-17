@@ -49,8 +49,9 @@ services:
     plan: free
     dockerfilePath: ./src/Dockerfile
     autoDeploy: false
-    buildArgs:
-      VITE_API_URL: https://api.harpagonapp.site
+    envVars:
+      - key: VITE_API_URL
+        sync: false
 
 
 databases:
