@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./router/router";
+import { DarkModeProvider } from "./context/DarkModeContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import "./index.css";
 
 const mountNode =
@@ -15,5 +17,9 @@ const mountNode =
   })();
 
 ReactDOM.createRoot(mountNode).render(
-  <RouterProvider router={router} />
+  <DarkModeProvider>
+    <LanguageProvider>
+      <RouterProvider router={router} />
+    </LanguageProvider>
+  </DarkModeProvider>
 );

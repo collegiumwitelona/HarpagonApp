@@ -1,5 +1,83 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+  color-scheme: dark;
+  
+  --text-h: #f1f5f9;
+}
+
+.dark body,
+.dark #dashboard,
+.dark #root {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+.dark .bg-slate-50 { background-color: #0f172a !important; }
+.dark .bg-white    { background-color: #1e293b !important; }
+
+.dark .border-slate-200 { border-color: #334155 !important; }
+.dark .border-slate-100 { border-color: #334155 !important; }
+
+.dark .bg-violet-50 { background-color: transparent !important; }
+.dark .bg-blue-50   { background-color: transparent !important; }
+.dark .border-violet-100 { border-color: #7c3aed !important; }
+.dark .border-blue-100   { border-color: #3b82f6 !important; }
+
+.dark .bg-rose-50    { background-color: rgba(225, 29, 72, 0.1) !important; }
+.dark .bg-rose-100   { background-color: rgba(225, 29, 72, 0.15) !important; }
+.dark .border-rose-100 { border-color: #f43f5e !important; }
+.dark .text-rose-500 { color: #fb7185 !important; }
+.dark .text-rose-600 { color: #f43f5e !important; }
+
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.1) !important; }
+.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.15) !important; }
+.dark .border-emerald-100 { border-color: #10b981 !important; }
+.dark .text-emerald-600 { color: #10b981 !important; }
+
+.dark .recharts-default-tooltip {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .recharts-tooltip-label,
+.dark .recharts-tooltip-item {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-900 { color: #f1f5f9 !important; }
+.dark .text-slate-800 { color: #e2e8f0 !important; }
+.dark .text-slate-700 { color: #cbd5e1 !important; }
+.dark .text-slate-600 { color: #94a3b8 !important; }
+.dark .text-slate-500 { color: #64748b !important; }
+.dark .text-slate-400 { color: #cbd5e1 !important; }
+
+.dark h1, .dark h2, .dark p {
+  color: #f1f5f9 !important;
+}
+
+.dark .hover\:bg-slate-100:hover { background-color: #334155 !important; }
+
+.dark .bg-slate-50.px-4,
+.dark input.bg-slate-50,
+.dark select.bg-slate-50,
+.dark textarea.bg-slate-50 {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+
+.dark select option,
+.dark select optgroup {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -63,11 +141,10 @@ body {
 h1, h2, p {
   font-family: var(--heading);
   font-weight: 500;
-  /* color: var(--text-h); */
+  color: var(--text-h);
   margin: 0;
 }
 
-/* Sekcja tła */
 .bg-hero-blur {
   position: relative;
   overflow: hidden;

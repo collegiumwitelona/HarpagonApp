@@ -1,72 +1,157 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { Link } from "react-router-dom";
+import Input from '../components/Input';
+import Button from '../components/LogButton';
+import AlertCard from '../components/AlertCard';
+import { useLanguage } from '../context/LanguageContext';
+import { api } from '../services/api';
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  
+  
+  const [formData, setFormData] = useState({
+    email: '',
+    name: '',
+    surname: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  
+  const handleFieldChange = (name, value) => {
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError(t('auth.passwordsMismatch'));
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await api.post('/Auth/register', {
+          email: formData.email,
+          name: formData.name,
+          surname: formData.surname,
+          password: formData.password
+        }, {
+          headers: { 'Content-Type': 'application/json' },
+          validateStatus: () => true,
+        }
+      );
+
+      if (response.status >= 200 && response.status < 300) {
+        
+        alert(t('auth.joinSuccess'));
+        navigate("/login");
+      } else {
+        const data = response.data;
+        setError(data?.message || t('auth.registerError'));
+      }
+    } catch (err) {
+      console.error(err);
+      setError(t('auth.connectionError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
-      
       <Navbar />
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
-        
-        <div className="relative z-10 max-w-sm w-full bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100">
+        <div className="relative z-10 max-w-sm w-full h-112 bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100 flex flex-col overflow-hidden">
           
           <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
-            Dołącz do <span className="text-violet-700">Harpagon</span>
+            {t('auth.registerTitle')} <span className="text-violet-700">Harpagon</span>
           </h2>
 
-          <form className="space-y-1" onSubmit={(e) => e.preventDefault()}>
-            <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-sm font-semibold text-slate-700 ml-1">
-                E-mail
-              </label>
-              <input 
-                type="email" 
-                placeholder="Twój adres e-mail"
-                className="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white transition-all shadow-sm"
+          <div className="grow min-h-0 overflow-y-auto pr-1 custom-scrollbar">
+            <AlertCard 
+              type="error" 
+              message={error} 
+              show={!!error}
+              onClose={() => setError('')}
+            />
+
+            <form className="space-y-3" onSubmit={handleRegister}>
+            <div className="flex gap-2">
+              <Input 
+                label={t('auth.name')}
+                name="name"
+                placeholder={t('auth.name')}
+                required
+                value={formData.name}
+                onChange={(e) => handleFieldChange('name', e.target.value)}
+              />
+              <Input 
+                label={t('auth.surname')}
+                name="surname"
+                placeholder={t('auth.surname')}
+                required
+                value={formData.surname}
+                onChange={(e) => handleFieldChange('surname', e.target.value)}
               />
             </div>
 
-            <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-sm font-semibold text-slate-700 ml-1">
-                Hasło
-              </label>
-              <input 
-                type="password" 
-                placeholder="Utwórz hasło"
-                className="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white transition-all shadow-sm"
-              />
+            <Input 
+              label={t('auth.email')}
+              type="email" 
+              placeholder={t('auth.emailPlaceholder')}
+              required
+              value={formData.email}
+              onChange={(e) => handleFieldChange('email', e.target.value)}
+            />
+
+            <Input 
+              label={t('auth.password')}
+              type="password" 
+              placeholder={t('auth.createPassword')}
+              required
+              value={formData.password}
+              onChange={(e) => handleFieldChange('password', e.target.value)}
+            />
+
+            <Input 
+              label={t('auth.confirmPassword')}
+              type="password" 
+              placeholder={t('auth.confirmPassword')}
+              required
+              value={formData.confirmPassword}
+              onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
+            />
+
+              <div className="pt-4">
+                <Button type="submit" disabled={loading}>
+                  {loading ? t('auth.creatingAccount') : t('common.register')}
+                </Button>
+              </div>
+            </form>
+
+            <div className="mt-8 text-center text-sm text-slate-600">
+              <p>
+                {t('auth.haveAccount')}{' '}
+                <Link to="/login" className="text-violet-700 font-bold hover:underline">
+                  {t('common.login')}
+                </Link>
+              </p>
             </div>
-
-            <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-sm font-semibold text-slate-700 ml-1">
-                Powtórz hasło
-              </label>
-              <input 
-                type="password" 
-                placeholder="Powtórz hasło"
-                className="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white transition-all shadow-sm"
-              />
-            </div>
-
-            <button 
-              type="submit"
-              className="w-full bg-violet-600 text-white font-bold py-4 rounded-2xl hover:bg-violet-700 hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all mt-4"
-            >
-            <Link to="/login" className="px-5 py-2.5 font-medium">
-            Zarejestruj się
-            </Link>
-            </button>
-          </form>
-
-          <div className="mt-8 text-center text-sm text-slate-600">
-            <p>Masz już konto? <Link to="/login" className="text-violet-700 font-bold hover:underline">Zaloguj się</Link></p>
           </div>
-          
         </div>
       </main>
-
       <Footer />
     </div>
   );
