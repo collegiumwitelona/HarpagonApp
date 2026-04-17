@@ -322,6 +322,24 @@ namespace Application.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Attempted to delete admin user but it is not allowed..
+        /// </summary>
+        public static string User_DeleteAdminNotAllowed {
+            get {
+                return ResourceManager.GetString("User_DeleteAdminNotAllowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to delete user..
+        /// </summary>
+        public static string User_DeleteFailed {
+            get {
+                return ResourceManager.GetString("User_DeleteFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to User not found..
         /// </summary>
         public static string User_NotFound {

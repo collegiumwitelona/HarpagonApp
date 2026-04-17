@@ -240,14 +240,15 @@ namespace Application.Services
                 }).ToList();
         }
 
-        public async Task<DataTableResponse<TransactionResponse>> GetFilteredTransactionsByUserIdAsync(Guid userId, DataTableRequest? request = null)
+        public async Task<DataTableResponse<TransactionResponse>> GetFilteredTransactionsByUserIdAsync(Guid userId, 
+            DataTableRequest? request = null, TransactionFilteringRequest? filters = null)
         {
             var query = _transactionRepository
                 .GetUserTransactionsQuery(userId)
                 .AsNoTracking();
 
             var recordsTotal = await query.CountAsync();
-            query = ApplyFiltering(query, request?.Filters);
+            query = ApplyFiltering(query, filters);
             query = ApplySearch(query, request?.Search?.Value);
 
             // filtered count
@@ -344,7 +345,7 @@ namespace Application.Services
             );
         }
 
-        private IQueryable<Transaction> ApplyFiltering(IQueryable<Transaction> query, FilteringRequest? request) {
+        private IQueryable<Transaction> ApplyFiltering(IQueryable<Transaction> query, TransactionFilteringRequest? request) {
 
             if (request is null)
             {

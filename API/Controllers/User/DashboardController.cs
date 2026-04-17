@@ -3,17 +3,15 @@ using API.Extensions.Filters;
 using Application.DTO.Requests;
 using Application.DTO.Responses;
 using Application.Interfaces;
-using Application.Services;
-using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers
+namespace Api.Controllers.User
 {
     [EnableCors("Policy")]
     [ApiController]
-    [Route("[controller]")]
+    [Route("Me/[controller]")]
     [RequireConfirmedEmail]
     [Authorize]
     public class DashboardController : ControllerBase

@@ -8,6 +8,5 @@
         public SearchRequest? Search { get; set; } = new SearchRequest();
         public List<SortingRequest>? Order { get; set; } = new List<SortingRequest>();
         public List<DataTableColumns>? Columns { get; set; } = new List<DataTableColumns>();
-        public FilteringRequest? Filters { get; set; } = new FilteringRequest();
     }
 }

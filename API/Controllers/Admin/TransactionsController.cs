@@ -2,17 +2,16 @@
 using API.Extensions.Filters;
 using Application.DTO.Requests.Filtering;
 using Application.DTO.Requests.Transactions;
-using Application.DTO.Responses;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers
+namespace Api.Controllers.Admin
 {
     [EnableCors("Policy")]
     [ApiController]
-    [Route("[controller]")]
+    [Route("Users/{userId}/[controller]")]
     [RequireConfirmedEmail]
     [Authorize]
     public class TransactionsController : ControllerBase
@@ -28,51 +27,46 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest request)
+        public async Task<IActionResult> GetTransactions([FromQuery] DataTableRequest request, 
+            [FromQuery] TransactionFilteringRequest filters, Guid userId)
         {
-            var userId = User.GetUserId();
-            var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request);
+            var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request, filters);
             return Ok(response);
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> GetAllTransactions()
+        public async Task<IActionResult> GetAllTransactions(Guid userId)
         {
-            var userId = User.GetUserId();
             var response = await _transactionService.GetAllTransactionsByUserIdAsync(userId);
             return Ok(response);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetTransactionById(Guid id)
+        public async Task<IActionResult> GetTransactionById(Guid id, Guid userId)
         {
-            var userId = User.GetUserId();
             var response = await _transactionService.GetTransactionByIdAsync(id, userId);
             return Ok(response);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest request)
+        public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest request, Guid userId)
         {
-            var userId = User.GetUserId();
             var response = await _transactionService.CreateTransactionAsync(request, userId);
             await _cache.InvalidateDashboardAsync(userId);
             return Ok(response);
         }
 
         [HttpPatch]
-        public async Task<IActionResult> EditTransactionById([FromBody] EditTransactionRequest request)
+        public async Task<IActionResult> EditTransactionById([FromBody] EditTransactionRequest request, Guid userId)
         {
-            var userId = User.GetUserId();
             var response = await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
             await _cache.InvalidateDashboardAsync(userId);
             return Ok(response);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTransactionById(Guid id)
+        public async Task<IActionResult> DeleteTransactionById(Guid id, Guid userId)
         {
-            var userId = User.GetUserId();
             await _transactionService.DeleteTransactionByIdAsync(id, userId);
             await _cache.InvalidateDashboardAsync(userId);
             return Ok();
