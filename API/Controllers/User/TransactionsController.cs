@@ -8,11 +8,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers
+namespace Api.Controllers.User
 {
     [EnableCors("Policy")]
     [ApiController]
-    [Route("[controller]")]
+    [Route("Me/[controller]")]
     [RequireConfirmedEmail]
     [Authorize]
     public class TransactionsController : ControllerBase

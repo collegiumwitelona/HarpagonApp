@@ -93,6 +93,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IFrontendLinkBuilder, FrontendLinkBuilder>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 
 if (builder.Configuration["EMAIL_PROVIDER"] == "MAILGUN") {

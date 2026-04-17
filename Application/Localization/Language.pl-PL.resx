@@ -210,4 +210,7 @@
   <data name="ResetPassword_Subject" xml:space="preserve">
     <value>Zresetuj swoje hasło.</value>
   </data>
+  <data name="User_DeleteFailed" xml:space="preserve">
+    <value>Nie udało się usunąć użytkownika.</value>
+  </data>
 </root>
