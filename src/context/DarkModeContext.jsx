@@ -24,7 +24,7 @@ export const DarkModeProvider = ({ children }) => {
     try {
       localStorage.setItem('darkMode', String(isDark));
     } catch {
-      
+      // Ignore storage write errors (e.g. privacy mode).
     }
   }, [isDark]);
 
