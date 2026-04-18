@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import Input from '../components/Input';
 import Button from '../components/LogButton';
 import AlertCard from '../components/AlertCard';
+import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 
@@ -114,11 +115,10 @@ const ResetPasswordPage = () => {
       <Navbar />
 
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
-        <div className="relative z-10 max-w-sm w-full bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100">
-          <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
-            {t('auth.resetPasswordTitle').split(' ').slice(0, 2).join(' ')} <span className="text-violet-700">{t('auth.resetPasswordTitle').split(' ').slice(2).join(' ')}</span>
-          </h2>
-
+        <AuthCard
+          title={<>{t('auth.resetPasswordTitle').split(' ').slice(0, 2).join(' ')} <span className="text-violet-700">{t('auth.resetPasswordTitle').split(' ').slice(2).join(' ')}</span></>}
+          scrollClassName="pr-2"
+        >
           <p className="text-center text-sm text-slate-600 mb-6">
             {t('auth.resetPasswordDescription')}
           </p>
@@ -136,7 +136,7 @@ const ResetPasswordPage = () => {
             show={!!success}
           />
 
-          <form className="space-y-4" onSubmit={handleResetPassword}>
+          <form className="space-y-4 px-1" onSubmit={handleResetPassword}>
             <Input
               label={t('auth.newPassword')}
               type="password"
@@ -168,7 +168,7 @@ const ResetPasswordPage = () => {
               </Link>
             </p>
           </div>
-        </div>
+        </AuthCard>
       </main>
 
       <Footer />

@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Input from '../components/Input';
 import Button from '../components/LogButton';
 import AlertCard from '../components/AlertCard';
+import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 
@@ -72,12 +73,7 @@ const ForgotPasswordPage = () => {
       <Navbar />
 
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
-        <div className="relative z-10 max-w-sm w-full bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100">
-          
-          <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
-            {t('auth.forgotPasswordTitle').split(' ')[0]} <span className="text-violet-700">{t('auth.forgotPasswordTitle').split(' ').slice(1).join(' ')}</span>
-          </h2>
-
+        <AuthCard title={<>{t('auth.forgotPasswordTitle').split(' ')[0]} <span className="text-violet-700">{t('auth.forgotPasswordTitle').split(' ').slice(1).join(' ')}</span></>}>
           <p className="text-center text-sm text-slate-600 mb-6">
             {t('auth.forgotPasswordDescription')}
           </p>
@@ -131,7 +127,7 @@ const ForgotPasswordPage = () => {
               </Link>
             </p>
           </div>
-        </div>
+        </AuthCard>
       </main>
 
       <Footer />

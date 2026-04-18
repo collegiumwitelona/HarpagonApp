@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Input from '../components/Input';
 import Button from '../components/LogButton';
 import AlertCard from '../components/AlertCard';
+import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { isAdmin } from '../services/auth';
@@ -129,12 +130,10 @@ const LoginPage = () => {
       <Navbar />
 
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
-        <div className="relative z-10 max-w-sm w-full bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100">
-          
-          <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
-            {t('auth.loginTitle')} <span className="text-violet-700">Harpagon</span>
-          </h2>
-
+        <AuthCard
+          title={<>{t('auth.loginTitle')} <span className="text-violet-700">Harpagon</span></>}
+          scrollClassName="pr-2"
+        >
           <AlertCard 
             type="error" 
             message={error} 
@@ -142,7 +141,7 @@ const LoginPage = () => {
             onClose={() => setError('')}
           />
 
-          <form className="space-y-4" onSubmit={handleLogin}>
+          <form className="space-y-4 px-1" onSubmit={handleLogin}>
             <Input 
               label={t('auth.email')}
               type="email" 
@@ -187,7 +186,7 @@ const LoginPage = () => {
               </Link>
             </p>
           </div>
-        </div>
+        </AuthCard>
       </main>
 
       <Footer />

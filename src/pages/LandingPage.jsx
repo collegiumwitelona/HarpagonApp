@@ -18,7 +18,7 @@ const LandingPage = () => {
 
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full text-center space-y-12">
         
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white!">
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white!">
           {t('landing.titleStart')} <br />
           <span className="text-violet-700">{t('landing.titleAccent')}</span>
         </h1>
