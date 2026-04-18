@@ -603,7 +603,7 @@ const DashboardPage = () => {
             </div>
 
             <div className="relative h-48 sm:h-52 lg:h-60 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height={210}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={pieData} innerRadius="64%" outerRadius="84%" paddingAngle={5} dataKey="value" stroke="none">
                     <Cell fill="#7c3aed" /><Cell fill="#60a5fa" />

@@ -138,7 +138,7 @@ body {
   box-sizing: border-box;
 }
 
-h1, h2, p {
+:where(h1, h2, p) {
   font-family: var(--heading);
   font-weight: 500;
   color: var(--text-h);

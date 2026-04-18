@@ -8,6 +8,32 @@ import AlertCard from '../components/AlertCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 
+const getRegisterErrorMessage = (data, fallbackMessage) => {
+  const errors = data?.errors;
+
+  if (!errors) {
+    return fallbackMessage;
+  }
+
+  if (typeof errors === 'string') {
+    return errors;
+  }
+
+  if (Array.isArray(errors)) {
+    return errors.filter(Boolean).join(' ') || fallbackMessage;
+  }
+
+  if (typeof errors === 'object') {
+    const messages = Object.values(errors)
+      .flatMap((value) => (Array.isArray(value) ? value : [value]))
+      .filter((value) => typeof value === 'string' && value.trim().length > 0);
+
+    return messages.join(' ') || fallbackMessage;
+  }
+
+  return fallbackMessage;
+};
+
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -59,7 +85,7 @@ const RegisterPage = () => {
         navigate("/login");
       } else {
         const data = response.data;
-        setError(data?.message || t('auth.registerError'));
+        setError(getRegisterErrorMessage(data, t('auth.registerError')));
       }
     } catch (err) {
       console.error(err);

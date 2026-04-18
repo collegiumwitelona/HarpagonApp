@@ -8,6 +8,10 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  const language = localStorage.getItem("language") === "en" ? "en-US" : "pl-PL";
+
+  config.headers["Accept-Language"] = language;
+
   const rawToken = localStorage.getItem("token") || "";
   const token = rawToken
     .trim()
