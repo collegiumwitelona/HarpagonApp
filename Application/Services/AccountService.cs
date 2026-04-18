@@ -12,7 +12,7 @@ namespace Application.Services
         public AccountService(IAccountRepository repository) {
             _accountRepository = repository;
         }
-        public async Task<AccountResponse> CreateAccountAsync(Guid userId, string accountName, decimal initialBalance)
+        public async Task<AccountResponse> CreateAccountAsync(Guid userId, string accountName, decimal initialBalance, decimal initialGoal)
         {
             var account = new Account
             {
@@ -20,6 +20,7 @@ namespace Application.Services
                 Name = accountName,
                 Balance = initialBalance,
                 UserId = userId,
+                Goal = initialGoal
             };
             await _accountRepository.AddAccountAsync(account);
 
@@ -29,6 +30,7 @@ namespace Application.Services
                 Name = account.Name,
                 Balance = account.Balance,
                 UserId = userId,
+                Goal = initialGoal
             };
         }
 
@@ -84,7 +86,8 @@ namespace Application.Services
                 Id = account.Id,
                 UserId = userId,
                 Name = account.Name,
-                Balance = account.Balance
+                Balance = account.Balance,
+                Goal = account.Goal
             };
         }
 
@@ -96,6 +99,7 @@ namespace Application.Services
                 UserId = userId, 
                 Name = a.Name, 
                 Balance = a.Balance, 
+                Goal = a.Goal
             }).ToList(); 
             return response; 
         }

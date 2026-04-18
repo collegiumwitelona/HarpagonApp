@@ -44,7 +44,7 @@ namespace Api.Controllers.User
         public async Task<IActionResult> CreateAccountAsync([FromBody] CreateAccountRequest request)
         {
             var userId = User.GetUserId();
-            var response = await _accountService.CreateAccountAsync(userId, request.AccountName, request.InitialBalance);
+            var response = await _accountService.CreateAccountAsync(userId, request.AccountName, request.InitialBalance, request.InitialGoal);
             return Ok(response);
         }
 

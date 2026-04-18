@@ -12,6 +12,7 @@ namespace Domain.Models
         public Guid UserId { get; set; }
         public string Name { get; set; }
         public decimal Balance { get; set; }
+        public decimal Goal { get; set; }
 
         public User User { get; set; }
         public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
