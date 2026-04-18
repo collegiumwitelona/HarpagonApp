@@ -7,7 +7,7 @@ volumes:
   pgadmin-data: {}
 
 services:
-  harpagon-front:
+  frontend:
     build: 
       context: .
       dockerfile: src/Dockerfile

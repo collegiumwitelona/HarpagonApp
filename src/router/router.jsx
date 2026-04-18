@@ -13,11 +13,13 @@ import UserSetupPage from "../pages/UserSetupPage";
 import TransactionPage from "../pages/TransactionPage";
 import AnalysisPage from "../pages/AnalysisPage";
 import AdminPage from "../pages/AdminPage";
+import AboutPage from "../pages/About";
 
 export const router = createBrowserRouter([
     
     { path: "/confirm-email", element: <ConfirmEmailPage /> }, 
     { path: "/reset-password", element: <ResetPasswordPage /> },
+    { path: "/about", element: <AboutPage /> },
     {
         element: <PublicOnlyRoute />,
         children: [
