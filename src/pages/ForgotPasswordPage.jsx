@@ -73,7 +73,10 @@ const ForgotPasswordPage = () => {
       <Navbar />
 
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
-        <AuthCard title={<>{t('auth.forgotPasswordTitle').split(' ')[0]} <span className="text-violet-700">{t('auth.forgotPasswordTitle').split(' ').slice(1).join(' ')}</span></>}>
+        <AuthCard
+          title={<>{t('auth.forgotPasswordTitle').split(' ')[0]} <span className="text-violet-700">{t('auth.forgotPasswordTitle').split(' ').slice(1).join(' ')}</span></>}
+          scrollClassName="pr-2"
+        >
           <p className="text-center text-sm text-slate-600 mb-6">
             {t('auth.forgotPasswordDescription')}
           </p>
@@ -91,7 +94,7 @@ const ForgotPasswordPage = () => {
             show={!!success}
           />
 
-          <form className="space-y-4" onSubmit={handleForgotPassword}>
+          <form className="space-y-4 px-1" onSubmit={handleForgotPassword}>
             <Input 
               label={t('auth.email')}
               type="email" 
