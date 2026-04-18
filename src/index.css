@@ -138,11 +138,13 @@ body {
   box-sizing: border-box;
 }
 
-:where(h1, h2, p) {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-  margin: 0;
+@layer base {
+  :where(h1, h2, p) {
+    font-family: var(--heading);
+    font-weight: 500;
+    color: var(--text-h);
+    margin: 0;
+  }
 }
 
 .bg-hero-blur {
