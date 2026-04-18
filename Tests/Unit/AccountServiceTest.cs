@@ -22,8 +22,9 @@ namespace Tests.Unit
             var userId = Guid.NewGuid();
             var accountName = "Main account";
             var initialBalance = 100m;
+            var initialGoal = 1000m;
 
-            var result = await service.CreateAccountAsync(userId, accountName, initialBalance);
+            var result = await service.CreateAccountAsync(userId, accountName, initialBalance, initialGoal);
 
             Assert.NotNull(result);
             Assert.Equal(accountName, result.Name);
