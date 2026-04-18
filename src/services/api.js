@@ -6,6 +6,7 @@ export const api = axios.create({
     Accept: "application/json",
   },
 });
+console.log(import.meta.env.VITE_API_URL);
 
 api.interceptors.request.use((config) => {
   const language = localStorage.getItem("language") === "en" ? "en-US" : "pl-PL";
