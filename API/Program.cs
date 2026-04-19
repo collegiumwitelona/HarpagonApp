@@ -96,7 +96,7 @@ builder.Services.AddScoped<IFrontendLinkBuilder, FrontendLinkBuilder>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 
-if (builder.Configuration["EMAIL_PROVIDER"] == "MAILGUN") {
+if (builder.Configuration["EMAIL_PROVIDER"]!.ToLower().Equals("mailgun")) {
     builder.Services.AddScoped<IEmailService, MailgunEmailSender>();
 }
 else {
