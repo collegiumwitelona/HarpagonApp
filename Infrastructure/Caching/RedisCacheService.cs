@@ -1,5 +1,7 @@
 ﻿using Application.Interfaces;
+using Application.Localization;
 using Microsoft.Extensions.Caching.Distributed;
+using System.Globalization;
 using System.Text.Json;
 
 
@@ -57,11 +59,11 @@ namespace Infrastructure.Caching
             await _cache.SetStringAsync(key, version.ToString());
         }
 
-        public async Task<string> BuildDashboardKeyVersionAsync(Guid userId, DateOnly from, DateOnly to)
+        public async Task<string> BuildDashboardKeyVersionAsync(Guid userId, DateOnly from, DateOnly to, string lang)
         {
             var version = await GetVersionAsync(userId);
 
-            return $"dashboard:user:{userId}:v{version}:{from}:{to}";
+            return $"dashboard:user:{userId}:v{version}:{from}:{to}:{lang}";
         }
     }
 }

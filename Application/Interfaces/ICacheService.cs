@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,6 @@ namespace Application.Interfaces
         Task SetDataAsync<T>(string key, T value);
         Task RemoveDataAsync(string key);
         Task InvalidateDashboardAsync(Guid userId);
-        Task<string> BuildDashboardKeyVersionAsync(Guid userId, DateOnly from, DateOnly to);
+        Task<string> BuildDashboardKeyVersionAsync(Guid userId, DateOnly from, DateOnly to, string lang);
     }
 }

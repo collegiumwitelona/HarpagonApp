@@ -1,7 +1,6 @@
 ﻿using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Seeders
@@ -11,31 +10,31 @@ namespace Infrastructure.Seeders
         public static async Task SeedCategories(IServiceProvider serviceProvider)
         {
             var _categoryRepository = serviceProvider.GetRequiredService<ICategoryRepository>();
-            List<string> categoriesExpense = new List<string>
+            Dictionary<string,string> categoriesExpense = new Dictionary<string,string>
             {
-                "Food",
-                "Transport",
-                "Entertainment",
-                "Utilities",
-                "Health",
-                "Education",
-                "Shopping",
-                "Travel",
-                "Personal Care",
-                "Gifts"
+                { "Food", "Jedzenie" },
+                { "Transport", "Transport" },
+                { "Entertainment", "Rozrywka" },
+                { "Utilities", "Media" },
+                { "Health", "Zdrowie" },
+                { "Education", "Edukacja" },
+                { "Shopping", "Zakupy" },
+                { "Travel", "Podróże" },
+                { "Personal Care", "Pielęgnacja osobista" },
+                { "Gifts", "Prezenty" }
             };
-            List<string> categoriesIncome = new List<string>
+            Dictionary<string,string> categoriesIncome = new Dictionary<string,string>
             {
-                "Salary",
-                "Business",
-                "Investments",
-                "Freelance",
-                "Rental Income",
-                "Gifts",
-                "Interest",
-                "Dividends",
-                "Royalties",
-                "Other"
+                { "Salary", "Pensja" },
+                { "Business", "Biznes" },
+                { "Investments", "Inwestycje" },
+                { "Freelance", "Freelance" },
+                { "Rental Income", "Dochód z wynajmu" },
+                { "Gifts", "Prezenty" },
+                { "Interest", "Odsetki" },
+                { "Dividends", "Dywidendy" },
+                { "Royalties", " Honorarium" },
+                { "Other", "Inne" }
             };
             for (int i = 0; i < categoriesExpense.Count; i++)
             {
@@ -43,7 +42,8 @@ namespace Infrastructure.Seeders
                 {
                     Id = Guid.NewGuid(),
                     UserId = null,
-                    Name = categoriesExpense[i],
+                    Name = categoriesExpense.ElementAt(i).Key,
+                    NamePl = categoriesExpense.ElementAt(i).Value,
                     Type = CategoryType.Expense,
                     Description = null,
                 };
@@ -56,7 +56,8 @@ namespace Infrastructure.Seeders
                 {
                     Id = Guid.NewGuid(),
                     UserId = null,
-                    Name = categoriesIncome[i],
+                    Name = categoriesIncome.ElementAt(i).Key,
+                    NamePl = categoriesIncome.ElementAt(i).Value,
                     Type = CategoryType.Income,
                     Description = null,
                 };

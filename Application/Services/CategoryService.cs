@@ -5,7 +5,7 @@ using Application.Interfaces;
 using Application.Localization;
 using Domain.Interfaces;
 using Domain.Models;
-using Microsoft.Extensions.Localization;
+using System.Globalization;
 
 namespace Application.Services
 {
@@ -86,11 +86,12 @@ namespace Application.Services
 
         public async Task<List<CategoryResponse>> GetCategoriesAsync(Guid userId)
         {
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             var result = await _categoryRepository.GetAllCategoriesAsync(userId);
             var response = result.Select(c => new CategoryResponse {
                 Id = c.Id,
                 OwnerId = c.UserId,
-                Name = c.Name,
+                Name = language == "pl" && !string.IsNullOrEmpty(c.NamePl) ? c.NamePl : c.Name,
                 Type = c.Type,
                 Description = c.Description ?? string.Empty
             }).ToList();
@@ -99,6 +100,7 @@ namespace Application.Services
 
         public async Task<CategoryResponse> GetCategoryByIdAsync(Guid categoryId, Guid userId)
         {
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             var result = await _categoryRepository.GetCategoryByIdAsync(categoryId);
             if (result == null)
             {
@@ -112,7 +114,7 @@ namespace Application.Services
             {
                 Id = categoryId,
                 OwnerId = result.UserId,
-                Name = result.Name,
+                Name = language == "pl" && !string.IsNullOrEmpty(result.NamePl) ? result.NamePl : result.Name,
                 Type = result.Type,
                 Description = result.Description ?? string.Empty
             };

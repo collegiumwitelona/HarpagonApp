@@ -7,6 +7,7 @@ namespace Domain.Models
         public Guid Id { get; set; }
         public Guid? UserId { get; set; }
         public string Name { get; set; }
+        public string? NamePl { get; set; }
         public CategoryType Type { get; set; }
         public string? Description { get; set; }
 
