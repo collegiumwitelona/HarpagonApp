@@ -6,6 +6,7 @@ using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace Api.Controllers.User
 {
@@ -34,7 +35,8 @@ namespace Api.Controllers.User
         public async Task<IActionResult> GetDashboardInfo([FromQuery] DashboardRequest request)
         {
             var userId = User.GetUserId();
-            var cacheKey = await _cache.BuildDashboardKeyVersionAsync(userId, request.FromDate, request.ToDate);
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+            var cacheKey = await _cache.BuildDashboardKeyVersionAsync(userId, request.FromDate, request.ToDate, language);
 
             var cachedDashboard = await _cache.GetDataAsync<DashboardResponse>(cacheKey);
             if (cachedDashboard != null)
@@ -43,7 +45,7 @@ namespace Api.Controllers.User
                 return Ok(cachedDashboard);
             }
 
-            var response = await _dashboardService.GetDashboard(userId, request.FromDate, request.ToDate);
+            var response = await _dashboardService.GetDashboard(userId, request.FromDate, request.ToDate, language);
             await _cache.SetDataAsync(cacheKey, response);
             return Ok(response);
         }

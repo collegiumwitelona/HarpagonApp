@@ -7,6 +7,7 @@ using Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,8 +29,10 @@ namespace Application.Services
             _userManager = userManager;
         }
 
-        public async Task<DashboardResponse> GetDashboard(Guid userId, DateOnly fromDate, DateOnly toDate)
+        public async Task<DashboardResponse> GetDashboard(Guid userId, DateOnly fromDate, DateOnly toDate, string lang)
         {
+            var language = lang;
+            Console.WriteLine($"Current culture: {language}");
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user == null) {
@@ -46,12 +49,12 @@ namespace Application.Services
             var categories = await _categoryRepository.GetAllCategoriesAsync(userId);
 
             var expensesByCategory = rawExpensesByCategory.ToDictionary(
-                t => categories.First(c => c.Id == t.Key).Name,
+                t => language == "pl" && !string.IsNullOrEmpty(categories.First(c => c.Id == t.Key).NamePl) ? categories.First(c => c.Id == t.Key).NamePl : categories.First(c => c.Id == t.Key).Name,
                 t => t.Value
             );
 
             var incomesByCategory = raweIncomesByCategory.ToDictionary(
-                t => categories.First(c => c.Id == t.Key).Name,
+                t => language == "pl" && !string.IsNullOrEmpty(categories.First(c => c.Id == t.Key).NamePl) ? categories.First(c => c.Id == t.Key).NamePl : categories.First(c => c.Id == t.Key).Name,
                 t => t.Value
             );
 

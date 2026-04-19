@@ -9,6 +9,8 @@ using Domain.Interfaces;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Application.Services
 {
@@ -332,16 +334,21 @@ namespace Application.Services
 
         private IQueryable<Transaction> ApplySearch(IQueryable<Transaction> query, string? search)
         {
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             if (string.IsNullOrWhiteSpace(search))
                 return query;
 
             string searchLower = search.ToLower();
 
+            var isPl = language == "pl";
+
             return query.Where(t =>
                 (!string.IsNullOrEmpty(t.Description) && t.Description.ToLower().Contains(searchLower)) ||
-                (t.Category != null &&
-                 !string.IsNullOrEmpty(t.Category.Name) &&
-                 t.Category.Name.ToLower().Contains(searchLower))
+
+                (t.Category != null && !string.IsNullOrEmpty(t.Category.Name) && t.Category.Name.ToLower().Contains(searchLower)) ||
+
+                (t.Category != null && (isPl ? t.Category.NamePl.ToLower().Contains(searchLower)
+                                             : t.Category.Name.ToLower().Contains(searchLower)))
             );
         }
 
