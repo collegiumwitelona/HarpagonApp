@@ -1,5 +1,4 @@
-﻿using API.Extensions;
-using API.Extensions.Filters;
+﻿using API.Extensions.Filters;
 using Application.DTO.Requests.Filtering;
 using Application.DTO.Requests.Transactions;
 using Application.Interfaces;
@@ -13,7 +12,7 @@ namespace Api.Controllers.Admin
     [ApiController]
     [Route("Users/{userId}/[controller]")]
     [RequireConfirmedEmail]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class TransactionsController : ControllerBase
     {
         private readonly ILogger<TransactionsController> _logger;

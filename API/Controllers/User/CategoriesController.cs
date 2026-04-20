@@ -1,11 +1,13 @@
 ﻿using API.Extensions;
 using API.Extensions.Filters;
 using Application.DTO.Requests.Categories;
+using Application.DTO.Responses;
 using Application.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace Api.Controllers.User
 {
@@ -31,7 +33,8 @@ namespace Api.Controllers.User
         public async Task<IActionResult> GetCategories()
         {
             var userId = User.GetUserId();
-            var cachedCategories = await _cache.GetDataAsync<List<Category>>($"categories:user:{userId}");
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+            var cachedCategories = await _cache.GetDataAsync<List<CategoryResponse>>($"categories:user:{userId}:{language}");
             if (cachedCategories != null)
             {
                 _logger.LogInformation("Categories fetched from cache");
@@ -39,7 +42,7 @@ namespace Api.Controllers.User
             }
 
             var response = await _categoryService.GetCategoriesAsync(userId);
-            await _cache.SetDataAsync($"categories:user:{userId}", response);
+            await _cache.SetDataAsync($"categories:user:{userId}:{language}", response);
             return Ok(response);
         }
 
@@ -55,8 +58,9 @@ namespace Api.Controllers.User
         public async Task<IActionResult> AddCategory([FromBody] CreateCategoryRequest request)
         {
             var userId = User.GetUserId();
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             var response = await _categoryService.CreateCategoryAsync(request, userId);
-            await _cache.RemoveDataAsync($"categories:user:{userId}");
+            await _cache.RemoveDataAsync($"categories:user:{userId}:{language}");
             return Ok(response);
         }
         [HttpPatch]
@@ -65,7 +69,8 @@ namespace Api.Controllers.User
             var userRole = User.GetRole();
             var userId = User.GetUserId();
             var response = await _categoryService.EditCategoryByIdAsync(request, userId, userRole);
-            await _cache.RemoveDataAsync($"categories:user:{userId}");
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+            await _cache.RemoveDataAsync($"categories:user:{userId}:{language}");
             return Ok(response);
         }
 
@@ -74,8 +79,9 @@ namespace Api.Controllers.User
         {
             var userRole = User.GetRole();
             var userId = User.GetUserId();
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             await _categoryService.DeleteCategoryByIdAsync(id, userId, userRole);
-            await _cache.RemoveDataAsync($"categories:user:{userId}");
+            await _cache.RemoveDataAsync($"categories:user:{userId}:{language}");
             return Ok();
         }
     }
