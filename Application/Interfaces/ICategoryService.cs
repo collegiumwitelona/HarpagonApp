@@ -1,6 +1,7 @@
 ﻿using Application.DTO.Requests.Categories;
 using Application.DTO.Responses;
-using Domain.Models;
+
+
 namespace Application.Interfaces
 {
     public interface ICategoryService

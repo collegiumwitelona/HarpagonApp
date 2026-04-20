@@ -1,5 +1,4 @@
-﻿using Application.DTO.Requests.Filtering;
-using Application.DTO.Requests.Transactions;
+﻿using Application.DTO.Requests.Transactions;
 using Application.Exceptions;
 using Application.Interfaces;
 using Application.Services;
@@ -7,7 +6,6 @@ using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
 using MockQueryable;
-using MockQueryable.Moq;
 using Moq;
 
 namespace Tests.Unit

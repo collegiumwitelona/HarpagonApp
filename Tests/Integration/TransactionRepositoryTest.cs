@@ -1,7 +1,5 @@
 ﻿using Domain.Models;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Tests.Seeders;
 
 

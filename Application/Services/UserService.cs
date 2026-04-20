@@ -2,7 +2,6 @@
 using Application.DTO.Responses;
 using Application.Exceptions;
 using Application.Interfaces;
-using Domain.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

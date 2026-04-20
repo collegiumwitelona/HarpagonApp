@@ -216,6 +216,7 @@ namespace Application.Services
 
         public async Task<List<TransactionResponse>> GetAllTransactionsByUserIdAsync(Guid userId)
         {
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             var transactions = await _transactionRepository
                 .GetAllTransactionsByUserIdAsync(userId);
 
@@ -229,7 +230,7 @@ namespace Application.Services
                     {
                         Id = t.Category.Id,
                         Description = t.Category.Description,
-                        Name = t.Category.Name,
+                        Name = language == "pl" ? t.Category.NamePl : t.Category.Name,
                         Type = t.Category.Type
                     },
                     Account = new AccountResponse
@@ -245,13 +246,14 @@ namespace Application.Services
         public async Task<DataTableResponse<TransactionResponse>> GetFilteredTransactionsByUserIdAsync(Guid userId, 
             DataTableRequest? request = null, TransactionFilteringRequest? filters = null)
         {
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             var query = _transactionRepository
                 .GetUserTransactionsQuery(userId)
                 .AsNoTracking();
 
             var recordsTotal = await query.CountAsync();
             query = ApplyFiltering(query, filters);
-            query = ApplySearch(query, request?.Search?.Value);
+            query = ApplySearch(query, request?.Search?.Value, language);
 
             // filtered count
             var recordsFiltered = await query.CountAsync();
@@ -292,7 +294,7 @@ namespace Application.Services
                     {
                         Id = t.Category.Id,
                         Description = t.Category.Description,
-                        Name = t.Category.Name,
+                        Name = language == "pl" ? t.Category.NamePl : t.Category.Name,
                         Type = t.Category.Type
                     },
 
@@ -332,9 +334,8 @@ namespace Application.Services
             };
         }
 
-        private IQueryable<Transaction> ApplySearch(IQueryable<Transaction> query, string? search)
+        private IQueryable<Transaction> ApplySearch(IQueryable<Transaction> query, string? search, string language)
         {
-            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             if (string.IsNullOrWhiteSpace(search))
                 return query;
 
