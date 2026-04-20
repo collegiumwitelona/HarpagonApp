@@ -1,8 +1,6 @@
 ﻿using Domain.Enums;
 using Domain.Models;
 using Infrastructure.Persistence.Context;
-using System;
-using System.Security.Principal;
 
 namespace Tests.Seeders
 {

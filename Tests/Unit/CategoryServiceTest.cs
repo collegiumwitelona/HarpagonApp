@@ -1,12 +1,10 @@
 ﻿using Application.DTO.Requests.Categories;
 using Application.Exceptions;
-using Application.Interfaces;
 using Application.Services;
 using Domain.Enums;
 using Domain.Interfaces;
 using Domain.Models;
 using Moq;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace Tests.Unit
 {

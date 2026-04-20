@@ -33,31 +33,31 @@ namespace Infrastructure.Seeders
                 { "Gifts", "Prezenty" },
                 { "Interest", "Odsetki" },
                 { "Dividends", "Dywidendy" },
-                { "Royalties", " Honorarium" },
+                { "Royalties", "Honorarium" },
                 { "Other", "Inne" }
             };
-            for (int i = 0; i < categoriesExpense.Count; i++)
+            foreach(var expenseName in categoriesExpense)
             {
                 var category = new Category
                 {
                     Id = Guid.NewGuid(),
                     UserId = null,
-                    Name = categoriesExpense.ElementAt(i).Key,
-                    NamePl = categoriesExpense.ElementAt(i).Value,
+                    Name = expenseName.Key,
+                    NamePl = expenseName.Value,
                     Type = CategoryType.Expense,
                     Description = null,
                 };
                 await _categoryRepository.AddCategoryAsync(category);
             }
 
-            for (int i = 0; i < categoriesIncome.Count; i++)
+            foreach (var incomeName in categoriesIncome)
             {
                 var category = new Category
                 {
                     Id = Guid.NewGuid(),
                     UserId = null,
-                    Name = categoriesIncome.ElementAt(i).Key,
-                    NamePl = categoriesIncome.ElementAt(i).Value,
+                    Name = incomeName.Key,
+                    NamePl = incomeName.Value,
                     Type = CategoryType.Income,
                     Description = null,
                 };
