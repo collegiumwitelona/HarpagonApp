@@ -50,7 +50,7 @@ namespace Application.Services
             if (user.EmailConfirmed != true)
             {
                 await _emailService.SendConfirmEmailAsync(user);
-                throw new UnauthorizedException("Auth_EmailNotConfirmed");
+                throw new ForbiddenException("Auth_EmailNotConfirmed");
             }
 
             var accessToken = await _jwtService.GenerateAccessTokenAsync(user);
@@ -81,7 +81,7 @@ namespace Application.Services
             var tokenEntity = await _refreshTokensRepository.GetRefreshTokenAsync(hashedToken);
             if (tokenEntity == null)
             {
-                throw new NotFoundException("Auth_InvalidRefreshToken");
+                throw new UnauthorizedException("Auth_InvalidRefreshToken");
             }
 
             if (!tokenEntity.IsActive)
@@ -127,7 +127,7 @@ namespace Application.Services
             var tokenEntity = await _refreshTokensRepository.GetRefreshTokenAsync(hashedToken);
             if (tokenEntity == null || !tokenEntity.IsActive)
             {
-                throw new NotFoundException("Auth_InvalidRefreshToken");
+                throw new UnauthorizedException("Auth_InvalidRefreshToken");
             }
 
             await _refreshTokensRepository.RevokeTokenAsync(tokenEntity);
