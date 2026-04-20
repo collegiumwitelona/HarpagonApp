@@ -55,7 +55,7 @@ namespace Application.Services
             var newBalance = account.Balance + delta;
 
             if (category.Type == CategoryType.Expense && newBalance < 0)
-                throw new BadRequestException("Transaction_InsufficientFunds");
+                throw new UnprocessableException("Transaction_InsufficientFunds");
 
             var transaction = new Transaction
             {
@@ -147,7 +147,7 @@ namespace Application.Services
             var newBalance = account.Balance - diff;
 
             if (transaction.Category.Type == CategoryType.Expense && newBalance < 0)
-                throw new BadRequestException("Transaction_InsufficientFunds");
+                throw new UnprocessableException("Transaction_InsufficientFunds");
 
             account.Balance = newBalance;
             transaction.Amount = newAmount;

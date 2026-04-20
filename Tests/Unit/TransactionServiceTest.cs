@@ -170,7 +170,7 @@ namespace Tests.Unit
                 .ReturnsAsync(account);
 
             // Act + Assert
-            var exception = await Assert.ThrowsAsync<BadRequestException>(() =>
+            var exception = await Assert.ThrowsAsync<UnprocessableException>(() =>
                 _service.EditTransactionByIdAsync(transaction.Id, 500, userId));
             // 500 > 100 + 200 => balance
 
