@@ -25,7 +25,7 @@ namespace Application.Services
             if (user == null)
             {
                 _logger.LogWarning("User with ID {UserId} not found", userId);
-                return null;
+                throw new NotFoundException("User_NotFound");
             }
             return new UserDataResponse
             {
@@ -77,7 +77,7 @@ namespace Application.Services
             if (await _userManager.IsInRoleAsync(user, "Admin"))
             {
                 _logger.LogWarning("Attempted to delete admin user with ID {UserId} but it is not allowed", userId);
-                throw new BadRequestException("User_DeleteAdminNotAllowed");
+                throw new ForbiddenException("User_DeleteAdminNotAllowed");
             }
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
