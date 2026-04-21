@@ -7,13 +7,10 @@ const Footer = () => {
   const { t } = useLanguage();
 
   return (
-    <footer className="w-full py-3 border-t border-slate-200 bg-white">
-      <Link to={'/about'} className="max-w-4xl mx-auto px-6 text-center">
-        <p className="text-sm text-slate-500 mb-2">
-          &copy; {currentYear} Harpagon. {t('footer.rights')}
-        </p>
-        <p className="text-xs text-slate-400 uppercase tracking-widest">
-          {t('footer.studentProject')} • Collegium Witelona W Legnicy
+    <footer className="w-full h-16 min-h-16 shrink-0 border-t border-slate-200 bg-white">
+      <Link to={'/about'} className="h-full max-w-6xl mx-auto px-6 text-center flex items-center justify-center">
+        <p className="text-xs lg:text-sm text-slate-500 truncate">
+          &copy; {currentYear} Harpagon. {t('footer.rights')} • {t('footer.studentProject')} • Collegium Witelona W Legnicy
         </p>
       </Link>
     </footer>

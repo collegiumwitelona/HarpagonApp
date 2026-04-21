@@ -126,8 +126,8 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
   };
 
   return (
-    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-200 flex flex-col">
-      <h2 className="text-base font-black tracking-tight mb-4">{t('history.newTransaction')}</h2>
+    <div className="bg-white rounded-[2.25rem] p-4 shadow-sm border border-slate-200 flex flex-col">
+      <h2 className="text-base font-black tracking-tight mb-3">{t('history.newTransaction')}</h2>
 
       {error && (
         <div className="mb-3 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
@@ -135,13 +135,13 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5">
           <select
             name="type"
             value={formType}
             onChange={(e) => setFormType(e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="wydatek">{t('common.expense')}</option>
             <option value="wpływ">{t('common.income')}</option>
@@ -151,7 +151,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
             name="categoryId"
             value={selectedCategoryId}
             onChange={(e) => setSelectedCategoryId(e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
           >
             {categoryOptions.length > 0 ? (
               categoryOptions.map((c) => (
@@ -168,7 +168,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
             name="amount"
             type="number"
             placeholder={t('dashboard.amountPlaceholder')}
-            className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
             required
           />
 
@@ -176,7 +176,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
             name="description"
             type="text"
             placeholder={t('history.descriptionPlaceholder')}
-            className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
             maxLength={30}
           />
         </div>
@@ -184,7 +184,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
         <button
           type="submit"
           disabled={!accountId || !selectedCategoryId}
-          className="w-full bg-violet-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-violet-700 transition-all shadow-sm active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed"
+          className="w-full bg-violet-600 text-white py-2 rounded-xl font-bold text-sm hover:bg-violet-700 transition-all shadow-sm active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed"
         >
           {t('common.add')}
         </button>

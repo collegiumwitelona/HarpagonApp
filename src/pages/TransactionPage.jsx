@@ -63,15 +63,15 @@ const TransactionPage = () => {
     return {
       id: transaction.id || transaction.transactionId || `${Date.now()}-${index}`,
       type: normalizeTransactionType(transactionType),
-      category:
+      category: String(
         transaction.categoryName ||
         transaction.category?.name ||
         transaction.category?.categoryName ||
-        transaction.category?.name ||
+        transaction.category?.nazwaKategorii ||
         matchedCategory?.categoryName ||
-        transaction.category ||
+        (typeof transaction.category === 'string' ? transaction.category : null) ||
         transaction.title ||
-        'Inne',
+        'Inne'),
       description:
         transaction.description ||
         transaction.note ||
@@ -122,14 +122,19 @@ const TransactionPage = () => {
       const transactionDate = normalizeFilterDateParam(transaction.date);
 
       if (searchNormalized) {
-        const haystack = `${category} ${description}`.toLowerCase();
+        const categoryPL = translateCategoryName(category, 'pl').toLowerCase();
+        const categoryEN = translateCategoryName(category, 'en').toLowerCase();
+        const haystack = `${categoryPL} ${categoryEN} ${description}`.toLowerCase();
         if (!haystack.includes(searchNormalized)) {
           return false;
         }
       }
 
-      if (categoryFilter.trim() && category !== categoryFilter.trim()) {
-        return false;
+      if (categoryFilter.trim()) {
+        const normalizeForCompare = (name) => translateCategoryName(name, 'en').toLowerCase();
+        if (normalizeForCompare(category) !== normalizeForCompare(categoryFilter)) {
+          return false;
+        }
       }
 
       if (fromDateParam && transactionDate && transactionDate < fromDateParam) {
@@ -291,7 +296,7 @@ const TransactionPage = () => {
       const toAmount = Number(toAmountFilter);
 
       if (categoryFilter.trim()) {
-        requestParams['Filters.CategoryName'] = categoryFilter.trim();
+        requestParams['Filters.CategoryName'] = translateCategoryName(categoryFilter.trim(), language);
       }
       const fromDateParam = normalizeFilterDateParam(fromDateFilter);
       const toDateParam = normalizeFilterDateParam(toDateFilter);
@@ -412,6 +417,7 @@ const TransactionPage = () => {
     currentPage,
     fromAmountFilter,
     fromDateFilter,
+    language,
     navigate,
     searchValue,
     sortBy,
@@ -430,6 +436,10 @@ const TransactionPage = () => {
   useEffect(() => {
     loadTransactions();
   }, [loadTransactions]);
+
+  useEffect(() => {
+    setCategoryFilter('');
+  }, [language]);
 
   const handleTransactionAdded = () => {
     if (currentPage !== 1) {
@@ -566,8 +576,8 @@ const TransactionPage = () => {
       <SideMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <main className="grow flex items-start lg:items-center justify-center p-4 lg:p-6 min-h-0 overflow-visible lg:overflow-hidden">
-        <div className="flex flex-col lg:flex-row w-full px-[10%] lg:gap-6 gap-4 items-stretch lg:h-full">
-          <div className="w-full lg:w-1/4 lg:flex-none flex flex-col gap-4 lg:justify-center">
+        <div className="flex flex-col lg:flex-row w-full px-[10%] lg:gap-5 gap-3 items-stretch lg:h-full">
+          <div className="w-full lg:w-1/4 lg:flex-none flex flex-col gap-3 lg:h-full lg:justify-between">
             <div>
               <TransactionForm
                 accountId={accountId}
@@ -575,9 +585,9 @@ const TransactionPage = () => {
                 onTransactionAdded={handleTransactionAdded}
               />
             </div>
-            <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-200 flex flex-col">
-              <h2 className="text-base font-black tracking-tight mb-4">{t('history.newCategory')}</h2>
-              <form onSubmit={handleAddCategory} className="flex flex-col gap-3">
+            <div className="bg-white rounded-[2.25rem] p-4 shadow-sm border border-slate-200 flex flex-col">
+              <h2 className="text-base font-black tracking-tight mb-3">{t('history.newCategory')}</h2>
+              <form onSubmit={handleAddCategory} className="flex flex-col gap-2.5">
                 <div className="flex rounded-xl overflow-hidden border border-slate-200 text-sm font-semibold">
                   <button
                     type="button"
@@ -600,7 +610,7 @@ const TransactionPage = () => {
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder={t('history.categoryNamePlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0"
                   maxLength={64}
                 />
 
@@ -614,7 +624,7 @@ const TransactionPage = () => {
                 <button
                   type="submit"
                   disabled={addingCategory || !newCategoryName.trim()}
-                  className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-80 disabled:opacity-40"
+                  className="w-full rounded-xl bg-slate-900 py-2 text-sm font-bold text-white transition-opacity hover:opacity-80 disabled:opacity-40"
                 >
                   {addingCategory ? t('history.adding') : t('common.add')}
                 </button>
@@ -623,24 +633,22 @@ const TransactionPage = () => {
 
           </div>
 
-          <div className="w-full lg:w-3/4 lg:flex-none bg-white rounded-[2.5rem] p-6 lg:p-8 shadow-sm border border-slate-200 flex flex-col min-h-[70vh] lg:min-h-0 lg:h-full">
-          <div className="mb-4 lg:mb-5 shrink-0 flex flex-col items-center gap-3">
-            <h1 className="text-xl lg:text-2xl font-black tracking-tight text-center">{t('history.title')}</h1>
-            {!isFiltersOpen && (
-              <button
-                type="button"
-                onClick={() => setIsFiltersOpen(true)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-              >
-                {t('history.filtering')}
-              </button>
-            )}
+          <div className="w-full lg:w-3/4 lg:flex-none bg-white rounded-[2.5rem] p-4 lg:p-4 shadow-sm border border-slate-200 flex flex-col min-h-[70vh] lg:min-h-0 lg:h-full">
+          <div className="mb-2 lg:mb-3 shrink-0 flex items-center justify-between gap-3">
+            <h1 className="text-xl lg:text-2xl font-black tracking-tight">{t('history.title')}</h1>
+            <button
+              type="button"
+              onClick={() => setIsFiltersOpen((prev) => !prev)}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
+            >
+              {t('history.filtering')}
+            </button>
           </div>
 
           {isFiltersOpen && (
           <div
             onMouseLeave={() => setIsFiltersOpen(false)}
-            className="mb-4 lg:mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-700/40 p-4 shrink-0 space-y-3"
+            className="mb-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-700/40 p-3 shrink-0 space-y-3"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
               <input
@@ -763,22 +771,22 @@ const TransactionPage = () => {
             </div>
           )}
 
-          <div className="grow min-h-0 overflow-y-auto pr-2 custom-scrollbar space-y-2">
+          <div className="grow min-h-0 overflow-y-auto pr-2 custom-scrollbar space-y-1.5">
             {loading ? (
               <p className="text-sm text-slate-500">{t('history.loading')}</p>
             ) : transactions.length > 0 ? (
               transactions.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="px-5 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm"
+                  className="px-3.5 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm"
                 >
-                  <p className="text-xs font-semibold text-slate-400 mb-2">{formatDateOnly(transaction.date, language)}</p>
-                  <div className="flex items-center gap-4">
-                    <span className="font-bold text-base text-slate-800 w-1/4 truncate">{translateCategoryName(transaction.category, language)}</span>
-                    <span className="flex-1 text-sm text-slate-500 text-center truncate">
-                      {(() => { const d = String(transaction.description || '').trim(); return (d && d.toLowerCase() !== transaction.category.toLowerCase()) ? d.slice(0, 30) : t('common.noDescription'); })()}
+                  <p className="text-[11px] font-semibold text-slate-400 mb-1.5">{formatDateOnly(transaction.date, language)}</p>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-sm text-slate-800 w-1/4 truncate">{translateCategoryName(transaction.category, language)}</span>
+                    <span className="flex-1 text-xs text-slate-500 text-center truncate">
+                      {(() => { const d = String(transaction.description || '').trim(); return (d && d.toLowerCase() !== String(transaction.category || '').toLowerCase()) ? d.slice(0, 30) : t('common.noDescription'); })()}
                     </span>
-                    <span className={`font-black text-base w-1/4 text-right shrink-0 ${transaction.type === 'wpływ' ? 'text-emerald-600' : 'text-rose-500'}`}>
+                    <span className={`font-black text-sm w-1/4 text-right shrink-0 ${transaction.type === 'wpływ' ? 'text-emerald-600' : 'text-rose-500'}`}>
                       {transaction.type === 'wpływ' ? '+' : '-'}{formatCurrencyByLanguage(transaction.amount, language)}
                     </span>
                   </div>
@@ -789,7 +797,7 @@ const TransactionPage = () => {
             )}
           </div>
 
-          <div className="mt-4 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4">
+          <div className="mt-2 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-100 pt-2">
             <p className="text-xs text-slate-500">
               {t('history.showingEntries', {
                 from: firstItemNumber,
