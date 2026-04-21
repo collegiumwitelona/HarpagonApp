@@ -58,8 +58,14 @@ namespace Infrastructure.Persistence.Context
             builder.Entity<Category>()
                 .HasIndex(c => c.UserId);
 
+            builder.Entity<Category>()
+                .HasIndex(c => c.Type);
+
             builder.Entity<Transaction>()
                 .HasIndex(t => new { t.AccountId, t.Date });
+
+            builder.Entity<Transaction>()
+                .HasIndex(t => t.Date);
         }
     }
 }
