@@ -9,5 +9,6 @@ namespace Application.Interfaces
         Task<AccountResponse> GetAccountByIdAsync(Guid accountId, Guid userId);
         Task DeleteAccountByIdAsync(Guid accountId, Guid userId);
         Task<AccountResponse> EditAccountBalanceByIdAsync(Guid accountId, decimal newBalance, Guid userId);
+        Task<AccountResponse> EditAccountGoalByIdAsync(Guid accountId, decimal newGoal, Guid userId);
     }
 }

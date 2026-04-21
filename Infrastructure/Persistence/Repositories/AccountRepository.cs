@@ -51,6 +51,7 @@ namespace Infrastructure.Persistence.Repositories
 
             existing.Name = account.Name;
             existing.Balance = account.Balance;
+            existing.Goal = account.Goal;
 
             await _context.SaveChangesAsync();
         }
