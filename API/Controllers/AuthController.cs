@@ -64,13 +64,21 @@ namespace API.Controllers
             return Ok(new { message = _localizer["ResetPassword_LinkWasSent"].Value });
         }
 
-        //validate token and changing password
+        /// <summary>
+        /// Reset password link request
+        /// </summary>
+        /// <remarks>
+        /// Sends a request to reset the password using the provided token, user ID, 
+        /// and new password. The token is typically generated and sent to the user's 
+        /// email when they request a password reset. This endpoint validates the token 
+        /// and updates the user's password if the token is valid.
+        /// </remarks>
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
             await _authService.ResetPasswordAsync(request);
             return Ok(new {message = _localizer["ResetPassword_Success"].Value });
-        }
+        }   
 
         [HttpPost("confirm-email")]
         public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailRequest request)
