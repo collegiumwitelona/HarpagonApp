@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bar,
@@ -99,6 +99,12 @@ const AnalysisPage = () => {
 
     return {
       id: transaction.id || transaction.transactionId || `${Date.now()}-${index}`,
+      accountId:
+        transaction.accountId ||
+        transaction.accountID ||
+        transaction.account?.id ||
+        transaction.account?.accountId ||
+        '',
       type: normalizeTransactionType(transactionType),
       category:
         transaction.categoryName ||
@@ -113,7 +119,7 @@ const AnalysisPage = () => {
     };
   };
 
-  const loadAnalysisData = async () => {
+  const loadAnalysisData = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -128,6 +134,27 @@ const AnalysisPage = () => {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
       };
+
+      const accountsResponse = await api.get('/Me/Accounts', {
+        headers,
+        validateStatus: () => true,
+      });
+
+      if (accountsResponse.status === 401) {
+        removeAuthToken();
+        navigate('/login');
+        return;
+      }
+
+      const accounts = Array.isArray(accountsResponse.data) ? accountsResponse.data : [];
+      const storedAccountId = localStorage.getItem('activeAccountId') || '';
+      const selectedAccount = accounts.find(
+        (item) => String(item?.id || item?.accountId || '') === storedAccountId
+      ) || accounts[0] || null;
+      const resolvedAccountId = String(selectedAccount?.id || selectedAccount?.accountId || '');
+      if (resolvedAccountId) {
+        localStorage.setItem('activeAccountId', resolvedAccountId);
+      }
 
       const getFirstSuccessful = async (requests) => {
         for (const request of requests) {
@@ -208,19 +235,23 @@ const AnalysisPage = () => {
           )
         : [];
 
+      const accountTransactions = normalizedTransactions.filter(
+        (transaction) => String(transaction.accountId) === String(resolvedAccountId)
+      );
+
       setCategories(normalizedCategories);
-      setTransactions(normalizedTransactions);
+      setTransactions(accountTransactions);
     } catch (err) {
       console.error('Blad ladowania analizy:', err);
       setError(t('analysis.analysisError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, t]);
 
   useEffect(() => {
     loadAnalysisData();
-  }, []);
+  }, [loadAnalysisData]);
 
   const selectedMonth = useMemo(
     () => monthOptions.find((item) => item.key === selectedMonthKey) || null,
@@ -348,7 +379,7 @@ const AnalysisPage = () => {
             </div>
           </section>
 
-          <section className="w-full lg:flex-1 bg-white rounded-[2.5rem] p-5 lg:p-6 shadow-sm border border-slate-200 flex flex-col min-h-88 lg:min-h-0 relative overflow-hidden">
+          <section className="w-full lg:flex-1 bg-white rounded-[2.5rem] p-5 lg:p-6 shadow-sm border border-slate-200 flex flex-col min-h-88 lg:min-h-0 relative overflow-visible">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <h2 className="text-lg font-black tracking-tight text-slate-900">
@@ -441,6 +472,7 @@ const AnalysisPage = () => {
                       cursor={{ fill: isDark ? 'rgba(51, 65, 85, 0.45)' : '#f8fafc' }}
                       formatter={(value, name) => [formatCurrencyByLanguage(value, language), name]}
                       labelFormatter={(label) => t('analysis.dayLabel', { value: label })}
+                      wrapperStyle={{ zIndex: 60, pointerEvents: 'none' }}
                     />
 
                     {categoryKeys.map((categoryName) => (

@@ -36,7 +36,7 @@ const TransactionPage = () => {
   const [toDateFilter, setToDateFilter] = useState('');
   const [fromAmountFilter, setFromAmountFilter] = useState('');
   const [toAmountFilter, setToAmountFilter] = useState('');
-  const [accountId, setAccountId] = useState('');
+  const [accountId, setAccountId] = useState(() => localStorage.getItem('activeAccountId') || '');
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryType, setNewCategoryType] = useState('wydatek');
@@ -62,6 +62,12 @@ const TransactionPage = () => {
 
     return {
       id: transaction.id || transaction.transactionId || `${Date.now()}-${index}`,
+      accountId:
+        transaction.accountId ||
+        transaction.accountID ||
+        transaction.account?.id ||
+        transaction.account?.accountId ||
+        '',
       type: normalizeTransactionType(transactionType),
       category: String(
         transaction.categoryName ||
@@ -116,6 +122,10 @@ const TransactionPage = () => {
     const searchNormalized = searchValue.trim().toLowerCase();
 
     const filtered = normalized.filter((transaction) => {
+      if (accountId && String(transaction.accountId) !== String(accountId)) {
+        return false;
+      }
+
       const category = String(transaction.category || '');
       const description = String(transaction.description || '');
       const amount = Number(transaction.amount || 0);
@@ -174,6 +184,7 @@ const TransactionPage = () => {
     setTransactions(pageData);
     setFilteredCount(filtered.length);
   }, [
+    accountId,
     categories,
     currentPage,
     fromAmountFilter,
@@ -234,8 +245,15 @@ const TransactionPage = () => {
       }
 
       const accountsData = accountsResponse.data;
-      const account = Array.isArray(accountsData) && accountsData.length > 0 ? accountsData[0] : null;
-      setAccountId(account?.id || account?.accountId || '');
+      const preferredAccountId = localStorage.getItem('activeAccountId') || '';
+      const account = Array.isArray(accountsData) && accountsData.length > 0
+        ? accountsData.find((item) => String(item?.id || item?.accountId || '') === preferredAccountId) || accountsData[0]
+        : null;
+      const resolvedAccountId = String(account?.id || account?.accountId || '');
+      setAccountId(resolvedAccountId);
+      if (resolvedAccountId) {
+        localStorage.setItem('activeAccountId', resolvedAccountId);
+      }
 
       const categoriesData = categoriesResponse.data;
       const normalizedCategories = Array.isArray(categoriesData)
@@ -274,22 +292,11 @@ const TransactionPage = () => {
               : [];
       };
 
-      const sortColumnIndex = sortBy === 'amount' ? 1 : 0;
       const requestParams = {
         Draw: 1,
-        Start: (currentPage - 1) * PAGE_SIZE,
-        Length: PAGE_SIZE,
+        Start: 0,
+        Length: 1000,
         'Search.Value': searchValue.trim(),
-        'Order[0].Column': sortColumnIndex,
-        'Order[0].Dir': sortDirection,
-        'Columns[0].Data': 'date',
-        'Columns[0].Name': 'date',
-        'Columns[0].Searchable': true,
-        'Columns[0].Orderable': true,
-        'Columns[1].Data': 'amount',
-        'Columns[1].Name': 'amount',
-        'Columns[1].Searchable': true,
-        'Columns[1].Orderable': true,
       };
 
       const fromAmount = Number(fromAmountFilter);
@@ -346,16 +353,7 @@ const TransactionPage = () => {
       const responseBody = transactionsResponse.data;
       const transactionsData = extractTransactionsData(responseBody);
 
-      const normalizedTransactions = Array.isArray(transactionsData)
-        ? transactionsData.map((transaction, index) =>
-            normalizeTransaction(transaction, index, categories)
-          )
-        : [];
-
-      const resolvedFilteredCount = Number(responseBody?.recordsFiltered ?? responseBody?.RecordsFiltered);
-
-      setTransactions(normalizedTransactions);
-      setFilteredCount(Number.isFinite(resolvedFilteredCount) ? resolvedFilteredCount : normalizedTransactions.length);
+      applyClientFilteringSortingPaging(transactionsData);
     } catch (err) {
       try {
         const fallbackResponse = await api.get('/Me/Transactions', {
@@ -413,20 +411,15 @@ const TransactionPage = () => {
     }
   }, [
     applyClientFilteringSortingPaging,
-    categories,
-    currentPage,
     fromAmountFilter,
     fromDateFilter,
     language,
     navigate,
     searchValue,
-    sortBy,
-    sortDirection,
     t,
     toAmountFilter,
     toDateFilter,
     categoryFilter,
-    PAGE_SIZE,
   ]);
 
   useEffect(() => {

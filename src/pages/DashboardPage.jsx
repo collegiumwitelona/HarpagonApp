@@ -11,7 +11,7 @@ import { api } from '../services/api';
 import { CATEGORY_COLORS } from '../constants/colors';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 import { translateCategoryName } from '../utils/categoryTranslations';
-import { normalizeTransactionType, normalizeCategoryType, normalizeDate, formatCurrencyByLanguage, formatDateIso } from '../utils/formatters';
+import { normalizeTransactionType, normalizeCategoryType, normalizeDate, formatCurrencyByLanguage } from '../utils/formatters';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -41,15 +41,6 @@ const DashboardPage = () => {
     incomesByCategory: {},
   });
   const hasLoadedDashboardRef = useRef(false);
-
-  const getDashboardDateRange = () => {
-    const today = new Date();
-
-    return {
-      FromDate: '2020-01-01',
-      ToDate: formatDateIso(today),
-    };
-  };
 
   const buildSummaryFromTransactions = (transactionsList = []) => {
     const summary = {
@@ -84,44 +75,6 @@ const DashboardPage = () => {
     return summary;
   };
 
-  const fetchDashboardSummary = async (token, fallbackTransactions = []) => {
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
-    };
-
-    const endpoints = ['/Me/Dashboard'];
-
-    for (const endpoint of endpoints) {
-      const dashboardResponse = await api.get(endpoint, {
-        headers,
-        params: getDashboardDateRange(),
-        validateStatus: () => true,
-      });
-
-      if (dashboardResponse.status === 401) {
-        removeAuthToken();
-        navigate('/login');
-        return;
-      }
-
-      if (dashboardResponse.status >= 200 && dashboardResponse.status < 300) {
-        const dashboardData = dashboardResponse.data || {};
-
-        setDashboardSummary({
-          totalExpenses: Number(dashboardData.totalExpenses || 0),
-          totalIncomes: Number(dashboardData.totalIncomes || 0),
-          expensesByCategory: dashboardData.expensesByCategory || {},
-          incomesByCategory: dashboardData.incomesByCategory || {},
-        });
-        return;
-      }
-    }
-
-    
-    setDashboardSummary(buildSummaryFromTransactions(fallbackTransactions));
-  };
-
   const normalizeTransaction = (transaction, index, categoriesList = []) => {
     const transactionCategoryId =
       transaction.categoryId || transaction.categoryID || transaction.category?.id || '';
@@ -139,6 +92,12 @@ const DashboardPage = () => {
 
     return {
       id: transaction.id || transaction.transactionId || `${Date.now()}-${index}`,
+      accountId:
+        transaction.accountId ||
+        transaction.accountID ||
+        transaction.account?.id ||
+        transaction.account?.accountId ||
+        '',
       type: normalizeTransactionType(transactionType),
       category:
         transaction.categoryName ||
@@ -210,14 +169,22 @@ const DashboardPage = () => {
 
       const transactionsResponse = await fetchFirstSuccessfulGet(
         [
-          { url: '/Me/Transactions' },
+          {
+            url: '/Me/Transactions',
+            params: {
+              Draw: 1,
+              Start: 0,
+              Length: 1000,
+              'Search.Value': '',
+            },
+          },
           { url: '/Transactions/all' },
           {
             url: '/Transactions',
             params: {
               Draw: 1,
               Start: 0,
-              Length: 500,
+              Length: 1000,
               'Search.Value': '',
             },
           },
@@ -262,8 +229,15 @@ const DashboardPage = () => {
 
       setCategories(normalizedCategories);
 
-      const account = Array.isArray(accounts) && accounts.length > 0 ? accounts[0] : null;
-      setAccountId(account?.id || account?.accountId || '');
+      const storedAccountId = localStorage.getItem('activeAccountId') || '';
+      const account = Array.isArray(accounts) && accounts.length > 0
+        ? accounts.find((item) => String(item?.id || item?.accountId || '') === storedAccountId) || accounts[0]
+        : null;
+      const resolvedAccountId = String(account?.id || account?.accountId || '');
+      setAccountId(resolvedAccountId);
+      if (resolvedAccountId) {
+        localStorage.setItem('activeAccountId', resolvedAccountId);
+      }
 
       const accountBalance = Number(account?.balance ?? account?.currentBalance ?? 0);
       setBalance(Number.isNaN(accountBalance) ? 0 : accountBalance);
@@ -274,10 +248,14 @@ const DashboardPage = () => {
           )
         : [];
 
-      normalizedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const accountTransactions = normalizedTransactions.filter(
+        (transaction) => String(transaction.accountId) === String(resolvedAccountId)
+      );
 
-      setTransactions(normalizedTransactions);
-      await fetchDashboardSummary(token, normalizedTransactions);
+      accountTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      setTransactions(accountTransactions);
+      setDashboardSummary(buildSummaryFromTransactions(accountTransactions));
     } catch (err) {
       console.error('Błąd ładowania dashboardu:', err);
       setError(t('dashboard.dashboardError'));
@@ -382,7 +360,7 @@ const DashboardPage = () => {
 
       setBalance(Number.isNaN(responseBalance) ? parsedBalance : responseBalance);
       setTempBalance('');
-      await fetchDashboardSummary(token, transactions);
+      await loadDashboardData();
     } catch (err) {
       console.error('Błąd zapisu salda konta:', err);
       setError(t('dashboard.saveBalanceError'));
@@ -474,21 +452,8 @@ const DashboardPage = () => {
         throw new Error(`Nie udało się dodać transakcji (status ${response.status}).`);
       }
 
-      const createdTransaction = response.data || null;
-
-      const normalizedCreated = createdTransaction
-        ? normalizeTransaction(createdTransaction, 0, categories)
-        : {
-            id: Date.now(),
-            type,
-            category: selectedCategory?.categoryName || 'Inne',
-            amount,
-            date: new Date().toISOString().split('T')[0],
-          };
-
-      setTransactions((prev) => [normalizedCreated, ...prev]);
       setBalance((prev) => (type === 'wpływ' ? prev + amount : prev - amount));
-      await fetchDashboardSummary(token);
+      await loadDashboardData();
 
       e.target.reset();
       setFormType('wydatek');
