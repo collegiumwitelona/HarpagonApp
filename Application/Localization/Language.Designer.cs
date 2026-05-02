@@ -142,6 +142,42 @@ namespace Application.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Password change failed..
+        /// </summary>
+        public static string Auth_PasswordChangeFailed {
+            get {
+                return ResourceManager.GetString("Auth_PasswordChangeFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Passwords are the same..
+        /// </summary>
+        public static string Auth_PasswordsAreTheSame {
+            get {
+                return ResourceManager.GetString("Auth_PasswordsAreTheSame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Passwords do not match..
+        /// </summary>
+        public static string Auth_PasswordsDoNotMatch {
+            get {
+                return ResourceManager.GetString("Auth_PasswordsDoNotMatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Incorrect previous password..
+        /// </summary>
+        public static string Auth_WrongPreviousPassword {
+            get {
+                return ResourceManager.GetString("Auth_WrongPreviousPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You do not have permission to delete this category..
         /// </summary>
         public static string Category_DeletePermissionDenied {
@@ -201,6 +237,15 @@ namespace Application.Localization {
         public static string EmailConfirmation_Subject {
             get {
                 return ResourceManager.GetString("EmailConfirmation_Subject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password changed..
+        /// </summary>
+        public static string PasswordChanged {
+            get {
+                return ResourceManager.GetString("PasswordChanged", resourceCulture);
             }
         }
         

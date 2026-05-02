@@ -84,11 +84,11 @@ namespace API.Controllers
         }
 
         /// <summary>
-        // /// Send a password reset link.
-        // /// </summary>
-        // /// <remarks>
-        // /// Sends a reset password link to the email address provided in the query string.
-        // /// </remarks>
+        /// Send a password reset link.
+        /// </summary>
+        /// <remarks>
+        /// Sends a reset password link to the email address provided in the query string.
+        /// </remarks>
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromQuery]string email)
         {

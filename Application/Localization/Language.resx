@@ -216,4 +216,19 @@
   <data name="User_DeleteAdminNotAllowed" xml:space="preserve">
     <value>Attempted to delete admin user but it is not allowed.</value>
   </data>
+  <data name="PasswordChanged" xml:space="preserve">
+    <value>Password changed.</value>
+  </data>
+  <data name="Auth_PasswordsDoNotMatch" xml:space="preserve">
+    <value>Passwords do not match.</value>
+  </data>
+  <data name="Auth_PasswordsAreTheSame" xml:space="preserve">
+    <value>Passwords are the same.</value>
+  </data>
+  <data name="Auth_WrongPreviousPassword" xml:space="preserve">
+    <value>Incorrect previous password.</value>
+  </data>
+  <data name="Auth_PasswordChangeFailed" xml:space="preserve">
+    <value>Password change failed.</value>
+  </data>
 </root>
