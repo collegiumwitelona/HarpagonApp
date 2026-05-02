@@ -124,5 +124,19 @@ namespace API.Controllers
             _logger.LogInformation("Email confirmed");
             return Ok(new { message = _localizer["EmailConfirmed"].Value});
         }
+        
+        /// <summary>
+        /// Change user password.
+        /// </summary>
+        /// <remarks>
+        /// Changes the user's password, checking previous password and confirming new one.
+        /// </remarks>
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            await _authService.ChangePasswordAsync(request);
+            _logger.LogInformation("Password changed");
+            return Ok(new { message = _localizer["PasswordChanged"].Value});
+        }
     }
 }
