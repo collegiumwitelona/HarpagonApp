@@ -246,9 +246,9 @@ namespace Application.Services
             }
         }
         
-        public async Task ChangePasswordAsync(ChangePasswordRequest request)
+        public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
         {
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user == null)
             {

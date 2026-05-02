@@ -4,6 +4,7 @@ using Application.DTO.Requests.Auth;
 using Application.DTO.Responses;
 using Application.Interfaces;
 using Application.Localization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -124,17 +125,20 @@ namespace API.Controllers
             _logger.LogInformation("Email confirmed");
             return Ok(new { message = _localizer["EmailConfirmed"].Value});
         }
-        
+
         /// <summary>
         /// Change user password.
         /// </summary>
         /// <remarks>
         /// Changes the user's password, checking previous password and confirming new one.
         /// </remarks>
+        [Authorize]
+        [RequireConfirmedEmail]
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {
-            await _authService.ChangePasswordAsync(request);
+            var userId = User.GetUserId();
+            await _authService.ChangePasswordAsync(userId, request);
             _logger.LogInformation("Password changed");
             return Ok(new { message = _localizer["PasswordChanged"].Value});
         }
