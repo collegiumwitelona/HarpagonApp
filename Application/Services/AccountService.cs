@@ -69,6 +69,29 @@ namespace Application.Services
                 UserId = userId,
             };
         }
+        
+        public async Task<AccountResponse> EditAccountGoalByIdAsync(Guid accountId, decimal newGoal, Guid userId)
+        {
+            var account = await _accountRepository.GetAccountByIdAsync(accountId);
+            if (account == null)
+            {
+                throw new NotFoundException("Account_NotFound");
+            }
+            if(account.UserId != userId)
+            {
+                throw new ForbiddenException("Account_EditPermissionDenied");
+            }
+            account.Goal = newGoal;
+            await _accountRepository.UpdateAccountAsync(account);
+            return new AccountResponse
+            {
+                Id = account.Id,
+                Name = account.Name,
+                Balance = account.Balance,
+                UserId = userId,
+                Goal = account.Goal
+            };
+        }
 
         public async Task<AccountResponse> GetAccountByIdAsync(Guid accountId, Guid userId)
         {
