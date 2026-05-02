@@ -216,4 +216,19 @@
   <data name="User_DeleteAdminNotAllowed" xml:space="preserve">
     <value>Próba usunięcia użytkownika z rolą administratora jest niedozwolona.</value>
   </data>
+  <data name="PasswordChanged" xml:space="preserve">
+    <value>Hasło zostało zmienione</value>
+  </data>
+  <data name="Auth_PasswordsDoNotMatch" xml:space="preserve">
+    <value>Hasła się nie zgadzają.</value>
+  </data>
+  <data name="Auth_PasswordsAreTheSame" xml:space="preserve">
+    <value>Hasła są identyczne.</value>
+  </data>
+  <data name="Auth_WrongPreviousPassword" xml:space="preserve">
+    <value>Błędne stare hasło.</value>
+  </data>
+  <data name="Auth_PasswordChangeFailed" xml:space="preserve">
+    <value>Zmiana hasła nie powiodła się</value>
+  </data>
 </root>

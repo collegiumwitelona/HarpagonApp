@@ -245,5 +245,39 @@ namespace Application.Services
                 throw new BadRequestException("", errors);
             }
         }
+        
+        public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user == null)
+            {
+                throw new NotFoundException("User_NotFound");
+            }
+
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                throw new BadRequestException("Auth_PasswordsDoNotMatch");
+            }
+
+            if (request.PreviousPassword == request.NewPassword)
+            {
+                throw new BadRequestException("Auth_PasswordsAreTheSame");
+            }
+
+            var isPasswordCorrect = await _userManager.CheckPasswordAsync(user, request.PreviousPassword);
+            if (!isPasswordCorrect)
+            {
+                throw new BadRequestException("Auth_WrongPreviousPassword");
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, request.PreviousPassword, request.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Code).ToList();
+                throw new BadRequestException("Auth_PasswordChangeFailed", errors);
+            }
+        }
     }
 }

@@ -14,5 +14,7 @@ namespace Application.Interfaces
         Task SendResetPasswordEmailAsync(string email);
         Task ResetPasswordAsync(ResetPasswordRequest request);
         Task SendConfirmEmailAsync(Guid userId);
+        Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
+
     }
 }
