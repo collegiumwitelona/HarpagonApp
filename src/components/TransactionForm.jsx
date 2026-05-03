@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
-import { translateCategoryName } from '../utils/categoryTranslations';
 
 const normalizeDate = (dateValue) => {
   const d = new Date(dateValue);
@@ -156,7 +155,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
             {categoryOptions.length > 0 ? (
               categoryOptions.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {translateCategoryName(c.categoryName, language)}
+                  {c.categoryName}
                 </option>
               ))
             ) : (

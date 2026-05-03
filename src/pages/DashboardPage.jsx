@@ -10,7 +10,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { CATEGORY_COLORS } from '../constants/colors';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
-import { translateCategoryName } from '../utils/categoryTranslations';
 import { normalizeTransactionType, normalizeCategoryType, normalizeDate, formatCurrencyByLanguage } from '../utils/formatters';
 
 const DashboardPage = () => {
@@ -18,10 +17,7 @@ const DashboardPage = () => {
   const { language, t } = useLanguage();
 
   const [balance, setBalance] = useState(0);
-  const [goal, setGoal] = useState(() => {
-    const saved = localStorage.getItem('savingsGoal');
-    return saved !== null ? Number(saved) : 100000;
-  });
+  const [goal, setGoal] = useState(0);
   const [tempBalance, setTempBalance] = useState("");
   const [tempGoal, setTempGoal] = useState("");
   const [loading, setLoading] = useState(true);
@@ -242,6 +238,9 @@ const DashboardPage = () => {
       const accountBalance = Number(account?.balance ?? account?.currentBalance ?? 0);
       setBalance(Number.isNaN(accountBalance) ? 0 : accountBalance);
 
+      const accountGoal = Number(account?.goal ?? account?.savingsGoal ?? 0);
+      setGoal(Number.isNaN(accountGoal) ? 0 : accountGoal);
+
       const normalizedTransactions = Array.isArray(transactionsData)
         ? transactionsData.map((transaction, index) =>
             normalizeTransaction(transaction, index, normalizedCategories)
@@ -272,6 +271,11 @@ const DashboardPage = () => {
     hasLoadedDashboardRef.current = true;
     loadDashboardData();
   });
+
+  useEffect(() => {
+    if (!hasLoadedDashboardRef.current) return;
+    loadDashboardData();
+  }, [language]);
 
   const categoryOptions = useMemo(
     () => categories.filter((category) => category.type === formType),
@@ -464,13 +468,13 @@ const DashboardPage = () => {
   };
 
   const localizedIncomesPieData = useMemo(
-    () => incomesPieData.map((item) => ({ ...item, displayName: translateCategoryName(item.name, language) })),
-    [incomesPieData, language]
+    () => incomesPieData.map((item) => ({ ...item, displayName: item.name })),
+    [incomesPieData]
   );
 
   const localizedExpensesPieData = useMemo(
-    () => expensesPieData.map((item) => ({ ...item, displayName: translateCategoryName(item.name, language) })),
-    [expensesPieData, language]
+    () => expensesPieData.map((item) => ({ ...item, displayName: item.name })),
+    [expensesPieData]
   );
 
   return (
@@ -512,7 +516,7 @@ const DashboardPage = () => {
                   {categoryOptions.length > 0 ? (
                     categoryOptions.map((category) => (
                       <option key={category.id} value={category.id}>
-                        {translateCategoryName(category.categoryName, language)}
+                        {category.categoryName}
                       </option>
                     ))
                   ) : (
@@ -555,31 +559,52 @@ const DashboardPage = () => {
               <CashStatCard 
                 title={t('dashboard.savingsGoal')} value={goal} color="blue" 
                 tempValue={tempGoal} onTempChange={setTempGoal}
-                onSave={() => {
+                onSave={async () => {
                   const parsedGoal = Number(String(tempGoal || '').trim().replace(',', '.'));
-                  if (Number.isNaN(parsedGoal) || parsedGoal <= 0) {
-                    return;
+                  if (Number.isNaN(parsedGoal) || parsedGoal <= 0) return;
+                  const token = getAuthToken();
+                  if (!token) { navigate('/login'); return; }
+                  if (!accountId) return;
+                  try {
+                    let response = await api.patch('/Me/Accounts/goal', { accountId, newGoal: parsedGoal }, {
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+                      validateStatus: () => true,
+                    });
+                    if (response.status === 401) { removeAuthToken(); navigate('/login'); return; }
+                    if (response.status >= 200 && response.status < 300) {
+                      const responseGoal = Number(response.data?.goal ?? parsedGoal);
+                      setGoal(Number.isNaN(responseGoal) ? parsedGoal : responseGoal);
+                      setTempGoal('');
+                    }
+                  } catch (err) {
+                    console.error('Błąd zapisu celu oszczędzania:', err);
                   }
-                  localStorage.setItem('savingsGoal', parsedGoal);
-                  setGoal(parsedGoal);
-                  setTempGoal('');
                 }}
               />
             </div>
 
             <div className="relative h-48 sm:h-52 lg:h-60 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={pieData} innerRadius="64%" outerRadius="84%" paddingAngle={5} dataKey="value" stroke="none">
-                    <Cell fill="#7c3aed" /><Cell fill="#60a5fa" />
-                  </Pie>
-                  <Tooltip cornerRadius={10} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                <span className="text-2xl lg:text-3xl font-black text-slate-900 leading-none">{Math.round((balance/goal)*100)}%</span>
-                <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">{t('dashboard.completion')}</span>
-              </div>
+              {goal > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={pieData} innerRadius="64%" outerRadius="84%" paddingAngle={5} dataKey="value" stroke="none">
+                        <Cell fill="#7c3aed" /><Cell fill="#60a5fa" />
+                      </Pie>
+                      <Tooltip cornerRadius={10} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                    <span className="text-2xl lg:text-3xl font-black text-slate-900 leading-none">{Math.round((balance/goal)*100)}%</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">{t('dashboard.completion')}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <span className="text-4xl">🎯</span>
+                  <span className="text-base font-black text-slate-400">{t('dashboard.setGoal')}</span>
+                </div>
+              )}
             </div>
           </section>
 

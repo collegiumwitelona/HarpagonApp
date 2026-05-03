@@ -383,7 +383,7 @@ const SettingsPage = () => {
 
             <div className="pt-7 border-t border-slate-100 flex flex-col items-center">
               
-              <button onClick={handleLogout} className="w-full max-w-56 flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-red-500 transition-all border border-slate-200 group active:scale-95 mb-4 shadow-sm">
+              <button onClick={handleLogout} className="w-full max-w-56 flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 transition-all border border-red-100 group active:scale-95 mb-4 shadow-sm">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                   <polyline points="16 17 21 12 16 7"></polyline>

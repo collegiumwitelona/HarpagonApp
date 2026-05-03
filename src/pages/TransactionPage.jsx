@@ -8,7 +8,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { isAdmin } from '../services/auth';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
-import { translateCategoryName } from '../utils/categoryTranslations';
 import { normalizeTransactionType, normalizeCategoryType, normalizeDate, formatCurrencyByLanguage, formatDateOnly } from '../utils/formatters';
 
 const TransactionPage = () => {
@@ -132,17 +131,14 @@ const TransactionPage = () => {
       const transactionDate = normalizeFilterDateParam(transaction.date);
 
       if (searchNormalized) {
-        const categoryPL = translateCategoryName(category, 'pl').toLowerCase();
-        const categoryEN = translateCategoryName(category, 'en').toLowerCase();
-        const haystack = `${categoryPL} ${categoryEN} ${description}`.toLowerCase();
+        const haystack = `${category} ${description}`.toLowerCase();
         if (!haystack.includes(searchNormalized)) {
           return false;
         }
       }
 
       if (categoryFilter.trim()) {
-        const normalizeForCompare = (name) => translateCategoryName(name, 'en').toLowerCase();
-        if (normalizeForCompare(category) !== normalizeForCompare(categoryFilter)) {
+        if (category.toLowerCase() !== categoryFilter.trim().toLowerCase()) {
           return false;
         }
       }
@@ -302,9 +298,6 @@ const TransactionPage = () => {
       const fromAmount = Number(fromAmountFilter);
       const toAmount = Number(toAmountFilter);
 
-      if (categoryFilter.trim()) {
-        requestParams['Filters.CategoryName'] = translateCategoryName(categoryFilter.trim(), language);
-      }
       const fromDateParam = normalizeFilterDateParam(fromDateFilter);
       const toDateParam = normalizeFilterDateParam(toDateFilter);
 
@@ -413,13 +406,11 @@ const TransactionPage = () => {
     applyClientFilteringSortingPaging,
     fromAmountFilter,
     fromDateFilter,
-    language,
     navigate,
     searchValue,
     t,
     toAmountFilter,
     toDateFilter,
-    categoryFilter,
   ]);
 
   useEffect(() => {
@@ -431,8 +422,17 @@ const TransactionPage = () => {
   }, [loadTransactions]);
 
   useEffect(() => {
+    setSearchValue('');
     setCategoryFilter('');
-  }, [language]);
+    setFromDateFilter('');
+    setToDateFilter('');
+    setFromAmountFilter('');
+    setToAmountFilter('');
+    setSortBy('date');
+    setSortDirection('desc');
+    setCurrentPage(1);
+    loadFormData();
+  }, [language, loadFormData]);
 
   const handleTransactionAdded = () => {
     if (currentPage !== 1) {
@@ -665,8 +665,8 @@ const TransactionPage = () => {
               >
                 <option value="">{t('history.allCategories')}</option>
                 {categories.map((category) => (
-                  <option key={category.id} value={category.categoryName}>
-                    {translateCategoryName(category.categoryName, language)}
+                  <option key={category.id} value={category.rawCategoryName || category.categoryName}>
+                    {category.categoryName}
                   </option>
                 ))}
               </select>
@@ -775,7 +775,7 @@ const TransactionPage = () => {
                 >
                   <p className="text-[11px] font-semibold text-slate-400 mb-1.5">{formatDateOnly(transaction.date, language)}</p>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-sm text-slate-800 w-1/4 truncate">{translateCategoryName(transaction.category, language)}</span>
+                    <span className="font-bold text-sm text-slate-800 w-1/4 truncate">{transaction.category}</span>
                     <span className="flex-1 text-xs text-slate-500 text-center truncate">
                       {(() => { const d = String(transaction.description || '').trim(); return (d && d.toLowerCase() !== String(transaction.category || '').toLowerCase()) ? d.slice(0, 30) : t('common.noDescription'); })()}
                     </span>

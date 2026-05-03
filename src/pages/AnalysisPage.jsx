@@ -21,7 +21,6 @@ import { api } from '../services/api';
 import { useDarkMode } from '../context/DarkModeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { CHART_COLORS } from '../constants/colors';
-import { translateCategoryName } from '../utils/categoryTranslations';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 import { getIntlLocale, normalizeTransactionType, normalizeCategoryType, normalizeDate, formatCurrencyByLanguage } from '../utils/formatters';
 
@@ -253,6 +252,10 @@ const AnalysisPage = () => {
     loadAnalysisData();
   }, [loadAnalysisData]);
 
+  useEffect(() => {
+    loadAnalysisData();
+  }, [language]);
+
   const selectedMonth = useMemo(
     () => monthOptions.find((item) => item.key === selectedMonthKey) || null,
     [monthOptions, selectedMonthKey]
@@ -305,7 +308,7 @@ const AnalysisPage = () => {
         return;
       }
 
-      const categoryName = translateCategoryName(String(transaction.category || 'Inne').trim() || 'Inne', language);
+      const categoryName = String(transaction.category || 'Inne').trim() || 'Inne';
       data[dayIndex][categoryName] = Number(data[dayIndex][categoryName] || 0) + Number(transaction.amount || 0);
       data[dayIndex].total += Number(transaction.amount || 0);
     });
