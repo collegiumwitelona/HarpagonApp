@@ -367,13 +367,13 @@ namespace Application.Services
 
             if (request.FromDate is not null)
             {
-                var from = request.FromDate.Value.ToDateTime(TimeOnly.MinValue);
+                var from = request.FromDate.Value.ToDateTime(TimeOnly.MinValue).ToUniversalTime();
                 query = query.Where(t => t.Date >= from);
             }
 
             if (request.ToDate is not null)
             {
-                var to = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue);
+                var to = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue).ToUniversalTime();
                 query = query.Where(t => t.Date <= to);
             }
 
