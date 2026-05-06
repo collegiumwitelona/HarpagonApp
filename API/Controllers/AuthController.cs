@@ -135,7 +135,7 @@ namespace API.Controllers
         [Authorize]
         [RequireConfirmedEmail]
         [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
             var userId = User.GetUserId();
             await _authService.ChangePasswordAsync(userId, request);
