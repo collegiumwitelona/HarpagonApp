@@ -1,9 +1,12 @@
-﻿namespace Domain.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Domain.Models
 {
     public class Account
     {
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
+        [MaxLength(60)]
         public string Name { get; set; }
         public decimal Balance { get; set; }
         public decimal Goal { get; set; }

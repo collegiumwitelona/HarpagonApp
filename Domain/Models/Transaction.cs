@@ -1,4 +1,6 @@
-﻿namespace Domain.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Domain.Models
 {
     public class Transaction
     {
@@ -7,6 +9,7 @@
         public Guid CategoryId { get; set; }
         public Guid AccountId { get; set; }
         public DateTime Date { get; set; }
+        [MaxLength(100)]
         public string Description { get; set; }
 
         public Category Category { get; set; }
