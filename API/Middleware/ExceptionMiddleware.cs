@@ -41,7 +41,6 @@ namespace API.Middleware
                 var response = new
                 {
                     message = _localizer[ex.Message].Value,
-                    code = ex.StatusCode,
                     errors = errors.ToArray()
                 };
                 await context.Response.WriteAsync(JsonSerializer.Serialize(response));
