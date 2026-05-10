@@ -37,7 +37,7 @@ namespace Application.Services
             var htmlTemplate = await File.ReadAllTextAsync(templatePath);
 
             var htmlBody = htmlTemplate
-                .Replace("{{Email}}", user.Email!)
+                .Replace("{{Name}}", user.Name)
                 .Replace("{{Link}}", link);
 
             await _emailSender.SendEmailAsync(user.Email!, _localizer["EmailConfirmation_Subject"], "", htmlBody);
@@ -54,7 +54,7 @@ namespace Application.Services
             var htmlTemplate = await File.ReadAllTextAsync(templatePath);
 
             var htmlBody = htmlTemplate
-                .Replace("{{Email}}", user.Email!)
+                .Replace("{{Name}}", user.Name)
                 .Replace("{{Link}}", link);
             await _emailSender.SendEmailAsync(user.Email!, _localizer["ResetPassword_Subject"], "", htmlBody);
         }
