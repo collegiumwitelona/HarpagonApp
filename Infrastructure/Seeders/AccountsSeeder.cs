@@ -22,6 +22,7 @@ namespace Infrastructure.Seeders
                         Name = $"Bank account {i}",
                         Balance = Random.Shared.Next(1000, 5000),
                         UserId = user.Id,
+                        Goal = Random.Shared.Next(5000, 10000)
                     };
 
                     await _accountRepository.AddAccountAsync(account);
