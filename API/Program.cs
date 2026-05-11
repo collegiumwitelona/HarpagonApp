@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -116,7 +117,27 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-    });
+    })
+    .ConfigureApiBehaviorOptions(options =>
+     {
+         options.SuppressModelStateInvalidFilter = false;
+
+         options.InvalidModelStateResponseFactory = context =>
+         {
+             var errors = context.ModelState
+                 .Where(x => x.Value.Errors.Count > 0)
+                 .ToDictionary(
+                     x => x.Key,
+                     x => x.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                 );
+
+             return new BadRequestObjectResult(new
+             {
+                 message = "Validation failed",
+                 errors
+             });
+         };
+     });
 
 
 //CORS
