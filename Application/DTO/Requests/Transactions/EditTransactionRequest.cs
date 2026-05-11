@@ -1,8 +1,12 @@
-﻿namespace Application.DTO.Requests.Transactions
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Application.DTO.Requests.Transactions
 {
     public class EditTransactionRequest
     {
-        public Guid TransactionId { get; set; }
-        public decimal Amount { get; set; }
+        [Required]
+        public required Guid TransactionId { get; set; }
+        [Required]
+        public required decimal Amount { get; set; }
     }
 }

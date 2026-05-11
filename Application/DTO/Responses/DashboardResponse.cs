@@ -9,7 +9,7 @@
         public decimal CurrentTotalBalance {  get; set; }
         public DateTime LastUpdated { get; set; }
 
-        public Dictionary<string, decimal> ExpensesByCategory { get; set; }
-        public Dictionary<string, decimal> IncomesByCategory { get; set; }
+        public required Dictionary<string, decimal> ExpensesByCategory { get; set; }
+        public required Dictionary<string, decimal> IncomesByCategory { get; set; }
     }
 }
