@@ -11,18 +11,25 @@ namespace Tests.Unit
         [Fact]
         public async Task CreateAccountAsync_ShouldCreateAccountAndReturnResponse()
         {
-            var repositoryMock = new Mock<IAccountRepository>();
-
-            repositoryMock
-                .Setup(r => r.AddAccountAsync(It.IsAny<Account>()))
-                .ReturnsAsync(new Account());
-
-            var service = new AccountService(repositoryMock.Object);
-
             var userId = Guid.NewGuid();
             var accountName = "Main account";
             var initialBalance = 100m;
             var initialGoal = 1000m;
+
+            var repositoryMock = new Mock<IAccountRepository>();
+
+            repositoryMock
+                .Setup(r => r.AddAccountAsync(It.IsAny<Account>()))
+                .ReturnsAsync(new Account
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Name = accountName,
+                    Balance = initialBalance,
+                    Goal = initialGoal
+                });
+
+            var service = new AccountService(repositoryMock.Object);
 
             var result = await service.CreateAccountAsync(userId, accountName, initialBalance, initialGoal);
 
@@ -47,7 +54,8 @@ namespace Tests.Unit
                 Id = Guid.NewGuid(),
                 UserId = Guid.NewGuid(),
                 Name = "Old name",
-                Balance = 100
+                Balance = 100,
+                Goal = 1000
             };
 
             var repositoryMock = new Mock<IAccountRepository>();
@@ -87,7 +95,8 @@ namespace Tests.Unit
                 Id = accountId,
                 UserId = Guid.NewGuid(),
                 Name = "Old name",
-                Balance = 100
+                Balance = 100,
+                Goal = 1000
             };
 
             var repositoryMock = new Mock<IAccountRepository>();
@@ -135,7 +144,8 @@ namespace Tests.Unit
                 Id = accountId,
                 UserId = userId,
                 Name = "Old name",
-                Balance = 100
+                Balance = 100,
+                Goal = 1000
             };
 
             var repositoryMock = new Mock<IAccountRepository>();
@@ -165,7 +175,8 @@ namespace Tests.Unit
                 Id = accountId,
                 UserId = Guid.NewGuid(),
                 Name = "Old name",
-                Balance = 100
+                Balance = 100,
+                Goal = 1000
             };
 
             var repositoryMock = new Mock<IAccountRepository>();
@@ -191,7 +202,8 @@ namespace Tests.Unit
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Name = "Name",
-                Balance = 100
+                Balance = 100,
+                Goal = 1000
             };
 
             var repositoryMock = new Mock<IAccountRepository>();
@@ -212,8 +224,8 @@ namespace Tests.Unit
         {
             var userId = Guid.NewGuid();
             var accounts = new List<Account>{
-                new Account { Id = Guid.NewGuid(), UserId = userId, Balance = 100 },
-                new Account { Id = Guid.NewGuid(), UserId = userId, Balance = 200 }
+                new Account { Id = Guid.NewGuid(), UserId = userId, Balance = 100, Goal = 1000, Name = "Main account" },
+                new Account { Id = Guid.NewGuid(), UserId = userId, Balance = 200, Goal = 2000, Name = "Secondary account" }
             };
 
             var repositoryMock = new Mock<IAccountRepository>();

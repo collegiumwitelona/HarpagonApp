@@ -32,6 +32,7 @@ namespace Tests.Seeders
                 Name = "Test Account",
                 UserId = userId,
                 Balance = Random.Shared.Next(0, 100),
+                Goal = Random.Shared.Next(100, 1000)
             };
 
             context.Accounts.Add(account);
