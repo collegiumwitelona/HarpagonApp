@@ -175,7 +175,7 @@ namespace Application.Services
 
                 Category = new CategoryResponse
                 {
-                    Id = transaction.Category.Id,
+                    Id = transaction.Category!.Id,
                     Name = transaction.Category.Name,
                     Type = transaction.Category.Type
                 }
@@ -185,7 +185,7 @@ namespace Application.Services
         public async Task<TransactionResponse> GetTransactionByIdAsync(Guid transactionId, Guid userId)
         {
             var response = await _transactionRepository.GetTransactionByIdAsync(transactionId);
-            if (response == null || response.Account.UserId != userId)
+            if (response == null || response.Account!.UserId != userId)
             {
                 throw new NotFoundException("Transaction_NotFound");
             }
@@ -228,14 +228,14 @@ namespace Application.Services
                     Description = t.Description,
                     Category = new CategoryResponse
                     {
-                        Id = t.Category.Id,
+                        Id = t.Category!.Id,
                         Description = t.Category.Description,
                         Name = language == "pl" && t.Category.NamePl != null ? t.Category.NamePl : t.Category.Name,
                         Type = t.Category.Type
                     },
                     Account = new AccountResponse
                     {
-                        Id = t.Account.Id,
+                        Id = t.Account!.Id,
                         UserId = userId,
                         Name = t.Account.Name,
                         Balance = t.Account.Balance,
@@ -263,7 +263,7 @@ namespace Application.Services
 
             if (hasOrder)
             {
-                var order = request?.Order[0];
+                var order = request?.Order![0];
 
                 string? sortColumn = request?.Columns?.Count > order?.Column
                     ? request.Columns[order.Column].Data
@@ -292,7 +292,7 @@ namespace Application.Services
 
                     Category = new CategoryResponse
                     {
-                        Id = t.Category.Id,
+                        Id = t.Category!.Id,
                         Description = t.Category.Description,
                         Name = language == "pl" && t.Category.NamePl != null ? t.Category.NamePl : t.Category.Name,
                         Type = t.Category.Type
@@ -300,7 +300,7 @@ namespace Application.Services
 
                     Account = new AccountResponse
                     {
-                        Id = t.Account.Id,
+                        Id = t.Account!.Id,
                         UserId = userId,
                         Name = t.Account.Name,
                         Balance = t.Account.Balance,
