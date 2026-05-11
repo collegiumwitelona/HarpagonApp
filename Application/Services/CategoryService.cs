@@ -33,7 +33,7 @@ namespace Application.Services
                 OwnerId = userId,
                 Name = newCategory.Name,
                 Type = newCategory.Type,
-                Description = newCategory.Description
+                Description = newCategory.Description ?? string.Empty
             };
         }
 
@@ -66,9 +66,9 @@ namespace Application.Services
             {
                 Id = request.CategoryId,
                 UserId = category.UserId,
-                Name = request.CategoryName,
-                Type = request.Type,
-                Description = request.Description
+                Name = request.CategoryName ?? category.Name,
+                Type = request.Type ?? category.Type,
+                Description = request.Description ?? category.Description
             };
 
             await _categoryRepository.UpdateCategoryAsync(newCategory);
@@ -79,7 +79,7 @@ namespace Application.Services
                 OwnerId = newCategory.UserId,
                 Name = newCategory.Name,
                 Type = newCategory.Type,
-                Description = newCategory.Description
+                Description = newCategory.Description ?? string.Empty
             };
         }
 
