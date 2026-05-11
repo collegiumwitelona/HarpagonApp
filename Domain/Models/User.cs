@@ -5,9 +5,9 @@ namespace Domain.Models
 {
     public class User : IdentityUser<Guid>
     {
-        [MaxLength(100)]
+        [MaxLength(50)]
         public string Name { get; set; }
-        [MaxLength(100)]
+        [MaxLength(50)]
         public string Surname { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdate { get; set; }
