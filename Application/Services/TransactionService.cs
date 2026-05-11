@@ -103,7 +103,7 @@ namespace Application.Services
         {
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
 
-            if (transaction == null || transaction.Account.UserId != userId)
+            if (transaction == null || transaction.Account?.UserId != userId)
                 throw new NotFoundException("Transaction_NotFound");
 
             var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
@@ -113,7 +113,7 @@ namespace Application.Services
                 throw new NotFoundException("Account_NotFound");
             }
 
-            var delta = transaction.Category.Type switch
+            var delta = transaction.Category?.Type switch
             {
                 CategoryType.Expense => transaction.Amount,
                 CategoryType.Income => -transaction.Amount,
@@ -133,7 +133,7 @@ namespace Application.Services
         {
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
 
-            if (transaction == null || transaction.Account.UserId != userId)
+            if (transaction == null || transaction.Account?.UserId != userId)
                 throw new NotFoundException("Transaction_NotFound");
 
             var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
@@ -146,7 +146,7 @@ namespace Application.Services
             var diff = newAmount - transaction.Amount;
             var newBalance = account.Balance - diff;
 
-            if (transaction.Category.Type == CategoryType.Expense && newBalance < 0)
+            if (transaction.Category?.Type == CategoryType.Expense && newBalance < 0)
                 throw new UnprocessableException("Transaction_InsufficientFunds");
 
             account.Balance = newBalance;
@@ -216,7 +216,7 @@ namespace Application.Services
 
         public async Task<List<TransactionResponse>> GetAllTransactionsByUserIdAsync(Guid userId)
         {
-            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+            var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName ?? "en";
             var transactions = await _transactionRepository
                 .GetAllTransactionsByUserIdAsync(userId);
 
@@ -230,7 +230,7 @@ namespace Application.Services
                     {
                         Id = t.Category.Id,
                         Description = t.Category.Description,
-                        Name = language == "pl" ? t.Category.NamePl : t.Category.Name,
+                        Name = language == "pl" && t.Category.NamePl != null ? t.Category.NamePl : t.Category.Name,
                         Type = t.Category.Type
                     },
                     Account = new AccountResponse
@@ -263,17 +263,17 @@ namespace Application.Services
 
             if (hasOrder)
             {
-                var order = request!.Order[0];
+                var order = request?.Order[0];
 
-                string? sortColumn = request.Columns?.Count > order.Column
+                string? sortColumn = request?.Columns?.Count > order?.Column
                     ? request.Columns[order.Column].Data
                     : null;
 
-                query = ApplySorting(query, sortColumn, order.Dir);
+                query = ApplySorting(query, sortColumn, order?.Dir);
             }
             else
             {
-                query = query.OrderBy(x => x.Date);
+                query = query.OrderByDescending(x => x.Date);
             }
 
             // pagination
@@ -294,7 +294,7 @@ namespace Application.Services
                     {
                         Id = t.Category.Id,
                         Description = t.Category.Description,
-                        Name = language == "pl" ? t.Category.NamePl : t.Category.Name,
+                        Name = language == "pl" && t.Category.NamePl != null ? t.Category.NamePl : t.Category.Name,
                         Type = t.Category.Type
                     },
 
@@ -348,7 +348,7 @@ namespace Application.Services
 
                 (t.Category != null && !string.IsNullOrEmpty(t.Category.Name) && t.Category.Name.ToLower().Contains(searchLower)) ||
 
-                (t.Category != null && (isPl ? t.Category.NamePl.ToLower().Contains(searchLower)
+                (t.Category != null && (isPl && t.Category.NamePl != null ? t.Category.NamePl.ToLower().Contains(searchLower)
                                              : t.Category.Name.ToLower().Contains(searchLower)))
             );
         }
@@ -362,7 +362,7 @@ namespace Application.Services
 
             if (!string.IsNullOrEmpty(request.CategoryName))
             {
-                query = query.Where(t => t.Category.Name == request.CategoryName);
+                query = query.Where(t => t.Category != null && t.Category.Name == request.CategoryName);
             }
 
             if (request.FromDate is not null)

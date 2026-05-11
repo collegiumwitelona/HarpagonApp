@@ -1,4 +1,5 @@
-﻿namespace Application.DTO.Responses
+﻿
+namespace Application.DTO.Responses
 {
     public class DataTableResponse<T>
     {

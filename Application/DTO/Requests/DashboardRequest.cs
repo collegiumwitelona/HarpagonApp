@@ -1,8 +1,12 @@
-﻿namespace Application.DTO.Requests
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Application.DTO.Requests
 {
     public class DashboardRequest
     {
-        public DateOnly FromDate { get; set; }
-        public DateOnly ToDate { get; set; }
+        [Required]
+        public required DateOnly FromDate { get; set; }
+        [Required]
+        public required DateOnly ToDate { get; set; }
     }
 }

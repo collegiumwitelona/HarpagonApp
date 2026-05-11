@@ -1,11 +1,16 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 
 namespace Domain.Models
 {
     public class User : IdentityUser<Guid>
     {
-        public string Name { get; set; }
-        public string Surname { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public required string Name { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public required string Surname { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdate { get; set; }
 

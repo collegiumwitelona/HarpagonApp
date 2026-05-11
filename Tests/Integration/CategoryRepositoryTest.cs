@@ -18,6 +18,7 @@ namespace Tests.Integration
             {
                 Id = Guid.NewGuid(),
                 Name = "Test",
+                Type = CategoryType.Expense,
             };
 
             context.Categories.Add(category);
@@ -41,16 +42,16 @@ namespace Tests.Integration
 
             var userCategories = new List<Category>
             {
-                new Category { Id = Guid.NewGuid(), Name = "User1", UserId = user!.Id },
-                new Category { Id = Guid.NewGuid(), Name = "User2", UserId = user!.Id }
+                new Category { Id = Guid.NewGuid(), Name = "User1", UserId = user!.Id, Type = CategoryType.Expense },
+                new Category { Id = Guid.NewGuid(), Name = "User2", UserId = user!.Id, Type = CategoryType.Expense }
             };
 
             var globalCategories = new List<Category>
             {
-                new Category { Id = Guid.NewGuid(), Name = "Global1", UserId = null }
+                new Category { Id = Guid.NewGuid(), Name = "Global1", UserId = null, Type = CategoryType.Expense }
             };
 
-            var otherUserCategory = new Category { Id = Guid.NewGuid(), Name = "Other", UserId = otherUser!.Id};
+            var otherUserCategory = new Category { Id = Guid.NewGuid(), Name = "Other", UserId = otherUser!.Id, Type = CategoryType.Expense};
 
             context.Categories.AddRange(userCategories);
             context.Categories.AddRange(globalCategories);

@@ -35,12 +35,11 @@ namespace Tests.Integration
 
             var userAccounts = new List<Account>
             {
-                new Account { Id = Guid.NewGuid(), Name = "User1", UserId = user!.Id },
-                new Account { Id = Guid.NewGuid(), Name = "User2", UserId = user!.Id }
+                new Account { Id = Guid.NewGuid(), Name = "User1", UserId = user!.Id, Balance = 500, Goal = 20 },
+                new Account { Id = Guid.NewGuid(), Name = "User2", UserId = user!.Id, Balance = 300, Goal = 10 }
             };
 
-            var otherUserAccount = new Account { Id = Guid.NewGuid(), Name = "Other", UserId = otherUser!.Id };
-
+            var otherUserAccount = new Account { Id = Guid.NewGuid(), Name = "Other", UserId = otherUser!.Id, Balance = 200, Goal = 5 };
             context.Accounts.AddRange(userAccounts);
             context.Accounts.Add(otherUserAccount);
 

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Localization;
 namespace API.Controllers
 {
     [EnableCors("Policy")]
-    [Controller]
+    [ApiController]
     [Route("[controller]")]
     public class AuthController : ControllerBase
     {

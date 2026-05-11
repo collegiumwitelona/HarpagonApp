@@ -57,7 +57,8 @@ namespace Tests.Unit
                 Id = accountId,
                 Name = "Test",
                 UserId = userId,
-                Balance = 1000
+                Balance = 1000,
+                Goal = 2000
             };
 
             _categoryRepositoryMock
@@ -99,24 +100,35 @@ namespace Tests.Unit
         {
             var userId = Guid.NewGuid();
             var accountId = Guid.NewGuid();
+            var categoryId = Guid.NewGuid();
 
             var account = new Account
             {
                 Id = accountId,
                 Name = "Test",
                 UserId = userId,
-                Balance = 1000
+                Balance = 1000,
+                Goal = 2000
+            };
+
+            var category = new Category
+            {
+                Id = categoryId,
+                Name = "Test",
+                UserId = userId,
+                Type = CategoryType.Expense
             };
 
             var transaction = new Transaction
             {
                 Id = Guid.NewGuid(),
                 AccountId = accountId,
+                CategoryId = categoryId,
                 Account = account,
                 Amount = 200,
                 Date = DateTime.UtcNow,
                 Description = "Test",
-                Category = new Category { Type = CategoryType.Expense }
+                Category = category
             };
 
             _transactionRepositoryMock
@@ -141,12 +153,23 @@ namespace Tests.Unit
         {
             var userId = Guid.NewGuid();
             var accountId = Guid.NewGuid();
+            var categoryId = Guid.NewGuid();
 
             var account = new Account
             {
                 Id = accountId,
                 UserId = userId,
-                Balance = 100
+                Balance = 100,
+                Goal = 2000,
+                Name = "Test"
+            };
+
+            var category = new Category
+            {
+                Id = categoryId,
+                Name = "Test",
+                UserId = userId,
+                Type = CategoryType.Expense
             };
 
             var transaction = new Transaction
@@ -155,10 +178,9 @@ namespace Tests.Unit
                 AccountId = accountId,
                 Account = account,
                 Amount = 200,
-                Category = new Category
-                {
-                    Type = CategoryType.Expense
-                }
+                Category = category,
+                CategoryId = categoryId,
+                Date = DateTime.UtcNow,
             };
 
             _transactionRepositoryMock
@@ -196,12 +218,23 @@ namespace Tests.Unit
         {
             var userId = Guid.NewGuid();
             var accountId = Guid.NewGuid();
+            var categoryId = Guid.NewGuid();
 
             var account = new Account
             {
                 Id = accountId,
+                Name = "Test",
                 UserId = userId,
-                Balance = 1000
+                Balance = 1000,
+                Goal = 2000
+            };
+
+            var category = new Category
+            {
+                Id = categoryId,
+                Name = "Test",
+                UserId = userId,
+                Type = CategoryType.Expense
             };
 
             var transaction = new Transaction
@@ -210,7 +243,9 @@ namespace Tests.Unit
                 AccountId = accountId,
                 Account = account,
                 Amount = 200,
-                Category = new Category { Type = CategoryType.Expense }
+                Category = category,
+                CategoryId = categoryId,
+                Date = DateTime.UtcNow
             };
 
             _transactionRepositoryMock
@@ -245,7 +280,8 @@ namespace Tests.Unit
                 Id = accountId,
                 Name = "Test",
                 UserId = userId,
-                Balance = 1000
+                Balance = 1000,
+                Goal = 2000
             };
 
             var category = new Category { 
@@ -292,7 +328,8 @@ namespace Tests.Unit
                 Id = Guid.NewGuid(),
                 Name = "Test",
                 UserId = userId,
-                Balance = 1000
+                Balance = 1000,
+                Goal = 2000
             };
 
             var category = new Category

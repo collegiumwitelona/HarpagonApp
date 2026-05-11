@@ -1,4 +1,6 @@
-﻿namespace Application.DTO.Requests.Accounts
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Application.DTO.Requests.Accounts
 {
     /// <summary>
     /// Request model used to update an account balance.
@@ -8,10 +10,12 @@
         /// <summary>
         /// Identifier of the account to update.
         /// </summary>
-        public Guid AccountId { get; set; }
+        [Required]
+        public required Guid AccountId { get; set; }
         /// <summary>
         /// New balance value for the account.
         /// </summary>
-        public decimal NewBalance { get; set; }
+        [Required]
+        public required decimal NewBalance { get; set; }
     }
 }

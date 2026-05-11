@@ -1,10 +1,16 @@
-﻿namespace Application.DTO.Requests.Transactions
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Application.DTO.Requests.Transactions
 {
     public class CreateTransactionRequest
     {
-        public Guid AccountId { get; set; }
-        public Guid CategoryId { get; set; }
-        public decimal Amount { get; set; }
-        public string Description { get; set; }
+        [Required]
+        public required Guid AccountId { get; set; }
+        [Required]
+        public required Guid CategoryId { get; set; }
+        [Required]
+        public required decimal Amount { get; set; }
+        [MaxLength(100, ErrorMessage = "Description cannot exceed 100 characters.")]
+        public string? Description { get; set; } = null;
     }
 }

@@ -1,8 +1,12 @@
-﻿namespace Application.DTO.Requests.Auth
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Application.DTO.Requests.Auth
 {
     public class ConfirmEmailRequest
     {
-        public Guid UserId { get; set; }
-        public string Token { get; set; }
+        [Required]
+        public required Guid UserId { get; set; }
+        [Required]
+        public required string Token { get; set; }
     }
 }
