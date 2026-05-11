@@ -32,7 +32,7 @@ namespace Application.Services
                 Id = user.Id,
                 Name = user.Name,
                 Surname = user.Surname,
-                Email = user.Email,
+                Email = user.Email!,
             };
         }
 
@@ -49,7 +49,7 @@ namespace Application.Services
                 Id = user.Id,
                 Name = user.Name,
                 Surname = user.Surname,
-                Email = user.Email,
+                Email = user.Email!,
             };
         }
 
@@ -114,7 +114,7 @@ namespace Application.Services
             //}
             //else
             //{
-            query = query.OrderBy(x => x.CreatedAt);
+            query = query.OrderByDescending(x => x.CreatedAt);
             //}
 
             // pagination

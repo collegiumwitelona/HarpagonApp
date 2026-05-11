@@ -38,22 +38,23 @@ namespace Application.Services
             var transactionsCount = await _transactionRepository.GetTransactionsCountByUserIdAsync(userId, from, to);
 
             var rawExpensesByCategory = await _transactionRepository.GetTotalsByCategoryIdAsync(CategoryType.Expense, from, to);
-            var raweIncomesByCategory = await _transactionRepository.GetTotalsByCategoryIdAsync(CategoryType.Income, from, to);
+            var rawIncomesByCategory = await _transactionRepository.GetTotalsByCategoryIdAsync(CategoryType.Income, from, to);
 
             var categories = await _categoryRepository.GetAllCategoriesAsync(userId);
 
-            var expensesByCategory = rawExpensesByCategory.ToDictionary(
+            
+            var expensesByCategory = rawExpensesByCategory?.ToDictionary(
                 t => language == "pl" && !string.IsNullOrEmpty(categories.First(c => c.Id == t.Key).NamePl) ? categories.First(c => c.Id == t.Key).NamePl : categories.First(c => c.Id == t.Key).Name,
                 t => t.Value
             );
 
-            var incomesByCategory = raweIncomesByCategory.ToDictionary(
+            var incomesByCategory = rawIncomesByCategory?.ToDictionary(
                 t => language == "pl" && !string.IsNullOrEmpty(categories.First(c => c.Id == t.Key).NamePl) ? categories.First(c => c.Id == t.Key).NamePl : categories.First(c => c.Id == t.Key).Name,
                 t => t.Value
             );
 
-            var totalExpenses = expensesByCategory.Values.Sum();
-            var totalIncomes = incomesByCategory.Values.Sum();
+            var totalExpenses = expensesByCategory?.Values.Sum() ?? 0;
+            var totalIncomes = incomesByCategory?.Values.Sum() ?? 0;
 
             var accounts = await _accountRepository.GetAccountsByUserIdAsync(userId);
             var currentTotalBalance = accounts.Sum(a => a.Balance);

@@ -27,7 +27,7 @@ namespace Infrastructure.Persistence.Repositories
             var transactions = _context.Transactions.AsNoTracking()
                 .Include(t => t.Account)
                 .Include(t => t.Category)
-                .Where(t => t.Account.UserId == userId);
+                .Where(t => t.Account!.UserId == userId);
 
             return transactions.AsQueryable();
         }
@@ -37,7 +37,7 @@ namespace Infrastructure.Persistence.Repositories
             return await _context.Transactions.AsNoTracking()
                 .Include(t => t.Account)
                 .Include(t => t.Category)
-                .Where(t => t.Account.UserId == userId)
+                .Where(t => t.Account!.UserId == userId)
                 .ToListAsync();
         }
 
@@ -75,7 +75,7 @@ namespace Infrastructure.Persistence.Repositories
 
             return await _context.Transactions
                 .AsNoTracking()
-                .Where(t => t.Account.UserId == userId && 
+                .Where(t => t.Account!.UserId == userId && 
                 t.Date >= from && t.Date < endDateExclusive)
                 .CountAsync();
         }
@@ -86,7 +86,7 @@ namespace Infrastructure.Persistence.Repositories
 
             var totals = await _context.Transactions
                 .AsNoTracking()
-                .Where(t => t.Category.Type == type && t.Date >= from && t.Date < endDateExclusive)
+                .Where(t => t.Category!.Type == type && t.Date >= from && t.Date < endDateExclusive)
                 .GroupBy(t => t.CategoryId)
                 .Select(g => new
                 {
