@@ -81,15 +81,11 @@ const ResetPasswordPage = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/Auth/reset-password', null, {
-        params: {
-          userId,
-          token,
-          password,
-        },
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await api.post('/Auth/reset-password', {
+        userId,
+        token,
+        password,
+      }, {
         validateStatus: () => true,
       });
 
