@@ -12,17 +12,17 @@ export default function About() {
           <Navbar />
           <main className="grow flex flex-col justify-center items-center px-6 py-4 lg:py-6 bg-hero-blur w-full text-center space-y-12 min-h-0 overflow-y-auto">
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white!">
-                  About <br />
+                  {t('about.title')} <br />
               </h1>
-              <p className="text-lg md:text-xl text-white! leading-relaxed max-w-2xl pt-10">
-                  Harpagon to wygodna aplikacja stworzona z myslą o zarządzaniu budżetem domowym. <br /> <br />
-                  Projekt studencji wykonany przez:
+              <div className="text-lg md:text-xl text-white! leading-relaxed max-w-2xl pt-10">
+                  <p>{t('about.description')}</p>
+                  <p className="mt-6">{t('about.teamHeader')}</p>
                   <ul>
                       <li>Julia Kozłowska 44922</li>
                       <li>Stanislav Zhuk 44963</li>
                       <li>Michał Nocuń 40669</li>
                   </ul>
-              </p>
+              </div>
           </main>
           <Footer />
       </div>

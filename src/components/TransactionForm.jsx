@@ -17,7 +17,7 @@ const normalizeType = (type) =>
 
 const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => {
   const navigate = useNavigate();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [formType, setFormType] = useState('wydatek');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [error, setError] = useState('');

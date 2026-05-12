@@ -44,6 +44,11 @@ export const translations = {
       titleAccent: 'lepiej niż kiedykolwiek',
       description: 'Dzięki naszej platformie możesz łatwo śledzić swoje wydatki, planować budżet i osiągać swoje cele finansowe.',
     },
+    about: {
+      title: 'O projekcie',
+      description: 'Harpagon to wygodna aplikacja stworzona z myślą o zarządzaniu budżetem domowym.',
+      teamHeader: 'Projekt studencki wykonany przez:',
+    },
     auth: {
       email: 'E-mail',
       emailPlaceholder: 'Twój adres e-mail',
@@ -280,6 +285,11 @@ export const translations = {
       titleStart: 'Manage your budget',
       titleAccent: 'better than ever',
       description: 'With our platform you can easily track expenses, plan your budget, and reach your financial goals.',
+    },
+    about: {
+      title: 'About the project',
+      description: 'Harpagon is a convenient app designed to help manage a household budget.',
+      teamHeader: 'Student project by:',
     },
     auth: {
       email: 'Email',

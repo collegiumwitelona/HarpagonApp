@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import CashStatCard from '../components/CashStatCard';
@@ -38,7 +38,7 @@ const DashboardPage = () => {
   });
   const hasLoadedDashboardRef = useRef(false);
 
-  const buildSummaryFromTransactions = (transactionsList = []) => {
+  const buildSummaryFromTransactions = useCallback((transactionsList = []) => {
     const summary = {
       totalExpenses: 0,
       totalIncomes: 0,
@@ -69,9 +69,9 @@ const DashboardPage = () => {
     });
 
     return summary;
-  };
+  }, []);
 
-  const normalizeTransaction = (transaction, index, categoriesList = []) => {
+  const normalizeTransaction = useCallback((transaction, index, categoriesList = []) => {
     const transactionCategoryId =
       transaction.categoryId || transaction.categoryID || transaction.category?.id || '';
 
@@ -105,9 +105,9 @@ const DashboardPage = () => {
       amount: Number(transaction.amount || transaction.value || 0),
       date: normalizeDate(transaction.date || transaction.transactionDate || transaction.createdAt),
     };
-  };
+  }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     setError('');
     setLoading(true);
 
@@ -261,7 +261,7 @@ const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [buildSummaryFromTransactions, navigate, normalizeTransaction, t]);
 
   useEffect(() => {
     if (hasLoadedDashboardRef.current) {
@@ -270,12 +270,12 @@ const DashboardPage = () => {
 
     hasLoadedDashboardRef.current = true;
     loadDashboardData();
-  });
+  }, [loadDashboardData]);
 
   useEffect(() => {
     if (!hasLoadedDashboardRef.current) return;
     loadDashboardData();
-  }, [language]);
+  }, [language, loadDashboardData]);
 
   const categoryOptions = useMemo(
     () => categories.filter((category) => category.type === formType),

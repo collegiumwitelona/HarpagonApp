@@ -252,10 +252,6 @@ const AnalysisPage = () => {
     loadAnalysisData();
   }, [loadAnalysisData]);
 
-  useEffect(() => {
-    loadAnalysisData();
-  }, [language]);
-
   const selectedMonth = useMemo(
     () => monthOptions.find((item) => item.key === selectedMonthKey) || null,
     [monthOptions, selectedMonthKey]
@@ -314,7 +310,7 @@ const AnalysisPage = () => {
     });
 
     return data;
-  }, [chartMode, language, selectedMonth, transactions]);
+  }, [chartMode, selectedMonth, transactions]);
 
   const categoryKeys = useMemo(() => {
     if (!chartData.length) {
