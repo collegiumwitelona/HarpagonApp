@@ -33,6 +33,7 @@ namespace Application.Services
                 Name = user.Name,
                 Surname = user.Surname,
                 Email = user.Email!,
+                EmailConfirmed = user.EmailConfirmed
             };
         }
 
@@ -50,6 +51,7 @@ namespace Application.Services
                 Name = user.Name,
                 Surname = user.Surname,
                 Email = user.Email!,
+                EmailConfirmed = user.EmailConfirmed
             };
         }
 
@@ -63,6 +65,7 @@ namespace Application.Services
                 Name = user.Name,
                 Surname = user.Surname,
                 Email = user.Email!,
+                EmailConfirmed = user.EmailConfirmed
             }).ToList();
         }
 
@@ -130,8 +133,8 @@ namespace Application.Services
                     Name = User.Name,
                     Surname = User.Surname,
                     Email = User.Email!,
-                })
-                .ToListAsync();
+                    EmailConfirmed = User.EmailConfirmed
+                }).ToListAsync();
 
             return new DataTableResponse<UserDataResponse>
             {
