@@ -82,6 +82,7 @@ namespace Api.Controllers.Admin
             [FromQuery] TransactionFilteringRequest filters, Guid userId)
         {
             var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request, filters);
+            _logger.LogInformation($"Admin retrieved transactions for user {userId} with filters: {filters}");
             return Ok(response);
         }
 
@@ -119,6 +120,7 @@ namespace Api.Controllers.Admin
         public async Task<IActionResult> GetAllTransactions(Guid userId)
         {
             var response = await _transactionService.GetAllTransactionsByUserIdAsync(userId);
+            _logger.LogInformation($"Admin retrieved all transactions for user {userId}");
             return Ok(response);
         }
 
@@ -168,6 +170,7 @@ namespace Api.Controllers.Admin
         public async Task<IActionResult> GetTransactionById(Guid id, Guid userId)
         {
             var response = await _transactionService.GetTransactionByIdAsync(id, userId);
+            _logger.LogInformation($"Admin retrieved transaction {id} for user {userId}");
             return Ok(response);
         }
 
@@ -229,6 +232,7 @@ namespace Api.Controllers.Admin
         {
             var response = await _transactionService.CreateTransactionAsync(request, userId);
             await _cache.InvalidateDashboardAsync(userId);
+            _logger.LogInformation($"Admin created transaction {response.Id} for user {userId}");
             return Ok(response);
         }
 
@@ -276,6 +280,7 @@ namespace Api.Controllers.Admin
         {
             var response = await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
             await _cache.InvalidateDashboardAsync(userId);
+            _logger.LogInformation($"Admin updated transaction {request.TransactionId} for user {userId} with new amount {request.Amount}");
             return Ok(response);
         }
 
@@ -305,6 +310,7 @@ namespace Api.Controllers.Admin
         {
             await _transactionService.DeleteTransactionByIdAsync(id, userId);
             await _cache.InvalidateDashboardAsync(userId);
+            _logger.LogInformation($"Admin deleted transaction {id} for user {userId}");
             return Ok();
         }
     }

@@ -41,12 +41,13 @@ namespace Api.Controllers.User
             var cachedDashboard = await _cache.GetDataAsync<DashboardResponse>(cacheKey);
             if (cachedDashboard != null)
             {
-                _logger.LogInformation($"Dashboard fetched from cache, key:{cacheKey}");
+                _logger.LogInformation($"Dashboard fetched from cache for user {userId}, key:{cacheKey}");
                 return Ok(cachedDashboard);
             }
 
             var response = await _dashboardService.GetDashboard(userId, request.FromDate, request.ToDate, language);
             await _cache.SetDataAsync(cacheKey, response);
+            _logger.LogInformation($"Dashboard fetched from database for user {userId}, key:{cacheKey}");
             return Ok(response);
         }
     }
