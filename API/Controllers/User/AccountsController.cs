@@ -60,6 +60,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _accountService.GetAccountsByUserIdAsync(userId);
+            _logger.LogInformation($"Accounts fetched for user {userId}");
             return Ok(response);
         }
 
@@ -100,6 +101,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _accountService.GetAccountByIdAsync(id, userId);
+            _logger.LogInformation($"Account {id} fetched for user {userId}");
             return Ok(response);
         }
 
@@ -147,6 +149,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _accountService.CreateAccountAsync(userId, request.AccountName, request.InitialBalance, request.InitialGoal);
+            _logger.LogInformation($"Account {response.Id} created for user {userId}");
             return Ok(response);
         }
 
@@ -194,6 +197,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _accountService.EditAccountBalanceByIdAsync(request.AccountId, request.NewBalance, userId);
+            _logger.LogInformation($"Account {request.AccountId} balance updated for user {userId}");
             return Ok(response);
         }
         
@@ -241,6 +245,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _accountService.EditAccountGoalByIdAsync(request.AccountId, request.NewGoal, userId);
+            _logger.LogInformation($"Account {request.AccountId} goal updated for user {userId}");
             return Ok(response);
         }
 
@@ -267,6 +272,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             await _accountService.DeleteAccountByIdAsync(id, userId);
+            _logger.LogInformation($"Account {id} deleted for user {userId}");
             return Ok();
         }
     }

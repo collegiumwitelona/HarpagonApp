@@ -75,10 +75,10 @@ namespace Api.Controllers.User
             var cachedCategories = await _cache.GetDataAsync<List<CategoryResponse>>($"categories:user:{userId}:{language}");
             if (cachedCategories != null)
             {
-                _logger.LogInformation("Categories fetched from cache");
+                _logger.LogInformation($"Categories fetched from cache for user {userId}");
                 return Ok(cachedCategories);
             }
-
+            _logger.LogInformation($"Categories fetched from database for user {userId}");
             var response = await _categoryService.GetCategoriesAsync(userId);
             await _cache.SetDataAsync($"categories:user:{userId}:{language}", response);
             return Ok(response);
@@ -118,6 +118,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _categoryService.GetCategoryByIdAsync(id,userId);
+            _logger.LogInformation($"Category {id} fetched for user {userId}");
             return Ok(response);
         }
 
@@ -169,6 +170,7 @@ namespace Api.Controllers.User
             var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             var response = await _categoryService.CreateCategoryAsync(request, userId);
             await _cache.RemoveDataAsync($"categories:user:{userId}:{language}");
+            _logger.LogInformation($"Category {response.Id} created for user {userId}");
             return Ok(response);
         }
         
@@ -224,6 +226,7 @@ namespace Api.Controllers.User
             var response = await _categoryService.EditCategoryByIdAsync(request, userId, userRole);
             var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             await _cache.RemoveDataAsync($"categories:user:{userId}:{language}");
+            _logger.LogInformation($"Category {response.Id} updated for user {userId}");
             return Ok(response);
         }
 
@@ -253,6 +256,7 @@ namespace Api.Controllers.User
             var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             await _categoryService.DeleteCategoryByIdAsync(id, userId, userRole);
             await _cache.RemoveDataAsync($"categories:user:{userId}:{language}");
+            _logger.LogInformation($"Category {id} deleted for user {userId}");
             return Ok();
         }
     }
