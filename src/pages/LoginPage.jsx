@@ -132,7 +132,8 @@ const LoginPage = () => {
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
         <AuthCard
           title={<>{t('auth.loginTitle')} <span className="text-violet-700">Harpagon</span></>}
-          scrollClassName="pr-2"
+          scrollClassName="pr-1"
+          compact
         >
           <AlertCard 
             type="error" 
@@ -141,11 +142,12 @@ const LoginPage = () => {
             onClose={() => setError('')}
           />
 
-          <form className="space-y-4 px-1" onSubmit={handleLogin}>
+          <form className="space-y-3 px-1" onSubmit={handleLogin}>
             <Input 
               label={t('auth.email')}
               type="email" 
               placeholder={t('auth.emailPlaceholder')}
+              compact
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -155,13 +157,14 @@ const LoginPage = () => {
               label={t('auth.password')}
               type="password" 
               placeholder={t('auth.passwordPlaceholder')}
+              compact
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
 
-            <div className="pt-2">
-              <Button type="submit" disabled={loading}>
+            <div className="pt-1">
+              <Button type="submit" disabled={loading} className="py-3">
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -172,7 +175,7 @@ const LoginPage = () => {
             </div>
           </form>
 
-          <div className="mt-8 text-center text-sm text-slate-600 space-y-3">
+          <div className="mt-4 text-center text-sm text-slate-600 space-y-1.5">
             <p>
               {t('auth.forgotPassword')}{' '}
               <Link to="/forgot-password" className="text-violet-700 font-bold hover:underline">
