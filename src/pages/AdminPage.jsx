@@ -11,6 +11,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { isAdmin } from '../services/auth';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
+import { fetchAllFromFirstSuccessfulEndpoint } from '../utils/apiFallbacks';
 import { extractTransactionsCollection, normalizeTransactionRecord } from '../utils/transactions';
 import { useDataFetch } from '../utils/hooks';
 
@@ -132,49 +133,41 @@ const AdminPage = () => {
     }
 
     const userIdEncoded = encodeURIComponent(String(selectedUserId));
-    const params = { Draw: 1, Start: 0, Length: 1000 };
+    const params = { Draw: 1 };
     const endpoints = [
       { url: `/Users/${userIdEncoded}/Transactions`, params },
       { url: `/Users/${userIdEncoded}/transactions`, params },
     ];
 
     try {
-      for (const endpoint of endpoints) {
-        const response = await api.get(endpoint.url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-          params: endpoint.params,
-          validateStatus: () => true,
-        });
-
-        if (response.status === 401) {
+      const response = await fetchAllFromFirstSuccessfulEndpoint({
+        requests: endpoints,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        onUnauthorized: () => {
           removeAuthToken();
           navigate('/login');
-          throw new Error('Unauthorized');
-        }
+        },
+      });
 
-        if (response.status === 404) {
-          continue;
-        }
-
-        if (response.status >= 200 && response.status < 300) {
-          const transactionsData = extractTransactionsCollection(response.data);
-
-          const normalized = transactionsData.map((tx, i) =>
-            normalizeTransactionRecord(tx, {
-              ownerId: selectedUserId,
-              index: i,
-              includeDescription: true,
-              normalizeDateValue: false,
-            })
-          );
-          return normalized;
-        }
+      if (!response) {
+        throw new Error(t('admin.loadTransactionsError'));
       }
 
-      throw new Error(t('admin.loadTransactionsError'));
+      const transactionsData = extractTransactionsCollection(response.data);
+
+      const normalized = transactionsData.map((tx, i) =>
+        normalizeTransactionRecord(tx, {
+          ownerId: selectedUserId,
+          index: i,
+          includeDescription: true,
+          normalizeDateValue: false,
+        })
+      );
+
+      return normalized;
     } catch (error) {
       console.error('Błąd ładowania transakcji użytkownika:', error);
       throw error;

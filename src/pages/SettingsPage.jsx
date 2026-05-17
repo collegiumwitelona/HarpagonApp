@@ -204,9 +204,12 @@ const SettingsPage = () => {
   const handleLogout = async () => {
     try {
       const refreshToken = localStorage.getItem('refreshToken');
-      const { api } = await import('../services/api');
+      const token = getAuthToken();
       await api.post('/Auth/logout', { refreshToken: refreshToken || '' }, {
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         validateStatus: () => true,
       });
     } catch (err) {

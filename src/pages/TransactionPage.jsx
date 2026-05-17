@@ -13,7 +13,7 @@ import { isAdmin } from '../services/auth';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 import { normalizeCategoryType } from '../utils/formatters';
 import { normalizeTransactionRecord } from '../utils/transactions';
-import { fetchFirstSuccessfulGet } from '../utils/apiFallbacks';
+import { fetchAllFromFirstSuccessfulEndpoint, fetchFirstSuccessfulGet } from '../utils/apiFallbacks';
 import { useDataFetch } from '../utils/hooks';
 
 const TransactionPage = () => {
@@ -245,20 +245,8 @@ const TransactionPage = () => {
     }
 
     try {
-      const extractTransactionsData = (responseBody) => {
-        return Array.isArray(responseBody?.data)
-          ? responseBody.data
-          : Array.isArray(responseBody?.Data)
-            ? responseBody.Data
-            : Array.isArray(responseBody)
-              ? responseBody
-              : [];
-      };
-
       const requestParams = {
         Draw: 1,
-        Start: 0,
-        Length: 1000,
         'Search.Value': searchValue.trim(),
       };
 
@@ -285,32 +273,29 @@ const TransactionPage = () => {
         Accept: 'application/json',
       };
 
-      let transactionsResponse = await api.get('/Me/Transactions', {
+      const transactionsResponse = await fetchAllFromFirstSuccessfulEndpoint({
+        requests: [
+          {
+            url: '/Me/Transactions',
+            params: requestParams,
+          },
+          {
+            url: '/Transactions',
+            params: requestParams,
+          },
+        ],
         headers,
-        params: requestParams,
-        validateStatus: () => true,
+        onUnauthorized: () => {
+          removeAuthToken();
+          navigate('/login');
+        },
       });
 
-      if (transactionsResponse.status === 404 || transactionsResponse.status === 405) {
-        transactionsResponse = await api.get('/Transactions', {
-          headers,
-          params: requestParams,
-          validateStatus: () => true,
-        });
+      if (!transactionsResponse) {
+        throw new Error('Transactions fetch failed');
       }
 
-      if (transactionsResponse.status === 401) {
-        removeAuthToken();
-        navigate('/login');
-        throw new Error('Unauthorized');
-      }
-
-      if (transactionsResponse.status < 200 || transactionsResponse.status >= 300) {
-        throw new Error(`Transactions fetch failed: ${transactionsResponse.status}`);
-      }
-
-      const responseBody = transactionsResponse.data;
-      return extractTransactionsData(responseBody);
+      return Array.isArray(transactionsResponse.data) ? transactionsResponse.data : [];
     } catch (error) {
       console.error('Błąd ładowania transakcji:', error);
       throw error;

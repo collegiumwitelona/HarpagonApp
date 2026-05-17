@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
+import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 import { useForm } from '../utils/hooks';
 
 const normalizeDate = (dateValue) => {
@@ -21,11 +22,6 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
   const { t } = useLanguage();
   const [formType, setFormType] = useState('wydatek');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
-
-  const getAuthToken = () => {
-    const raw = localStorage.getItem('token') || '';
-    return raw.trim().replace(/^"|"$/g, '').replace(/^Bearer\s+/i, '');
-  };
 
   const categoryOptions = useMemo(
     () => categories.filter((c) => c.type === formType),
@@ -89,8 +85,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
         }
 
         if (response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
+          removeAuthToken();
           navigate('/login');
           return;
         }

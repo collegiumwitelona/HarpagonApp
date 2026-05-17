@@ -24,7 +24,7 @@ import { CHART_COLORS } from '../constants/colors';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 import { getIntlLocale, normalizeCategoryType, formatCurrencyByLanguage } from '../utils/formatters';
 import { normalizeTransactionRecord } from '../utils/transactions';
-import { fetchFirstSuccessfulGet } from '../utils/apiFallbacks';
+import { fetchAllFromFirstSuccessfulEndpoint, fetchFirstSuccessfulGet } from '../utils/apiFallbacks';
 import { useDataFetch } from '../utils/hooks';
 
 const MONTH_END = { year: 2026, month: 0 };
@@ -117,24 +117,20 @@ const AnalysisPage = () => {
       }
 
       const [transactionsResponse, categoriesResponse] = await Promise.all([
-        fetchFirstSuccessfulGet({
+        fetchAllFromFirstSuccessfulEndpoint({
           requests: [
           {
             url: '/Me/Transactions',
             params: {
               Draw: 1,
-              Start: 0,
-              Length: 1000,
               'Search.Value': '',
             },
           },
-          { url: '/Transactions/all' },
+          { url: '/Transactions/all', paginate: false },
           {
             url: '/Transactions',
             params: {
               Draw: 1,
-              Start: 0,
-              Length: 1000,
               'Search.Value': '',
             },
           },
@@ -163,14 +159,9 @@ const AnalysisPage = () => {
       }
 
       const categoriesData = categoriesResponse.data;
-      const transactionsResponseData = transactionsResponse.data;
-      const transactionsData = Array.isArray(transactionsResponseData?.data)
-        ? transactionsResponseData.data
-        : Array.isArray(transactionsResponseData?.Data)
-          ? transactionsResponseData.Data
-          : Array.isArray(transactionsResponseData)
-            ? transactionsResponseData
-            : [];
+      const transactionsData = Array.isArray(transactionsResponse.data)
+        ? transactionsResponse.data
+        : [];
 
       const normalizedCategories = Array.isArray(categoriesData)
         ? categoriesData.map((category) => ({

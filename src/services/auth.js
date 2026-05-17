@@ -1,11 +1,4 @@
-export const getAuthToken = () => {
-  const rawToken = localStorage.getItem('token') || '';
-
-  return rawToken
-    .trim()
-    .replace(/^"|"$/g, '')
-    .replace(/^Bearer\s+/i, '');
-};
+import { getAuthToken } from '../utils/tokenHelper';
 
 export const isAuthenticated = () => Boolean(getAuthToken());
 
