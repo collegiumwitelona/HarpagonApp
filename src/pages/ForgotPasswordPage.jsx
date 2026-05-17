@@ -8,16 +8,47 @@ import AlertCard from '../components/AlertCard';
 import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
+import { useForm } from '../utils/hooks';
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
-
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  const handleForgotPassword = async (values) => {
+    try {
+      const response = await api.post('/Auth/forgot-password', null, {
+        params: {
+          email: values.email,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        validateStatus: () => true,
+      });
+
+      if (response.status >= 200 && response.status < 300) {
+        setSuccess(t('auth.forgotPasswordSuccess'));
+      } else {
+        const data = response.data || {};
+        const msg = typeof data === 'string' ? data : (data.message || '');
+        if (response.status === 404 || /nie.*znale|not found/i.test(msg)) {
+          throw new Error(t('auth.forgotPasswordNotFound'));
+        } else {
+          throw new Error(t('auth.forgotPasswordError'));
+        }
+      }
+    } catch (err) {
+      console.error("Błąd krytyczny:", err);
+      throw err;
+    }
+  };
+
+  const form = useForm(
+    { email: '' },
+    handleForgotPassword
+  );
 
   useEffect(() => {
     const userId = searchParams.get('userId');
@@ -31,43 +62,6 @@ const ForgotPasswordPage = () => {
     }
   }, [navigate, searchParams]);
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
-
-    try {
-      const response = await api.post('/Auth/forgot-password', null, {
-        params: {
-          email: email,
-        },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        validateStatus: () => true,
-      });
-
-      if (response.status >= 200 && response.status < 300) {
-        setSuccess(t('auth.forgotPasswordSuccess'));
-        setEmail('');
-      } else {
-        const data = response.data || {};
-        const msg = typeof data === 'string' ? data : (data.message || '');
-        if (response.status === 404 || /nie.*znale|not found/i.test(msg)) {
-          setError(t('auth.forgotPasswordNotFound'));
-        } else {
-          setError(t('auth.forgotPasswordError'));
-        }
-      }
-    } catch (err) {
-      console.error("Błąd krytyczny:", err);
-      setError(t('auth.connectionError'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
       <Navbar />
@@ -76,6 +70,7 @@ const ForgotPasswordPage = () => {
         <AuthCard
           title={<>{t('auth.forgotPasswordTitle').split(' ')[0]} <span className="text-violet-700">{t('auth.forgotPasswordTitle').split(' ').slice(1).join(' ')}</span></>}
           scrollClassName="pr-2"
+          compact
         >
           <p className="text-center text-sm text-slate-600 mb-6">
             {t('auth.forgotPasswordDescription')}
@@ -83,9 +78,9 @@ const ForgotPasswordPage = () => {
 
           <AlertCard 
             type="error" 
-            message={error} 
-            show={!!error}
-            onClose={() => setError('')}
+            message={form.error} 
+            show={!!form.error}
+            onClose={() => form.setError('')}
           />
 
           <AlertCard 
@@ -94,19 +89,20 @@ const ForgotPasswordPage = () => {
             show={!!success}
           />
 
-          <form className="space-y-4 px-1" onSubmit={handleForgotPassword}>
+          <form className="space-y-4 px-1" onSubmit={form.handleSubmit}>
             <Input 
               label={t('auth.email')}
               type="email" 
+              name="email"
               placeholder={t('auth.emailPlaceholder')}
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.values.email}
+              onChange={form.handleChange}
             />
 
             <div className="pt-2">
-              <Button type="submit" disabled={loading || !email.trim()}>
-                {loading ? (
+              <Button type="submit" disabled={form.isSubmitting || !form.values.email.trim()}>
+                {form.isSubmitting ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     {t('auth.sending')}

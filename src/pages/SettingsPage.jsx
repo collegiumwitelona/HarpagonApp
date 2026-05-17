@@ -8,6 +8,7 @@ import { api } from '../services/api';
 import { isAdmin, getUserName, getUserSurname } from '../services/auth';
 import { getAuthToken, getStoredUserProfile, removeAuthToken } from '../utils/tokenHelper';
 import ChangePasswordButton from '../components/ChangePasswordButton';
+import { useForm } from '../utils/hooks';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -23,12 +24,9 @@ const SettingsPage = () => {
   const [accounts, setAccounts] = useState([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountsError, setAccountsError] = useState('');
-  const [actionError, setActionError] = useState('');
   const [accountActionLoading, setAccountActionLoading] = useState(false);
   const [activeAccountId, setActiveAccountId] = useState(() => localStorage.getItem('activeAccountId') || '');
   const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
-  const [newAccountName, setNewAccountName] = useState('');
-  const [newAccountBalance, setNewAccountBalance] = useState('0');
 
   const loadAccounts = useCallback(async () => {
     const token = getAuthToken();
@@ -99,66 +97,61 @@ const SettingsPage = () => {
     localStorage.setItem('activeAccountId', nextAccountId);
   };
 
-  const handleAddAccount = async (event) => {
-    event.preventDefault();
+  const addAccountForm = useForm(
+    { newAccountName: '', newAccountBalance: '0' },
+    async (values) => {
+      const accountName = String(values.newAccountName || '').trim();
+      const normalizedBalance = String(values.newAccountBalance || '0').trim().replace(',', '.');
+      const initialBalance = Number(normalizedBalance);
 
-    const accountName = String(newAccountName || '').trim();
-    const normalizedBalance = String(newAccountBalance || '0').trim().replace(',', '.');
-    const initialBalance = Number(normalizedBalance);
+      if (!accountName || Number.isNaN(initialBalance)) {
+        addAccountForm.setError(t('settings.addAccountValidationError'));
+        return;
+      }
 
-    if (!accountName || Number.isNaN(initialBalance)) {
-      setActionError(t('settings.addAccountValidationError'));
-      return;
-    }
-
-    const token = getAuthToken();
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
-    setActionError('');
-    setAccountActionLoading(true);
-
-    try {
-      const response = await api.post(
-        '/Me/Accounts',
-        {
-          accountName,
-          initialBalance,
-          initialGoal: 0,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          validateStatus: () => true,
-        }
-      );
-
-      if (response.status === 401) {
-        removeAuthToken();
+      const token = getAuthToken();
+      if (!token) {
         navigate('/login');
         return;
       }
 
-      if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Account create failed with status ${response.status}`);
-      }
+      try {
+        const response = await api.post(
+          '/Me/Accounts',
+          {
+            accountName,
+            initialBalance,
+            initialGoal: 0,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            validateStatus: () => true,
+          }
+        );
 
-      await loadAccounts();
-      setIsAddAccountModalOpen(false);
-      setNewAccountName('');
-      setNewAccountBalance('0');
-    } catch (error) {
-      console.error('Błąd dodawania konta:', error);
-      setActionError(t('settings.accountCreateError'));
-    } finally {
-      setAccountActionLoading(false);
+        if (response.status === 401) {
+          removeAuthToken();
+          navigate('/login');
+          return;
+        }
+
+        if (response.status < 200 || response.status >= 300) {
+          throw new Error(`Account create failed with status ${response.status}`);
+        }
+
+        await loadAccounts();
+        setIsAddAccountModalOpen(false);
+        addAccountForm.resetForm();
+      } catch (error) {
+        console.error('Błąd dodawania konta:', error);
+        addAccountForm.setError(t('settings.accountCreateError'));
+      }
     }
-  };
+  );
 
   const handleDeleteAccount = async (account) => {
     if (!account?.id || account.id === activeAccountId) {
@@ -179,7 +172,6 @@ const SettingsPage = () => {
       return;
     }
 
-    setActionError('');
     setAccountActionLoading(true);
 
     try {
@@ -204,7 +196,6 @@ const SettingsPage = () => {
       await loadAccounts();
     } catch (error) {
       console.error('Błąd usuwania konta:', error);
-      setActionError(t('settings.accountDeleteError'));
     } finally {
       setAccountActionLoading(false);
     }
@@ -242,7 +233,7 @@ const SettingsPage = () => {
       <SideMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <main className="grow flex items-start lg:items-center justify-center p-4 lg:p-6 min-h-0 overflow-visible lg:overflow-hidden">
-        <div className="w-full max-w-[44rem] bg-white rounded-[3rem] p-6 md:p-8 shadow-sm border border-slate-200 lg:h-full lg:max-h-195 flex flex-col min-h-0">
+        <div className="w-full max-w-176 bg-white rounded-[3rem] p-6 md:p-8 shadow-sm border border-slate-200 lg:h-full lg:max-h-195 flex flex-col min-h-0">
           <h1 className="text-3xl font-black mb-8 tracking-tight text-center md:text-left shrink-0">{t('settings.title')}</h1>
 
           <div className="space-y-7 overflow-y-auto pr-1 custom-scrollbar flex-1 min-h-0">
@@ -265,12 +256,6 @@ const SettingsPage = () => {
               {accountsError && (
                 <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
                   {accountsError}
-                </div>
-              )}
-
-              {actionError && (
-                <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
-                  {actionError}
                 </div>
               )}
 
@@ -332,9 +317,7 @@ const SettingsPage = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setActionError('');
-                    setNewAccountName('');
-                    setNewAccountBalance('0');
+                    addAccountForm.resetForm();
                     setIsAddAccountModalOpen(true);
                   }}
                   disabled={accountActionLoading}
@@ -399,15 +382,16 @@ const SettingsPage = () => {
             <h2 className="text-2xl font-bold mb-2 text-slate-900">{t('settings.addAccount')}</h2>
             <p className="text-slate-500 mb-6 text-sm">{t('settings.addAccountModalDescription')}</p>
 
-            <form onSubmit={handleAddAccount} className="space-y-5 text-left">
+            <form onSubmit={addAccountForm.handleSubmit} className="space-y-5 text-left">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">{t('setup.accountName')}</label>
                 <input
                   type="text"
+                  name="newAccountName"
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder={t('setup.accountNamePlaceholder')}
-                  value={newAccountName}
-                  onChange={(e) => setNewAccountName(e.target.value)}
+                  value={addAccountForm.values.newAccountName}
+                  onChange={addAccountForm.handleChange}
                   required
                 />
               </div>
@@ -416,17 +400,18 @@ const SettingsPage = () => {
                 <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">{t('setup.balance')}</label>
                 <input
                   type="number"
+                  name="newAccountBalance"
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder="0"
-                  value={newAccountBalance}
-                  onChange={(e) => setNewAccountBalance(e.target.value)}
+                  value={addAccountForm.values.newAccountBalance}
+                  onChange={addAccountForm.handleChange}
                   required
                 />
               </div>
 
-              {actionError && (
+              {addAccountForm.error && (
                 <div className="bg-rose-50 border border-rose-100 rounded-xl py-3 px-4">
-                  <p className="text-rose-500 text-sm text-center font-medium">{actionError}</p>
+                  <p className="text-rose-500 text-sm text-center font-medium">{addAccountForm.error}</p>
                 </div>
               )}
 
@@ -435,7 +420,7 @@ const SettingsPage = () => {
                   type="button"
                   onClick={() => {
                     setIsAddAccountModalOpen(false);
-                    setActionError('');
+                    addAccountForm.resetForm();
                   }}
                   className="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-2xl hover:bg-slate-200 transition-colors border border-slate-200"
                 >
@@ -443,10 +428,10 @@ const SettingsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={accountActionLoading}
+                  disabled={addAccountForm.isSubmitting}
                   className="w-full bg-violet-700 text-white font-bold py-3 rounded-2xl hover:bg-violet-800 transition-colors shadow-lg shadow-violet-200 disabled:bg-slate-300"
                 >
-                  {accountActionLoading ? t('setup.processing') : t('common.add')}
+                  {addAccountForm.isSubmitting ? t('setup.processing') : t('common.add')}
                 </button>
               </div>
             </form>

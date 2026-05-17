@@ -1,14 +1,20 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SideMenu from '../components/SideMenu';
 import TransactionForm from '../components/TransactionForm';
+import HistoryFiltersPanel from '../components/HistoryFiltersPanel';
+import HistoryPaginationControls from '../components/HistoryPaginationControls';
+import HistoryTransactionRow from '../components/HistoryTransactionRow';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { isAdmin } from '../services/auth';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
-import { normalizeTransactionType, normalizeCategoryType, normalizeDate, formatCurrencyByLanguage, formatDateOnly } from '../utils/formatters';
+import { normalizeCategoryType } from '../utils/formatters';
+import { normalizeTransactionRecord } from '../utils/transactions';
+import { fetchFirstSuccessfulGet } from '../utils/apiFallbacks';
+import { useDataFetch } from '../utils/hooks';
 
 const TransactionPage = () => {
   const PAGE_SIZE = 10;
@@ -22,8 +28,6 @@ const TransactionPage = () => {
   }, [navigate]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [transactions, setTransactions] = useState([]);
   const [filteredCount, setFilteredCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,51 +47,6 @@ const TransactionPage = () => {
   const [categorySuccess, setCategorySuccess] = useState('');
   const [addingCategory, setAddingCategory] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const loadFormDataRequestRef = useRef(0);
-
-  const normalizeTransaction = (transaction, index, categoriesList = []) => {
-    const transactionCategoryId =
-      transaction.categoryId || transaction.categoryID || transaction.category?.id || '';
-
-    const matchedCategory = categoriesList.find(
-      (c) => String(c.id) === String(transactionCategoryId)
-    );
-
-    const transactionType =
-      transaction.type ||
-      transaction.transactionType ||
-      transaction.kind ||
-      matchedCategory?.type ||
-      matchedCategory?.categoryType;
-
-    return {
-      id: transaction.id || transaction.transactionId || `${Date.now()}-${index}`,
-      accountId:
-        transaction.accountId ||
-        transaction.accountID ||
-        transaction.account?.id ||
-        transaction.account?.accountId ||
-        '',
-      type: normalizeTransactionType(transactionType),
-      category: String(
-        transaction.categoryName ||
-        transaction.category?.name ||
-        transaction.category?.categoryName ||
-        transaction.category?.nazwaKategorii ||
-        matchedCategory?.categoryName ||
-        (typeof transaction.category === 'string' ? transaction.category : null) ||
-        transaction.title ||
-        'Inne'),
-      description:
-        transaction.description ||
-        transaction.note ||
-        transaction.comment ||
-        transaction.category?.description ||
-        '',
-      amount: Number(transaction.amount || transaction.value || 0),
-      date: normalizeDate(transaction.date || transaction.transactionDate || transaction.createdAt),
-    };
-  };
 
   const normalizeFilterDateParam = (rawValue) => {
     const value = String(rawValue || '').trim();
@@ -111,7 +70,12 @@ const TransactionPage = () => {
   const applyClientFilteringSortingPaging = useCallback((rawTransactions) => {
     const normalized = Array.isArray(rawTransactions)
       ? rawTransactions.map((transaction, index) =>
-          normalizeTransaction(transaction, index, categories)
+          normalizeTransactionRecord(transaction, {
+            index,
+            categoriesList: categories,
+            includeDescription: true,
+            normalizeDateValue: true,
+          })
         )
       : [];
 
@@ -195,14 +159,11 @@ const TransactionPage = () => {
     PAGE_SIZE,
   ]);
 
-  const loadFormData = useCallback(async () => {
-    const requestId = loadFormDataRequestRef.current + 1;
-    loadFormDataRequestRef.current = requestId;
-
+  const fetchFormData = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      return;
+      throw new Error('No auth token');
     }
 
     try {
@@ -211,52 +172,31 @@ const TransactionPage = () => {
         Accept: 'application/json',
       };
 
-      const getFirstSuccessful = async (endpoints, requestConfig = {}) => {
-        for (const endpoint of endpoints) {
-          const response = await api.get(endpoint, {
-            headers,
-            validateStatus: () => true,
-            ...requestConfig,
-          });
-
-          if (response.status === 401) {
-            removeAuthToken();
-            navigate('/login');
-            return null;
-          }
-
-          if (response.status >= 200 && response.status < 300) {
-            return response;
-          }
-        }
-
-        return null;
-      };
-
       const [accountsResponse, categoriesResponse] = await Promise.all([
         api.get('/Me/Accounts', { headers, validateStatus: () => true }),
-        getFirstSuccessful(['/Me/Categories', '/Categories'], {
-          params: { _ts: Date.now() },
-          headers: {
-            ...headers,
+        fetchFirstSuccessfulGet({
+          requests: ['/Me/Categories', '/Categories'],
+          headers,
+          baseParams: { _ts: Date.now() },
+          baseHeaders: {
             'Cache-Control': 'no-cache',
             Pragma: 'no-cache',
+          },
+          onUnauthorized: () => {
+            removeAuthToken();
+            navigate('/login');
           },
         }),
       ]);
 
-      if (requestId !== loadFormDataRequestRef.current) {
-        return;
-      }
-
       if (!categoriesResponse) {
-        throw new Error('Nie udało się pobrać kategorii.');
+        throw new Error(t('history.historyError'));
       }
 
       if (accountsResponse.status === 401) {
         removeAuthToken();
         navigate('/login');
-        return;
+        throw new Error('Unauthorized');
       }
 
       const accountsData = accountsResponse.data;
@@ -281,38 +221,27 @@ const TransactionPage = () => {
 
       setCategories((previousCategories) => {
         const byId = new Map();
-
         previousCategories.forEach((category) => {
           byId.set(String(category.id), category);
         });
-
         normalizedCategories.forEach((category) => {
-          byId.set(String(category.id), {
-            ...byId.get(String(category.id)),
-            ...category,
-          });
+          byId.set(String(category.id), { ...byId.get(String(category.id)), ...category });
         });
-
         return Array.from(byId.values());
       });
-    } catch (err) {
-      if (requestId !== loadFormDataRequestRef.current) {
-        return;
-      }
 
-      console.error('Błąd ładowania danych formularza transakcji:', err);
-      setError(t('history.historyError'));
+      return { accountId: resolvedAccountId, categories: normalizedCategories };
+    } catch (error) {
+      console.error('Błąd ładowania danych formularza:', error);
+      throw error;
     }
   }, [navigate, t]);
 
-  const loadTransactions = useCallback(async () => {
-    setError('');
-    setLoading(true);
-
+  const fetchTransactions = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      return;
+      throw new Error('No auth token');
     }
 
     try {
@@ -335,7 +264,6 @@ const TransactionPage = () => {
 
       const fromAmount = Number(fromAmountFilter);
       const toAmount = Number(toAmountFilter);
-
       const fromDateParam = normalizeFilterDateParam(fromDateFilter);
       const toDateParam = normalizeFilterDateParam(toDateFilter);
 
@@ -374,90 +302,27 @@ const TransactionPage = () => {
       if (transactionsResponse.status === 401) {
         removeAuthToken();
         navigate('/login');
-        return;
+        throw new Error('Unauthorized');
       }
 
       if (transactionsResponse.status < 200 || transactionsResponse.status >= 300) {
-        throw new Error(`Primary endpoint failed with status ${transactionsResponse.status}`);
+        throw new Error(`Transactions fetch failed: ${transactionsResponse.status}`);
       }
 
       const responseBody = transactionsResponse.data;
-      const transactionsData = extractTransactionsData(responseBody);
-
-      applyClientFilteringSortingPaging(transactionsData);
-    } catch (err) {
-      try {
-        const fallbackResponse = await api.get('/Me/Transactions', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-          params: {
-            Draw: 1,
-            Start: 0,
-            Length: 500,
-            'Search.Value': '',
-          },
-          validateStatus: () => true,
-        });
-
-        let resolvedFallbackResponse = fallbackResponse;
-        if (fallbackResponse.status === 404 || fallbackResponse.status === 405) {
-          resolvedFallbackResponse = await api.get('/Transactions/all', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/json',
-            },
-            validateStatus: () => true,
-          });
-        }
-
-        if (resolvedFallbackResponse.status === 401) {
-          removeAuthToken();
-          navigate('/login');
-          return;
-        }
-
-        if (resolvedFallbackResponse.status < 200 || resolvedFallbackResponse.status >= 300) {
-          throw new Error(`Fallback failed with status ${resolvedFallbackResponse.status}`);
-        }
-
-        const fallbackBody = resolvedFallbackResponse.data;
-        const fallbackTransactions = Array.isArray(fallbackBody?.data)
-          ? fallbackBody.data
-          : Array.isArray(fallbackBody?.Data)
-            ? fallbackBody.Data
-            : Array.isArray(fallbackBody)
-              ? fallbackBody
-              : [];
-
-        applyClientFilteringSortingPaging(fallbackTransactions);
-        setError('');
-      } catch (fallbackError) {
-        console.error('Błąd ładowania historii transakcji:', err, fallbackError);
-        setError(t('history.historyError'));
-      }
-    } finally {
-      setLoading(false);
+      return extractTransactionsData(responseBody);
+    } catch (error) {
+      console.error('Błąd ładowania transakcji:', error);
+      throw error;
     }
-  }, [
-    applyClientFilteringSortingPaging,
-    fromAmountFilter,
-    fromDateFilter,
-    navigate,
-    searchValue,
-    t,
-    toAmountFilter,
-    toDateFilter,
-  ]);
+  }, [fromAmountFilter, fromDateFilter, navigate, searchValue, toAmountFilter, toDateFilter]);
+
+  const formDataHook = useDataFetch(fetchFormData);
+  const transactionsHook = useDataFetch(fetchTransactions);
 
   useEffect(() => {
-    loadFormData();
-  }, [loadFormData]);
-
-  useEffect(() => {
-    loadTransactions();
-  }, [loadTransactions]);
+    applyClientFilteringSortingPaging(transactionsHook.data || []);
+  }, [applyClientFilteringSortingPaging, transactionsHook.data, searchValue, categoryFilter, fromDateFilter, toDateFilter, fromAmountFilter, toAmountFilter, sortBy, sortDirection, currentPage]);
 
   useEffect(() => {
     setSearchValue('');
@@ -469,20 +334,24 @@ const TransactionPage = () => {
     setSortBy('date');
     setSortDirection('desc');
     setCurrentPage(1);
-    loadFormData();
-  }, [language, loadFormData]);
+  }, [language]);
 
   const handleTransactionAdded = () => {
     if (currentPage !== 1) {
       setCurrentPage(1);
       return;
     }
-    loadTransactions();
+    transactionsHook.retry();
   };
 
   const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
   const firstItemNumber = filteredCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const lastItemNumber = Math.min(currentPage * PAGE_SIZE, filteredCount);
+  const categoryOptions = categories.map((category) => ({
+    key: category.id,
+    value: category.rawCategoryName || category.categoryName,
+    label: category.categoryName,
+  }));
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -546,7 +415,7 @@ const TransactionPage = () => {
         setNewCategoryName('');
         setCategorySuccess(t('history.categoryRemoved'));
         setTimeout(() => setCategorySuccess(''), 3000);
-        await loadFormData();
+        await formDataHook.retry();
       } else {
         const apiType = newCategoryType === 'wpływ' ? 'Income' : 'Expense';
         const payload = { categoryName: name, type: apiType, description: '' };
@@ -592,7 +461,7 @@ const TransactionPage = () => {
         setNewCategoryName('');
         setCategorySuccess(t('history.categoryAdded'));
         setTimeout(() => setCategorySuccess(''), 3000);
-        await loadFormData();
+        await formDataHook.retry();
       }
     } catch (err) {
       console.error('Błąd dodawania kategorii:', err);
@@ -678,152 +547,72 @@ const TransactionPage = () => {
             </button>
           </div>
 
-          {isFiltersOpen && (
-          <div
-            onMouseLeave={() => setIsFiltersOpen(false)}
-            className="mb-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-700/40 p-3 shrink-0 space-y-3"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => {
-                  setSearchValue(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder={t('history.searchPlaceholder')}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0"
-              />
+          <HistoryFiltersPanel
+            t={t}
+            isOpen={isFiltersOpen}
+            onClose={() => setIsFiltersOpen(false)}
+            searchValue={searchValue}
+            onSearchChange={(value) => {
+              setSearchValue(value);
+              setCurrentPage(1);
+            }}
+            categoryFilter={categoryFilter}
+            onCategoryFilterChange={(value) => {
+              setCategoryFilter(value);
+              setCurrentPage(1);
+            }}
+            categoryOptions={categoryOptions}
+            fromDateFilter={fromDateFilter}
+            onFromDateChange={(value) => {
+              setFromDateFilter(value);
+              setCurrentPage(1);
+            }}
+            toDateFilter={toDateFilter}
+            onToDateChange={(value) => {
+              setToDateFilter(value);
+              setCurrentPage(1);
+            }}
+            fromAmountFilter={fromAmountFilter}
+            onFromAmountChange={(value) => {
+              setFromAmountFilter(value);
+              setCurrentPage(1);
+            }}
+            toAmountFilter={toAmountFilter}
+            onToAmountChange={(value) => {
+              setToAmountFilter(value);
+              setCurrentPage(1);
+            }}
+            sortBy={sortBy}
+            onSortByChange={(value) => {
+              setSortBy(value);
+              setCurrentPage(1);
+            }}
+            sortDirection={sortDirection}
+            onSortDirectionChange={(value) => {
+              setSortDirection(value);
+              setCurrentPage(1);
+            }}
+            onClear={handleClearFilters}
+            panelClassName="mb-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-700/40 p-3 shrink-0 space-y-3"
+          />
 
-              <select
-                value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-              >
-                <option value="">{t('history.allCategories')}</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.rawCategoryName || category.categoryName}>
-                    {category.categoryName}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                type="date"
-                value={fromDateFilter}
-                onChange={(e) => {
-                  setFromDateFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                aria-label={t('history.fromDate')}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-              />
-
-              <input
-                type="date"
-                value={toDateFilter}
-                onChange={(e) => {
-                  setToDateFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                aria-label={t('history.toDate')}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={fromAmountFilter}
-                onChange={(e) => {
-                  setFromAmountFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder={t('history.fromAmount')}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0"
-              />
-
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={toAmountFilter}
-                onChange={(e) => {
-                  setToAmountFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder={t('history.toAmount')}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0"
-              />
-
-              <select
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-              >
-                <option value="date">{t('history.sortDate')}</option>
-                <option value="amount">{t('history.sortAmount')}</option>
-              </select>
-
-              <div className="flex gap-2">
-                <select
-                  value={sortDirection}
-                  onChange={(e) => {
-                    setSortDirection(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-                >
-                  <option value="desc">{t('history.descending')}</option>
-                  <option value="asc">{t('history.ascending')}</option>
-                </select>
-
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-                >
-                  {t('history.clearFilters')}
-                </button>
-              </div>
-            </div>
-          </div>
-          )}
-
-          {error && (
+          {transactionsHook.error && (
             <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600 shrink-0">
-              {error}
+              {transactionsHook.error}
             </div>
           )}
 
           <div className="grow min-h-0 overflow-y-auto pr-2 custom-scrollbar space-y-1.5">
-            {loading ? (
+            {transactionsHook.loading ? (
               <p className="text-sm text-slate-500">{t('history.loading')}</p>
             ) : transactions.length > 0 ? (
               transactions.map((transaction) => (
-                <div
+                <HistoryTransactionRow
                   key={transaction.id}
-                  className="px-3.5 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm"
-                >
-                  <p className="text-[11px] font-semibold text-slate-400 mb-1.5">{formatDateOnly(transaction.date, language)}</p>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-sm text-slate-800 w-1/4 truncate">{transaction.category}</span>
-                    <span className="flex-1 text-xs text-slate-500 text-center truncate">
-                      {(() => { const d = String(transaction.description || '').trim(); return (d && d.toLowerCase() !== String(transaction.category || '').toLowerCase()) ? d.slice(0, 30) : t('common.noDescription'); })()}
-                    </span>
-                    <span className={`font-black text-sm w-1/4 text-right shrink-0 ${transaction.type === 'wpływ' ? 'text-emerald-600' : 'text-rose-500'}`}>
-                      {transaction.type === 'wpływ' ? '+' : '-'}{formatCurrencyByLanguage(transaction.amount, language)}
-                    </span>
-                  </div>
-                </div>
+                  transaction={transaction}
+                  language={language}
+                  t={t}
+                />
               ))
             ) : (
               <p className="text-sm text-slate-500">{t('history.noTransactions')}</p>
@@ -839,29 +628,14 @@ const TransactionPage = () => {
               })}
             </p>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1 || loading}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('history.previousPage')}
-              </button>
-
-              <span className="text-xs font-semibold text-slate-600 px-1">
-                {t('history.pageIndicator', { current: currentPage, total: totalPages })}
-              </span>
-
-              <button
-                type="button"
-                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                disabled={currentPage >= totalPages || loading}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('history.nextPage')}
-              </button>
-            </div>
+            <HistoryPaginationControls
+              t={t}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              loading={transactionsHook.loading}
+              onPrev={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              onNext={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            />
           </div>
           </div>
         </div>

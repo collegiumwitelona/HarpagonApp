@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from './Logo';
-import { useDarkMode } from '../context/DarkModeContext';
+import { useDarkMode } from '../context/useDarkMode';
 import { useLanguage } from '../context/LanguageContext';
 import { isAdmin } from '../services/auth';
 import { removeAuthToken } from '../utils/tokenHelper';

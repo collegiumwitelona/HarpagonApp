@@ -4,21 +4,20 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import UserCard from '../components/UserCard';
 import EmptyState from '../components/EmptyState';
+import HistoryFiltersPanel from '../components/HistoryFiltersPanel';
+import HistoryPaginationControls from '../components/HistoryPaginationControls';
+import HistoryTransactionRow from '../components/HistoryTransactionRow';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { isAdmin } from '../services/auth';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
-import { formatCurrencyByLanguage, formatDateOnly } from '../utils/formatters';
+import { extractTransactionsCollection, normalizeTransactionRecord } from '../utils/transactions';
+import { useDataFetch } from '../utils/hooks';
 
 const AdminPage = () => {
   const navigate = useNavigate();
   const { language, t } = useLanguage();
-  const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [usersError, setUsersError] = useState('');
-  const [loadingTransactions, setLoadingTransactions] = useState(false);
-  const [transactionsError, setTransactionsError] = useState('');
   const [deleteFeedback, setDeleteFeedback] = useState('');
   const [transactionFeedback, setTransactionFeedback] = useState('');
   const [deletingUserId, setDeletingUserId] = useState('');
@@ -30,160 +29,12 @@ const AdminPage = () => {
   const [toDateFilter, setToDateFilter] = useState('');
   const [fromAmountFilter, setFromAmountFilter] = useState('');
   const [toAmountFilter, setToAmountFilter] = useState('');
-  const [rawTransactions, setRawTransactions] = useState([]);
   const [visibleTransactions, setVisibleTransactions] = useState([]);
   const [sortBy, setSortBy] = useState('date');
   const [sortDirection, setSortDirection] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredCount, setFilteredCount] = useState(0);
   const PAGE_SIZE = 10;
-
-  const normalizeTransactionType = useCallback((transactionOrType, fallbackAmount = 0) => {
-    const isObjectPayload = transactionOrType && typeof transactionOrType === 'object';
-    const rawType = isObjectPayload
-      ? (
-          transactionOrType.type ||
-          transactionOrType.transactionType ||
-          transactionOrType.kind ||
-          transactionOrType.categoryType ||
-          transactionOrType.category?.type ||
-          transactionOrType.category?.categoryType ||
-          ''
-        )
-      : transactionOrType;
-
-    if (isObjectPayload) {
-      if (
-        transactionOrType.isIncome === true ||
-        transactionOrType.income === true ||
-        transactionOrType.isInflow === true
-      ) {
-        return 'wpływ';
-      }
-
-      if (
-        transactionOrType.isExpense === true ||
-        transactionOrType.expense === true ||
-        transactionOrType.isOutflow === true
-      ) {
-        return 'wydatek';
-      }
-    }
-
-    const value = String(rawType || '').trim().toLowerCase();
-    if (
-      [
-        'wpływ',
-        'wplyw',
-        'income',
-        'inflow',
-        'credit',
-        'przychod',
-        'przychód',
-        '1',
-      ].includes(value)
-    ) {
-      return 'wpływ';
-    }
-
-    if (
-      [
-        'wydatek',
-        'expense',
-        'outflow',
-        'debit',
-        'koszt',
-        '0',
-      ].includes(value)
-    ) {
-      return 'wydatek';
-    }
-
-    const amount = Number(
-      isObjectPayload
-        ? (transactionOrType.amount ?? transactionOrType.value ?? fallbackAmount)
-        : fallbackAmount
-    );
-
-    if (!Number.isNaN(amount) && amount > 0) {
-      return 'wpływ';
-    }
-
-    return 'wydatek';
-  }, []);
-
-  const extractTransactionsCollection = useCallback((payload) => {
-    if (Array.isArray(payload)) {
-      return payload;
-    }
-
-    if (!payload || typeof payload !== 'object') {
-      return [];
-    }
-
-    const transactionKeys = [
-      'transactions',
-      'transactionHistory',
-      'userTransactions',
-      'operations',
-      'items',
-      'records',
-      'data',
-      'Data',
-    ];
-
-    for (const key of transactionKeys) {
-      if (Array.isArray(payload[key])) {
-        return payload[key];
-      }
-    }
-
-    const nestedCandidates = [payload.data, payload.Data, payload.result, payload.Result, payload.user, payload.User];
-
-    for (const candidate of nestedCandidates) {
-      if (Array.isArray(candidate)) {
-        return candidate;
-      }
-
-      if (candidate && typeof candidate === 'object') {
-        for (const key of transactionKeys) {
-          if (Array.isArray(candidate[key])) {
-            return candidate[key];
-          }
-        }
-      }
-    }
-
-    return [];
-  }, []);
-
-  const normalizeTransaction = useCallback((transaction, ownerId, txIndex) => {
-    const amount = Number(transaction?.amount || transaction?.value || 0);
-
-    return {
-      id: transaction?.id || transaction?.transactionId || `${ownerId || 'user'}-${txIndex}`,
-      accountId:
-        transaction?.accountId ||
-        transaction?.accountID ||
-        transaction?.account?.id ||
-        transaction?.account?.accountId ||
-        '',
-      date: transaction?.date || transaction?.transactionDate || transaction?.createdAt || '',
-      category:
-        transaction?.categoryName ||
-        transaction?.category?.categoryName ||
-        transaction?.category?.name ||
-        (typeof transaction?.category === 'string' ? transaction.category : null) ||
-        'Inne',
-      description:
-        transaction?.description ||
-        transaction?.note ||
-        transaction?.comment ||
-        '',
-      amount,
-      type: normalizeTransactionType(transaction, amount),
-    };
-  }, [normalizeTransactionType]);
 
   const sortTransactionsNewestFirst = useCallback((transactionsList = []) => {
     if (!Array.isArray(transactionsList)) {
@@ -198,11 +49,15 @@ const AdminPage = () => {
     });
   }, []);
 
-
   const normalizeUser = useCallback((user, index) => {
     const transactionsData = extractTransactionsCollection(user);
     const normalizedTransactions = transactionsData.map((transaction, txIndex) =>
-      normalizeTransaction(transaction, user?.id || index, txIndex)
+      normalizeTransactionRecord(transaction, {
+        ownerId: user?.id || index,
+        index: txIndex,
+        includeDescription: true,
+        normalizeDateValue: false,
+      })
     );
     const emailConfirmedRaw =
       user?.emailConfirmed ??
@@ -220,16 +75,13 @@ const AdminPage = () => {
       surname: user?.surname || user?.lastName || '',
       transactions: sortTransactionsNewestFirst(normalizedTransactions),
     };
-  }, [extractTransactionsCollection, normalizeTransaction, sortTransactionsNewestFirst]);
+  }, [sortTransactionsNewestFirst]);
 
-  const loadUsers = useCallback(async () => {
-    setLoadingUsers(true);
-    setUsersError('');
-
+  const fetchUsers = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      return;
+      throw new Error('No authentication token');
     }
 
     try {
@@ -244,11 +96,11 @@ const AdminPage = () => {
       if (response.status === 401) {
         removeAuthToken();
         navigate('/login');
-        return;
+        throw new Error('Unauthorized');
       }
 
       if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Nie udało się pobrać użytkowników (status ${response.status}).`);
+        throw new Error(t('admin.loadUsersError'));
       }
 
       const responseData = response.data;
@@ -261,34 +113,25 @@ const AdminPage = () => {
             : [];
 
       const normalizedUsers = usersData.map(normalizeUser);
-      setUsers(normalizedUsers);
-      setSelectedUserId((current) => {
-        const selectedExists = normalizedUsers.some((user) => String(user.id) === String(current));
-        return selectedExists ? current : normalizedUsers[0]?.id || '';
-      });
+      return normalizedUsers;
     } catch (error) {
       console.error('Błąd ładowania użytkowników admina:', error);
-      setUsersError(t('admin.loadUsersError'));
-    } finally {
-      setLoadingUsers(false);
+      throw error;
     }
   }, [navigate, normalizeUser, t]);
 
-  const loadSelectedUserTransactions = useCallback(async (userId) => {
-    if (!userId) {
-      return;
+  const fetchTransactions = useCallback(async () => {
+    if (!selectedUserId) {
+      return [];
     }
 
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      return;
+      throw new Error('No authentication token');
     }
 
-    setLoadingTransactions(true);
-    setTransactionsError('');
-
-    const userIdEncoded = encodeURIComponent(String(userId));
+    const userIdEncoded = encodeURIComponent(String(selectedUserId));
     const params = { Draw: 1, Start: 0, Length: 1000 };
     const endpoints = [
       { url: `/Users/${userIdEncoded}/Transactions`, params },
@@ -309,7 +152,7 @@ const AdminPage = () => {
         if (response.status === 401) {
           removeAuthToken();
           navigate('/login');
-          return;
+          throw new Error('Unauthorized');
         }
 
         if (response.status === 404) {
@@ -319,25 +162,30 @@ const AdminPage = () => {
         if (response.status >= 200 && response.status < 300) {
           const transactionsData = extractTransactionsCollection(response.data);
 
-          
-          if (!Array.isArray(transactionsData)) {
-            continue;
-          }
-
-          const normalized = transactionsData.map((tx, i) => normalizeTransaction(tx, userId, i));
-          setRawTransactions(normalized);
-          return;
+          const normalized = transactionsData.map((tx, i) =>
+            normalizeTransactionRecord(tx, {
+              ownerId: selectedUserId,
+              index: i,
+              includeDescription: true,
+              normalizeDateValue: false,
+            })
+          );
+          return normalized;
         }
       }
 
-      setTransactionsError(t('admin.loadTransactionsError'));
+      throw new Error(t('admin.loadTransactionsError'));
     } catch (error) {
       console.error('Błąd ładowania transakcji użytkownika:', error);
-      setTransactionsError(t('admin.loadTransactionsError'));
-    } finally {
-      setLoadingTransactions(false);
+      throw error;
     }
-  }, [extractTransactionsCollection, navigate, normalizeTransaction, t]);
+  }, [selectedUserId, navigate, t]);
+
+  const usersData = useDataFetch(fetchUsers);
+  const transactionsData = useDataFetch(fetchTransactions);
+  
+  const users = useMemo(() => usersData.data || [], [usersData.data]);
+  const rawTransactions = useMemo(() => transactionsData.data || [], [transactionsData.data]);
 
   const categories = useMemo(() => {
     const seen = new Set();
@@ -346,6 +194,23 @@ const AdminPage = () => {
       .filter((name) => name && name !== 'Inne' && !seen.has(name) && seen.add(name))
       .sort();
   }, [rawTransactions]);
+
+  const categoryOptions = useMemo(
+    () => categories.map((name) => ({ key: name, value: name, label: name })),
+    [categories]
+  );
+
+  const handleClearFilters = useCallback(() => {
+    setSearchValue('');
+    setCategoryFilter('');
+    setFromDateFilter('');
+    setToDateFilter('');
+    setFromAmountFilter('');
+    setToAmountFilter('');
+    setSortBy('date');
+    setSortDirection('desc');
+    setCurrentPage(1);
+  }, []);
 
   const applyClientFilteringSortingPaging = useCallback((allTransactions) => {
     const fromDateParam = String(fromDateFilter || '').trim();
@@ -429,12 +294,8 @@ const AdminPage = () => {
         throw new Error(`Nie udało się usunąć użytkownika (status ${response.status}).`);
       }
 
-      setUsers((currentUsers) => {
-        const nextUsers = currentUsers.filter((user) => String(user.id) !== String(selectedUser.id));
-        setSelectedUserId(nextUsers[0]?.id || '');
-        return nextUsers;
-      });
       setDeleteFeedback(t('admin.deleteSuccess'));
+      usersData.retry();
     } catch (error) {
       console.error('Błąd usuwania użytkownika:', error);
       setDeleteFeedback(t('admin.deleteError'));
@@ -504,35 +365,28 @@ const AdminPage = () => {
         throw new Error('Nie znaleziono działającego endpointu usuwania transakcji.');
       }
 
-      
-      setUsers((currentUsers) =>
-        currentUsers.map((user) =>
-          String(user.id) === String(selectedUser.id)
-            ? {
-                ...user,
-                transactions: (user.transactions || []).filter((tx) => String(tx.id) !== String(transactionId)),
-              }
-            : user
-        )
-      );
-
       setTransactionFeedback(t('admin.deleteTransactionSuccess'));
-      await loadSelectedUserTransactions(selectedUser.id);
+      transactionsData.retry();
     } catch (error) {
       console.error('Błąd usuwania transakcji użytkownika:', error);
       setTransactionFeedback(t('admin.deleteTransactionError'));
     } finally {
       setDeletingTransactionId('');
     }
-  }, [deletingTransactionId, loadSelectedUserTransactions, navigate, selectedUserId, t, users]);
+  }, [deletingTransactionId, selectedUserId, navigate, t, users, transactionsData]);
 
   useEffect(() => {
     if (!isAdmin()) {
       navigate('/dashboard');
       return;
     }
-    loadUsers();
-  }, [loadUsers, navigate]);
+  }, [navigate]);
+
+  useEffect(() => {
+    if (users.length > 0 && !selectedUserId) {
+      setSelectedUserId(users[0]?.id || '');
+    }
+  }, [users, selectedUserId]);
 
   useEffect(() => {
     setSearchValue('');
@@ -544,15 +398,9 @@ const AdminPage = () => {
     setSortBy('date');
     setSortDirection('desc');
     setCurrentPage(1);
-    setRawTransactions([]);
     setVisibleTransactions([]);
     setFilteredCount(0);
   }, [selectedUserId]);
-
-  useEffect(() => {
-    if (!selectedUserId) return;
-    loadSelectedUserTransactions(selectedUserId);
-  }, [selectedUserId, language, loadSelectedUserTransactions]);
 
   useEffect(() => {
     setSearchValue('');
@@ -568,7 +416,7 @@ const AdminPage = () => {
 
   useEffect(() => {
     applyClientFilteringSortingPaging(rawTransactions);
-  }, [applyClientFilteringSortingPaging, rawTransactions]);
+  }, [applyClientFilteringSortingPaging, rawTransactions, searchValue, categoryFilter, fromDateFilter, toDateFilter, fromAmountFilter, toAmountFilter, sortBy, sortDirection, currentPage]);
 
   const selectedUser = useMemo(
     () => users.find((user) => String(user.id) === String(selectedUserId)) || null,
@@ -587,9 +435,9 @@ const AdminPage = () => {
         <div className="flex flex-col lg:flex-row w-full px-[8%] gap-4 lg:gap-6 items-stretch lg:h-full min-h-0">
           <section className="w-full lg:w-[30%] bg-white rounded-[2.5rem] p-5 lg:p-6 shadow-sm border border-slate-200 flex flex-col min-h-56 lg:min-h-0">
             <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">{t('admin.users')}</h2>
-            {usersError ? <div className="mb-3 text-xs text-rose-600 font-semibold">{usersError}</div> : null}
+            {usersData.error ? <div className="mb-3 text-xs text-rose-600 font-semibold">{usersData.error}</div> : null}
             <div className="flex-1 overflow-auto pr-1 space-y-2">
-              {loadingUsers ? (
+              {usersData.loading ? (
                 <div className="text-sm text-slate-500">{t('admin.loadingUsers')}</div>
               ) : users.length > 0 ? (
                 users.map((user) => (
@@ -642,137 +490,78 @@ const AdminPage = () => {
                   </button>
                 </div>
 
-                {isFiltersOpen && (
-                  <div
-                    onMouseLeave={() => setIsFiltersOpen(false)}
-                    className="mb-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shrink-0 space-y-3"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-                      <input
-                        type="text"
-                        value={searchValue}
-                        onChange={(e) => { setSearchValue(e.target.value); setCurrentPage(1); }}
-                        placeholder={t('history.searchPlaceholder')}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0"
-                      />
-                      <select
-                        value={categoryFilter}
-                        onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-                      >
-                        <option value="">{t('history.allCategories')}</option>
-                        {categories.map((name) => (
-                          <option key={name} value={name}>{name}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="date"
-                        value={fromDateFilter}
-                        onChange={(e) => { setFromDateFilter(e.target.value); setCurrentPage(1); }}
-                        aria-label={t('history.fromDate')}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-                      />
-                      <input
-                        type="date"
-                        value={toDateFilter}
-                        onChange={(e) => { setToDateFilter(e.target.value); setCurrentPage(1); }}
-                        aria-label={t('history.toDate')}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={fromAmountFilter}
-                        onChange={(e) => { setFromAmountFilter(e.target.value); setCurrentPage(1); }}
-                        placeholder={t('history.fromAmount')}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0"
-                      />
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={toAmountFilter}
-                        onChange={(e) => { setToAmountFilter(e.target.value); setCurrentPage(1); }}
-                        placeholder={t('history.toAmount')}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0"
-                      />
-                      <select
-                        value={sortBy}
-                        onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-                      >
-                        <option value="date">{t('history.sortDate')}</option>
-                        <option value="amount">{t('history.sortAmount')}</option>
-                      </select>
-                      <div className="flex gap-2">
-                        <select
-                          value={sortDirection}
-                          onChange={(e) => { setSortDirection(e.target.value); setCurrentPage(1); }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none focus:ring-0"
-                        >
-                          <option value="desc">{t('history.descending')}</option>
-                          <option value="asc">{t('history.ascending')}</option>
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => { setSearchValue(''); setCategoryFilter(''); setFromDateFilter(''); setToDateFilter(''); setFromAmountFilter(''); setToAmountFilter(''); setSortBy('date'); setSortDirection('desc'); setCurrentPage(1); }}
-                          className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-                        >
-                          {t('history.clearFilters')}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <HistoryFiltersPanel
+                  t={t}
+                  isOpen={isFiltersOpen}
+                  onClose={() => setIsFiltersOpen(false)}
+                  searchValue={searchValue}
+                  onSearchChange={(value) => {
+                    setSearchValue(value);
+                    setCurrentPage(1);
+                  }}
+                  categoryFilter={categoryFilter}
+                  onCategoryFilterChange={(value) => {
+                    setCategoryFilter(value);
+                    setCurrentPage(1);
+                  }}
+                  categoryOptions={categoryOptions}
+                  fromDateFilter={fromDateFilter}
+                  onFromDateChange={(value) => {
+                    setFromDateFilter(value);
+                    setCurrentPage(1);
+                  }}
+                  toDateFilter={toDateFilter}
+                  onToDateChange={(value) => {
+                    setToDateFilter(value);
+                    setCurrentPage(1);
+                  }}
+                  fromAmountFilter={fromAmountFilter}
+                  onFromAmountChange={(value) => {
+                    setFromAmountFilter(value);
+                    setCurrentPage(1);
+                  }}
+                  toAmountFilter={toAmountFilter}
+                  onToAmountChange={(value) => {
+                    setToAmountFilter(value);
+                    setCurrentPage(1);
+                  }}
+                  sortBy={sortBy}
+                  onSortByChange={(value) => {
+                    setSortBy(value);
+                    setCurrentPage(1);
+                  }}
+                  sortDirection={sortDirection}
+                  onSortDirectionChange={(value) => {
+                    setSortDirection(value);
+                    setCurrentPage(1);
+                  }}
+                  onClear={handleClearFilters}
+                />
 
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-black uppercase tracking-wider text-slate-500">{t('admin.transactionList')}</h3>
                   <span className="text-xs font-semibold text-slate-500">{t('history.showingEntries', { from: firstItemNumber, to: lastItemNumber, total: filteredCount })}</span>
                 </div>
 
-                {transactionsError ? <div className="mb-3 text-xs text-rose-600 font-semibold">{transactionsError}</div> : null}
+                {transactionsData.error ? <div className="mb-3 text-xs text-rose-600 font-semibold">{transactionsData.error}</div> : null}
 
                 {deleteFeedback ? <div className="mb-3 text-xs font-semibold text-slate-600">{deleteFeedback}</div> : null}
                 {transactionFeedback ? <div className="mb-3 text-xs font-semibold text-slate-600">{transactionFeedback}</div> : null}
 
                 <div className="flex-1 overflow-auto space-y-2 pr-1 mb-4">
-                  {loadingTransactions ? (
+                  {transactionsData.loading ? (
                     <div className="text-sm text-slate-500">{t('admin.loadingTransactions')}</div>
                   ) : visibleTransactions.length > 0 ? (
                     visibleTransactions.map((tx) => (
-                      <div key={tx.id} className="px-3.5 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm">
-                        <p className="text-[11px] font-semibold text-slate-400 mb-1.5">{formatDateOnly(tx.date, language)}</p>
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-sm text-slate-800 w-1/4 truncate">{tx.category}</span>
-                          <span className="flex-1 text-xs text-slate-500 text-center truncate">
-                            {(() => { const d = String(tx.description || '').trim(); return (d && d.toLowerCase() !== String(tx.category || '').toLowerCase()) ? d.slice(0, 30) : t('common.noDescription'); })()}
-                          </span>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`font-black text-sm ${tx.type === 'wpływ' ? 'text-emerald-600' : 'text-rose-500'}`}>
-                              {tx.type === 'wpływ' ? '+' : '-'}{formatCurrencyByLanguage(tx.amount, language)}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteTransaction(tx.id)}
-                              disabled={Boolean(deletingTransactionId)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={t('admin.deleteTransaction')}
-                              aria-label={t('admin.deleteTransaction')}
-                            >
-                              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <path d="M3 6h18" />
-                                <path d="M8 6V4h8v2" />
-                                <path d="M19 6l-1 14H6L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                      <HistoryTransactionRow
+                        key={tx.id}
+                        transaction={tx}
+                        language={language}
+                        t={t}
+                        onDelete={() => handleDeleteTransaction(tx.id)}
+                        deleting={Boolean(deletingTransactionId)}
+                        deleteTitle={t('admin.deleteTransaction')}
+                      />
                     ))
                   ) : (
                     <EmptyState title={t('admin.noTransactionsTitle')} message={t('admin.noTransactionsMessage')} icon="💳" />
@@ -783,32 +572,19 @@ const AdminPage = () => {
                   <p className="text-xs text-slate-500">
                     {t('history.showingEntries', { from: firstItemNumber, to: lastItemNumber, total: filteredCount })}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1 || loadingTransactions}
-                      className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {t('history.previousPage')}
-                    </button>
-                    <span className="text-xs font-semibold text-slate-600 px-1">
-                      {t('history.pageIndicator', { current: currentPage, total: totalPages })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage >= totalPages || loadingTransactions}
-                      className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {t('history.nextPage')}
-                    </button>
-                  </div>
+                  <HistoryPaginationControls
+                    t={t}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    loading={transactionsData.loading}
+                    onPrev={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    onNext={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  />
                 </div>
 
 
               </>
-            ) : loadingUsers ? (
+            ) : usersData.loading ? (
               <div className="h-full flex items-center justify-center text-sm text-slate-500">{t('admin.loadingUsers')}</div>
             ) : (
               <EmptyState title={t('admin.noUsersTitle')} message={t('admin.noUsersMessage')} />

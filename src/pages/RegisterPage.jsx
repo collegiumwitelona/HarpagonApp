@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -8,6 +8,7 @@ import AlertCard from '../components/AlertCard';
 import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
+import { useForm } from '../utils/hooks';
 
 const getRegisterErrorMessage = (data, fallbackMessage) => {
   const errors = data?.errors;
@@ -38,63 +39,46 @@ const getRegisterErrorMessage = (data, fallbackMessage) => {
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    name: '',
-    surname: '',
-    password: '',
-    confirmPassword: ''
-  });
 
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  
-  const handleFieldChange = (name, value) => {
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    
-    if (formData.password !== formData.confirmPassword) {
-      setError(t('auth.passwordsMismatch'));
-      return;
+  const handleRegister = async (values) => {
+    if (values.password !== values.confirmPassword) {
+      throw new Error(t('auth.passwordsMismatch'));
     }
-
-    setLoading(true);
 
     try {
       const response = await api.post('/Auth/register', {
-          email: formData.email,
-          name: formData.name,
-          surname: formData.surname,
-          password: formData.password
-        }, {
-          headers: { 'Content-Type': 'application/json' },
-          validateStatus: () => true,
-        }
-      );
+        email: values.email,
+        name: values.name,
+        surname: values.surname,
+        password: values.password
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+        validateStatus: () => true,
+      });
 
       if (response.status >= 200 && response.status < 300) {
-        
         alert(t('auth.joinSuccess'));
         navigate("/login");
       } else {
         const data = response.data;
-        setError(getRegisterErrorMessage(data, t('auth.registerError')));
+        throw new Error(getRegisterErrorMessage(data, t('auth.registerError')));
       }
     } catch (err) {
       console.error(err);
-      setError(t('auth.connectionError'));
-    } finally {
-      setLoading(false);
+      throw err;
     }
   };
+
+  const form = useForm(
+    {
+      email: '',
+      name: '',
+      surname: '',
+      password: '',
+      confirmPassword: ''
+    },
+    handleRegister
+  );
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
@@ -107,12 +91,12 @@ const RegisterPage = () => {
         >
           <AlertCard 
             type="error" 
-            message={error} 
-            show={!!error}
-            onClose={() => setError('')}
+            message={form.error} 
+            show={!!form.error}
+            onClose={() => form.setError('')}
           />
 
-          <form className="space-y-2.5 px-1" onSubmit={handleRegister}>
+          <form className="space-y-2.5 px-1" onSubmit={form.handleSubmit}>
           <div className="grid grid-cols-2 gap-2">
             <Input 
               label={t('auth.name')}
@@ -120,8 +104,8 @@ const RegisterPage = () => {
               placeholder={t('auth.name')}
               compact
               required
-              value={formData.name}
-              onChange={(e) => handleFieldChange('name', e.target.value)}
+              value={form.values.name}
+              onChange={form.handleChange}
             />
             <Input 
               label={t('auth.surname')}
@@ -129,44 +113,47 @@ const RegisterPage = () => {
               placeholder={t('auth.surname')}
               compact
               required
-              value={formData.surname}
-              onChange={(e) => handleFieldChange('surname', e.target.value)}
+              value={form.values.surname}
+              onChange={form.handleChange}
             />
           </div>
 
           <Input 
             label={t('auth.email')}
             type="email" 
+            name="email"
             placeholder={t('auth.emailPlaceholder')}
             compact
             required
-            value={formData.email}
-            onChange={(e) => handleFieldChange('email', e.target.value)}
+            value={form.values.email}
+            onChange={form.handleChange}
           />
 
           <Input 
             label={t('auth.password')}
             type="password" 
+            name="password"
             placeholder={t('auth.createPassword')}
             compact
             required
-            value={formData.password}
-            onChange={(e) => handleFieldChange('password', e.target.value)}
+            value={form.values.password}
+            onChange={form.handleChange}
           />
 
           <Input 
             label={t('auth.confirmPassword')}
             type="password" 
+            name="confirmPassword"
             placeholder={t('auth.confirmPassword')}
             compact
             required
-            value={formData.confirmPassword}
-            onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
+            value={form.values.confirmPassword}
+            onChange={form.handleChange}
           />
 
             <div className="pt-2">
-              <Button type="submit" disabled={loading} className="py-3">
-                {loading ? t('auth.creatingAccount') : t('common.register')}
+              <Button type="submit" disabled={form.isSubmitting} className="py-3">
+                {form.isSubmitting ? t('auth.creatingAccount') : t('common.register')}
               </Button>
             </div>
           </form>

@@ -8,6 +8,7 @@ import AlertCard from '../components/AlertCard';
 import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
+import { useForm } from '../utils/hooks';
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -16,10 +17,7 @@ const ResetPasswordPage = () => {
 
   const [userId, setUserId] = useState('');
   const [token, setToken] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const toFriendlyResetError = (rawError) => {
     const errorMap = {
@@ -51,6 +49,43 @@ const ResetPasswordPage = () => {
     return t('auth.resetFallbackError');
   };
 
+  const handleResetPassword = async (values) => {
+    if (!userId || !token) {
+      throw new Error(t('auth.resetMissingToken'));
+    }
+
+    if (!values.password.trim()) {
+      throw new Error(t('auth.resetEmptyPassword'));
+    }
+
+    try {
+      const response = await api.post('/Auth/reset-password', {
+        userId,
+        token,
+        password: values.password,
+      }, {
+        validateStatus: () => true,
+      });
+
+      if (response.status >= 200 && response.status < 300) {
+        setSuccess(t('auth.resetSuccess'));
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 2500);
+      } else {
+        throw new Error(toFriendlyResetError(response.data));
+      }
+    } catch (err) {
+      console.error('Blad resetowania hasla:', err);
+      throw err;
+    }
+  };
+
+  const form = useForm(
+    { password: '' },
+    handleResetPassword
+  );
+
   useEffect(() => {
     const linkUserId = searchParams.get('userId') || '';
     const linkToken = (searchParams.get('token') || '').replace(/ /g, '+');
@@ -59,52 +94,9 @@ const ResetPasswordPage = () => {
     setToken(linkToken);
 
     if (!linkUserId || !linkToken) {
-      setError(t('auth.resetMissingLink'));
+      form.setError(t('auth.resetMissingLink'));
     }
-  }, [searchParams, t]);
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (!userId || !token) {
-      setError(t('auth.resetMissingToken'));
-      return;
-    }
-
-    if (!password.trim()) {
-      setError(t('auth.resetEmptyPassword'));
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await api.post('/Auth/reset-password', {
-        userId,
-        token,
-        password,
-      }, {
-        validateStatus: () => true,
-      });
-
-      if (response.status >= 200 && response.status < 300) {
-        setSuccess(t('auth.resetSuccess'));
-        setPassword('');
-        setTimeout(() => {
-          navigate('/login', { replace: true });
-        }, 2500);
-      } else {
-        setError(toFriendlyResetError(response.data));
-      }
-    } catch (err) {
-      console.error('Blad resetowania hasla:', err);
-      setError(t('auth.connectionError'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [searchParams, t, form]);
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
@@ -121,9 +113,9 @@ const ResetPasswordPage = () => {
 
           <AlertCard 
             type="error" 
-            message={error} 
-            show={!!error}
-            onClose={() => setError('')}
+            message={form.error} 
+            show={!!form.error}
+            onClose={() => form.setError('')}
           />
 
           <AlertCard 
@@ -132,19 +124,20 @@ const ResetPasswordPage = () => {
             show={!!success}
           />
 
-          <form className="space-y-4 px-1" onSubmit={handleResetPassword}>
+          <form className="space-y-4 px-1" onSubmit={form.handleSubmit}>
             <Input
               label={t('auth.newPassword')}
               type="password"
+              name="password"
               placeholder={t('auth.newPasswordPlaceholder')}
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={form.values.password}
+              onChange={form.handleChange}
             />
 
             <div className="pt-2">
-              <Button type="submit" disabled={loading || !password.trim() || !userId || !token}>
-                {loading ? (
+              <Button type="submit" disabled={form.isSubmitting || !form.values.password.trim() || !userId || !token}>
+                {form.isSubmitting ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     {t('auth.changingPassword')}

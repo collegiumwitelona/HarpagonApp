@@ -18,11 +18,14 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import AlertCard from '../components/AlertCard';
 import EmptyState from '../components/EmptyState';
 import { api } from '../services/api';
-import { useDarkMode } from '../context/DarkModeContext';
+import { useDarkMode } from '../context/useDarkMode';
 import { useLanguage } from '../context/LanguageContext';
 import { CHART_COLORS } from '../constants/colors';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
-import { getIntlLocale, normalizeTransactionType, normalizeCategoryType, normalizeDate, formatCurrencyByLanguage } from '../utils/formatters';
+import { getIntlLocale, normalizeCategoryType, formatCurrencyByLanguage } from '../utils/formatters';
+import { normalizeTransactionRecord } from '../utils/transactions';
+import { fetchFirstSuccessfulGet } from '../utils/apiFallbacks';
+import { useDataFetch } from '../utils/hooks';
 
 const MONTH_END = { year: 2026, month: 0 };
 
@@ -32,11 +35,9 @@ const AnalysisPage = () => {
   const { language, t } = useLanguage();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [chartMode, setChartMode] = useState('wydatek');
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [chartMode, setChartMode] = useState('wydatek');
 
   const monthOptions = useMemo(() => {
     const now = new Date();
@@ -81,51 +82,11 @@ const AnalysisPage = () => {
     }
   }, [monthOptions, selectedMonthKey]);
 
-  const normalizeTransaction = (transaction, index, categoriesList = []) => {
-    const transactionCategoryId =
-      transaction.categoryId || transaction.categoryID || transaction.category?.id || '';
-
-    const matchedCategory = categoriesList.find(
-      (category) => String(category.id) === String(transactionCategoryId)
-    );
-
-    const transactionType =
-      transaction.type ||
-      transaction.transactionType ||
-      transaction.kind ||
-      matchedCategory?.type ||
-      matchedCategory?.categoryType;
-
-    return {
-      id: transaction.id || transaction.transactionId || `${Date.now()}-${index}`,
-      accountId:
-        transaction.accountId ||
-        transaction.accountID ||
-        transaction.account?.id ||
-        transaction.account?.accountId ||
-        '',
-      type: normalizeTransactionType(transactionType),
-      category:
-        transaction.categoryName ||
-        transaction.category?.categoryName ||
-        transaction.category?.name ||
-        matchedCategory?.categoryName ||
-        transaction.category ||
-        transaction.title ||
-        'Inne',
-      amount: Number(transaction.amount || transaction.value || 0),
-      date: normalizeDate(transaction.date || transaction.transactionDate || transaction.createdAt),
-    };
-  };
-
   const loadAnalysisData = useCallback(async () => {
-    setLoading(true);
-    setError('');
-
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      return;
+      throw new Error('No auth token');
     }
 
     try {
@@ -142,7 +103,7 @@ const AnalysisPage = () => {
       if (accountsResponse.status === 401) {
         removeAuthToken();
         navigate('/login');
-        return;
+        throw new Error('Unauthorized');
       }
 
       const accounts = Array.isArray(accountsResponse.data) ? accountsResponse.data : [];
@@ -155,30 +116,9 @@ const AnalysisPage = () => {
         localStorage.setItem('activeAccountId', resolvedAccountId);
       }
 
-      const getFirstSuccessful = async (requests) => {
-        for (const request of requests) {
-          const response = await api.get(request.url, {
-            headers,
-            params: request.params,
-            validateStatus: () => true,
-          });
-
-          if (response.status === 401) {
-            removeAuthToken();
-            navigate('/login');
-            return null;
-          }
-
-          if (response.status >= 200 && response.status < 300) {
-            return response;
-          }
-        }
-
-        return null;
-      };
-
       const [transactionsResponse, categoriesResponse] = await Promise.all([
-        getFirstSuccessful([
+        fetchFirstSuccessfulGet({
+          requests: [
           {
             url: '/Me/Transactions',
             params: {
@@ -198,16 +138,28 @@ const AnalysisPage = () => {
               'Search.Value': '',
             },
           },
-        ]),
-        getFirstSuccessful([
+          ],
+          headers,
+          onUnauthorized: () => {
+            removeAuthToken();
+            navigate('/login');
+          },
+        }),
+        fetchFirstSuccessfulGet({
+          requests: [
           { url: '/Me/Categories' },
           { url: '/Categories' },
-        ]),
+          ],
+          headers,
+          onUnauthorized: () => {
+            removeAuthToken();
+            navigate('/login');
+          },
+        }),
       ]);
 
       if (!transactionsResponse || !categoriesResponse) {
-        setError(t('analysis.analysisError'));
-        return;
+        throw new Error(t('analysis.analysisError'));
       }
 
       const categoriesData = categoriesResponse.data;
@@ -230,7 +182,12 @@ const AnalysisPage = () => {
 
       const normalizedTransactions = Array.isArray(transactionsData)
         ? transactionsData.map((transaction, index) =>
-            normalizeTransaction(transaction, index, normalizedCategories)
+            normalizeTransactionRecord(transaction, {
+              index,
+              categoriesList: normalizedCategories,
+              includeDescription: false,
+              normalizeDateValue: true,
+            })
           )
         : [];
 
@@ -240,17 +197,15 @@ const AnalysisPage = () => {
 
       setCategories(normalizedCategories);
       setTransactions(accountTransactions);
+
+      return { categories: normalizedCategories, transactions: accountTransactions };
     } catch (err) {
-      console.error('Blad ladowania analizy:', err);
-      setError(t('analysis.analysisError'));
-    } finally {
-      setLoading(false);
+      console.error('Błąd ładowania analizy:', err);
+      throw err;
     }
   }, [navigate, t]);
 
-  useEffect(() => {
-    loadAnalysisData();
-  }, [loadAnalysisData]);
+  const analysisDataHook = useDataFetch(loadAnalysisData);
 
   const selectedMonth = useMemo(
     () => monthOptions.find((item) => item.key === selectedMonthKey) || null,
@@ -432,13 +387,13 @@ const AnalysisPage = () => {
             </button>
 
             <div className="h-72 sm:h-80 lg:h-96">
-              {loading ? (
+              {analysisDataHook.loading ? (
                 <div className="h-full flex items-center justify-center text-sm font-semibold text-slate-500">
                   {t('analysis.loading')}
                 </div>
-              ) : error ? (
+              ) : analysisDataHook.error ? (
                 <div className="h-full flex items-center justify-center text-sm font-semibold text-rose-500 text-center px-6">
-                  {error}
+                  {analysisDataHook.error}
                 </div>
               ) : totalForMonth <= 0 ? (
                 <div className="h-full flex items-center justify-center text-sm font-semibold text-slate-500 text-center px-6">

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { getAuthToken } from './tokenHelper';
 
 
@@ -21,7 +21,11 @@ export const useDataFetch = (fetchFn) => {
     }
   }, [fetchFn]);
 
-  return { data, loading, error, fetchData, setData, setError };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, retry: fetchData, fetchData, setData, setError };
 };
 
 
@@ -30,6 +34,7 @@ export const useForm = (initialValues, onSubmit) => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,10 +48,13 @@ export const useForm = (initialValues, onSubmit) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setIsSubmitting(true);
     try {
       await onSubmit(values);
     } catch (err) {
+      const errorMessage = err.message || 'Form submission error';
+      setError(errorMessage);
       console.error('Form submission error:', err);
     } finally {
       setIsSubmitting(false);
@@ -57,6 +65,7 @@ export const useForm = (initialValues, onSubmit) => {
     setValues(initialValues);
     setErrors({});
     setTouched({});
+    setError('');
   };
 
   return {
@@ -64,12 +73,14 @@ export const useForm = (initialValues, onSubmit) => {
     errors,
     touched,
     isSubmitting,
+    error,
     handleChange,
     handleBlur,
     handleSubmit,
     resetForm,
     setValues,
     setErrors,
+    setError,
   };
 };
 

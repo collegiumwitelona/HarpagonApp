@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import CashStatCard from '../components/CashStatCard';
@@ -10,7 +10,10 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { CATEGORY_COLORS } from '../constants/colors';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
-import { normalizeTransactionType, normalizeCategoryType, normalizeDate, formatCurrencyByLanguage } from '../utils/formatters';
+import { normalizeCategoryType, formatCurrencyByLanguage } from '../utils/formatters';
+import { normalizeTransactionRecord } from '../utils/transactions';
+import { fetchFirstSuccessfulGet } from '../utils/apiFallbacks';
+import { useDataFetch } from '../utils/hooks';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -20,7 +23,6 @@ const DashboardPage = () => {
   const [goal, setGoal] = useState(0);
   const [tempBalance, setTempBalance] = useState("");
   const [tempGoal, setTempGoal] = useState("");
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [accountId, setAccountId] = useState('');
   const [categories, setCategories] = useState([]);
@@ -36,8 +38,47 @@ const DashboardPage = () => {
     expensesByCategory: {},
     incomesByCategory: {},
   });
-  const hasLoadedDashboardRef = useRef(false);
-  const loadDashboardDataRequestRef = useRef(0);
+
+  useEffect(() => {
+    const verifyAccountExists = async () => {
+      const token = getAuthToken();
+      if (!token) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      try {
+        const response = await api.get('/Me/Accounts', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+          validateStatus: () => true,
+        });
+
+        if (response.status === 401) {
+          removeAuthToken();
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        if (response.status >= 200 && response.status < 300) {
+          const accounts = response.data;
+          if (!Array.isArray(accounts) || accounts.length === 0) {
+            navigate('/setup', { replace: true });
+            return;
+          }
+        } else {
+          navigate('/setup', { replace: true });
+        }
+      } catch (err) {
+        console.error('Błąd weryfikacji konta na dashboardzie:', err);
+        navigate('/setup', { replace: true });
+      }
+    };
+
+    verifyAccountExists();
+  }, [navigate]);
 
   const buildSummaryFromTransactions = useCallback((transactionsList = []) => {
     const summary = {
@@ -72,55 +113,11 @@ const DashboardPage = () => {
     return summary;
   }, []);
 
-  const normalizeTransaction = useCallback((transaction, index, categoriesList = []) => {
-    const transactionCategoryId =
-      transaction.categoryId || transaction.categoryID || transaction.category?.id || '';
-
-    const matchedCategory = categoriesList.find(
-      (c) => String(c.id) === String(transactionCategoryId)
-    );
-
-    const transactionType =
-      transaction.type ||
-      transaction.transactionType ||
-      transaction.kind ||
-      matchedCategory?.type ||
-      matchedCategory?.categoryType;
-
-    return {
-      id: transaction.id || transaction.transactionId || `${Date.now()}-${index}`,
-      accountId:
-        transaction.accountId ||
-        transaction.accountID ||
-        transaction.account?.id ||
-        transaction.account?.accountId ||
-        '',
-      type: normalizeTransactionType(transactionType),
-      category: String(
-        transaction.categoryName ||
-        transaction.category?.name ||
-        transaction.category?.categoryName ||
-        matchedCategory?.categoryName ||
-        (typeof transaction.category === 'string' ? transaction.category : null) ||
-        transaction.title ||
-        'Inne'),
-      amount: Number(transaction.amount || transaction.value || 0),
-      date: normalizeDate(transaction.date || transaction.transactionDate || transaction.createdAt),
-    };
-  }, []);
-
   const loadDashboardData = useCallback(async () => {
-    const requestId = loadDashboardDataRequestRef.current + 1;
-    loadDashboardDataRequestRef.current = requestId;
-
-    setError('');
-    setLoading(true);
-
     const token = getAuthToken();
     if (!token) {
-      setLoading(false);
       navigate('/login');
-      return;
+      throw new Error('No auth token');
     }
 
     try {
@@ -129,112 +126,67 @@ const DashboardPage = () => {
         'Accept': 'application/json',
       };
 
-      const fetchFirstSuccessfulGet = async (requests, errorMessage, requestConfig = {}) => {
-        let unauthorizedDetected = false;
-
-        for (const request of requests) {
-          const mergedParams = {
-            ...(requestConfig.params || {}),
-            ...(request.params || {}),
-          };
-
-          const response = await api.get(request.url, {
-            headers: {
-              ...headers,
-              ...(requestConfig.headers || {}),
-            },
-            params: mergedParams,
-            validateStatus: () => true,
-          });
-
-          if (response.status === 401) {
-            unauthorizedDetected = true;
-            break;
-          }
-
-          if (response.status >= 200 && response.status < 300) {
-            return response;
-          }
-        }
-
-        if (unauthorizedDetected) {
-          removeAuthToken();
-          navigate('/login');
-          return null;
-        }
-
-        throw new Error(errorMessage);
-      };
-
       const accountsResponse = await api.get('/Me/Accounts', { headers, validateStatus: () => true });
-      if (requestId !== loadDashboardDataRequestRef.current) {
-        return;
-      }
 
       if (accountsResponse.status === 401) {
         removeAuthToken();
         navigate('/login');
-        return;
+        throw new Error('Unauthorized');
       }
 
       if (accountsResponse.status < 200 || accountsResponse.status >= 300) {
         throw new Error(`Nie udało się pobrać konta (status ${accountsResponse.status}).`);
       }
 
-      const transactionsResponse = await fetchFirstSuccessfulGet(
-        [
-          {
-            url: '/Me/Transactions',
-            params: {
-              Draw: 1,
-              Start: 0,
-              Length: 1000,
-              'Search.Value': '',
+      const [transactionsResponse, categoriesResponse] = await Promise.all([
+        fetchFirstSuccessfulGet({
+          requests: [
+            {
+              url: '/Me/Transactions',
+              params: {
+                Draw: 1,
+                Start: 0,
+                Length: 1000,
+                'Search.Value': '',
+              },
             },
-          },
-          { url: '/Transactions/all' },
-          {
-            url: '/Transactions',
-            params: {
-              Draw: 1,
-              Start: 0,
-              Length: 1000,
-              'Search.Value': '',
+            { url: '/Transactions/all' },
+            {
+              url: '/Transactions',
+              params: {
+                Draw: 1,
+                Start: 0,
+                Length: 1000,
+                'Search.Value': '',
+              },
             },
+          ],
+          headers,
+          onUnauthorized: () => {
+            removeAuthToken();
+            navigate('/login');
           },
-        ],
-        'Nie udało się pobrać transakcji.'
-      );
-
-      if (requestId !== loadDashboardDataRequestRef.current) {
-        return;
-      }
-
-      if (!transactionsResponse) {
-        return;
-      }
-
-      const categoriesResponse = await fetchFirstSuccessfulGet(
-        [
-          { url: '/Me/Categories' },
-          { url: '/Categories' },
-        ],
-        'Nie udało się pobrać kategorii.',
-        {
-          params: { _ts: Date.now() },
-          headers: {
+        }),
+        fetchFirstSuccessfulGet({
+          requests: [
+            { url: '/Me/Categories' },
+            { url: '/Categories' },
+          ],
+          headers,
+          baseParams: { _ts: Date.now() },
+          baseHeaders: {
             'Cache-Control': 'no-cache',
             Pragma: 'no-cache',
           },
-        }
-      );
+          onUnauthorized: () => {
+            removeAuthToken();
+            navigate('/login');
+          },
+        }),
+      ]);
 
-      if (requestId !== loadDashboardDataRequestRef.current) {
-        return;
-      }
-
-      if (!categoriesResponse) {
-        return;
+      if (!transactionsResponse || !categoriesResponse) {
+        throw new Error(t('dashboard.dashboardError'));
       }
 
       const accounts = accountsResponse.data;
@@ -256,10 +208,6 @@ const DashboardPage = () => {
           }))
         : [];
 
-      if (requestId !== loadDashboardDataRequestRef.current) {
-        return;
-      }
-
       setCategories(normalizedCategories);
 
       const storedAccountId = localStorage.getItem('activeAccountId') || '';
@@ -280,7 +228,12 @@ const DashboardPage = () => {
 
       const normalizedTransactions = Array.isArray(transactionsData)
         ? transactionsData.map((transaction, index) =>
-            normalizeTransaction(transaction, index, normalizedCategories)
+            normalizeTransactionRecord(transaction, {
+              index,
+              categoriesList: normalizedCategories,
+              includeDescription: false,
+              normalizeDateValue: true,
+            })
           )
         : [];
 
@@ -292,33 +245,27 @@ const DashboardPage = () => {
 
       setTransactions(accountTransactions);
       setDashboardSummary(buildSummaryFromTransactions(accountTransactions));
+
+      return { categories: normalizedCategories, transactions: accountTransactions };
     } catch (err) {
-      if (requestId !== loadDashboardDataRequestRef.current) {
-        return;
-      }
-
       console.error('Błąd ładowania dashboardu:', err);
-      setError(t('dashboard.dashboardError'));
-    } finally {
-      if (requestId === loadDashboardDataRequestRef.current) {
-        setLoading(false);
-      }
+      throw err;
     }
-  }, [buildSummaryFromTransactions, navigate, normalizeTransaction, t]);
+  }, [buildSummaryFromTransactions, navigate, t]);
+
+  const dashboardDataHook = useDataFetch(loadDashboardData);
 
   useEffect(() => {
-    if (hasLoadedDashboardRef.current) {
-      return;
+    if (!dashboardDataHook.error) {
+      setError('');
     }
-
-    hasLoadedDashboardRef.current = true;
-    loadDashboardData();
-  }, [loadDashboardData]);
+  }, [dashboardDataHook.error]);
 
   useEffect(() => {
-    if (!hasLoadedDashboardRef.current) return;
-    loadDashboardData();
-  }, [language, loadDashboardData]);
+    if (dashboardDataHook.error) {
+      setError(dashboardDataHook.error);
+    }
+  }, [dashboardDataHook.error]);
 
   const categoryOptions = useMemo(
     () => categories.filter((category) => category.type === formType),
@@ -407,7 +354,7 @@ const DashboardPage = () => {
 
       setBalance(Number.isNaN(responseBalance) ? parsedBalance : responseBalance);
       setTempBalance('');
-      await loadDashboardData();
+      dashboardDataHook.retry();
     } catch (err) {
       console.error('Błąd zapisu salda konta:', err);
       setError(t('dashboard.saveBalanceError'));
@@ -500,7 +447,7 @@ const DashboardPage = () => {
       }
 
       setBalance((prev) => (type === 'wpływ' ? prev + amount : prev - amount));
-      await loadDashboardData();
+      dashboardDataHook.retry();
 
       e.target.reset();
       setFormType('wydatek');
@@ -582,7 +529,7 @@ const DashboardPage = () => {
             </form>
 
             <div className="grow overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-              {loading ? (
+              {dashboardDataHook.loading ? (
                 <p className="text-sm text-slate-500">{t('dashboard.loadingTransactions')}</p>
               ) : transactions.length > 0 ? (
                 transactions.map(t => <TransactionItem key={t.id} {...t} />)

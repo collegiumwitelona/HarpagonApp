@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Link, useNavigate } from "react-router-dom";
@@ -10,120 +10,106 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { isAdmin } from '../services/auth';
 import { setRefreshToken, setStoredUserProfile } from '../utils/tokenHelper';
+import { useForm } from '../utils/hooks';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      
-      const response = await api.post('/Auth/login', {
-          email: email,
-          password: password,
+  const form = useForm(
+    { email: '', password: '' },
+    async (values) => {
+      try {
+        const response = await api.post('/Auth/login', {
+          email: values.email,
+          password: values.password,
         }, {
           headers: {
             'Content-Type': 'application/json',
           },
           validateStatus: () => true,
-        }
-      );
+        });
 
-      if (response.status >= 200 && response.status < 300) {
-        const rawData = response.data;
-        let token = "";
-        let refreshToken = "";
+        if (response.status >= 200 && response.status < 300) {
+          const rawData = response.data;
+          let token = "";
+          let refreshToken = "";
 
-        if (typeof rawData === 'string') {
-          token = rawData;
-        } else if (rawData && typeof rawData === 'object') {
-          token = rawData.accessToken || rawData.token || rawData.jwt || '';
-          refreshToken = rawData.refreshToken || '';
-        }
+          if (typeof rawData === 'string') {
+            token = rawData;
+          } else if (rawData && typeof rawData === 'object') {
+            token = rawData.accessToken || rawData.token || rawData.jwt || '';
+            refreshToken = rawData.refreshToken || '';
+          }
 
-        if (!token && typeof rawData === 'string') {
-          const jwtMatch = rawData.match(/[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+/);
-          token = jwtMatch ? jwtMatch[0] : '';
-        }
+          if (!token && typeof rawData === 'string') {
+            const jwtMatch = rawData.match(/[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+/);
+            token = jwtMatch ? jwtMatch[0] : '';
+          }
 
-        if (typeof token === 'string' && token.trim()) {
-          token = token
-            .trim()
-            .replace(/^"|"$/g, '')
-            .replace(/^Bearer\s+/i, '');
-        } else {
-          throw new Error('Invalid token format received from server.');
-        }
+          if (typeof token === 'string' && token.trim()) {
+            token = token
+              .trim()
+              .replace(/^"|"$/g, '')
+              .replace(/^Bearer\s+/i, '');
+          } else {
+            throw new Error('Invalid token format received from server.');
+          }
 
-        localStorage.setItem('token', token);
+          localStorage.setItem('token', token);
 
-        if (refreshToken) {
-          setRefreshToken(refreshToken);
-        }
+          if (refreshToken) {
+            setRefreshToken(refreshToken);
+          }
 
-        if (rawData && typeof rawData === 'object' && rawData.user) {
-          setStoredUserProfile(rawData.user);
-        }
+          if (rawData && typeof rawData === 'object' && rawData.user) {
+            setStoredUserProfile(rawData.user);
+          }
 
-        if (isAdmin(token)) {
-          navigate('/admin', { replace: true });
-          return;
-        }
+          if (isAdmin(token)) {
+            navigate('/admin', { replace: true });
+            return;
+          }
 
-        console.log("Token zapisany pomyślnie.");
+          console.log("Token zapisany pomyślnie.");
 
-        
-        try {
-          const accountsResponse = await api.get('/Me/Accounts', {
-            validateStatus: () => true,
-          });
+          try {
+            const accountsResponse = await api.get('/Me/Accounts', {
+              validateStatus: () => true,
+            });
 
-          if (accountsResponse.status >= 200 && accountsResponse.status < 300) {
-            const accounts = accountsResponse.data;
+            if (accountsResponse.status >= 200 && accountsResponse.status < 300) {
+              const accounts = accountsResponse.data;
 
-            
-            
-            if (Array.isArray(accounts) && accounts.length > 0) {
-              const account = accounts[0];
-              const hasBalanceConfigured =
-                account && account.balance !== null && account.balance !== undefined;
+              if (Array.isArray(accounts) && accounts.length > 0) {
+                const account = accounts[0];
+                const hasBalanceConfigured =
+                  account && account.balance !== null && account.balance !== undefined;
 
-              navigate(hasBalanceConfigured ? "/dashboard" : "/setup", { replace: true });
+                navigate(hasBalanceConfigured ? "/dashboard" : "/setup", { replace: true });
+              } else {
+                navigate("/setup", { replace: true });
+              }
             } else {
+              console.warn("Błąd podczas pobierania kont, status:", accountsResponse.status);
               navigate("/setup", { replace: true });
             }
-          } else {
-            
-            console.warn("Błąd podczas pobierania kont, status:", accountsResponse.status);
+          } catch (accountsErr) {
+            console.error("Błąd podczas weryfikacji kont:", accountsErr);
             navigate("/setup", { replace: true });
           }
-        } catch (accountsErr) {
-          console.error("Błąd podczas weryfikacji kont:", accountsErr);
-          navigate("/setup", { replace: true });
+        } else {
+          const errorText =
+            typeof response.data === 'string' ? response.data : JSON.stringify(response.data || {});
+          console.error("Serwer odrzucił logowanie:", errorText);
+          form.setError(t('auth.invalidCredentials'));
         }
-
-      } else {
-        const errorText =
-          typeof response.data === 'string' ? response.data : JSON.stringify(response.data || {});
-        console.error("Serwer odrzucił logowanie:", errorText);
-        setError(t('auth.invalidCredentials'));
+      } catch (err) {
+        console.error("Błąd krytyczny logowania:", err);
+        form.setError(t('auth.connectionError'));
       }
-    } catch (err) {
-      console.error("Błąd krytyczny logowania:", err);
-      setError(t('auth.connectionError'));
-    } finally {
-      setLoading(false);
     }
-  };
+  );
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
@@ -137,35 +123,37 @@ const LoginPage = () => {
         >
           <AlertCard 
             type="error" 
-            message={error} 
-            show={!!error}
-            onClose={() => setError('')}
+            message={form.error} 
+            show={!!form.error}
+            onClose={() => form.setError('')}
           />
 
-          <form className="space-y-3 px-1" onSubmit={handleLogin}>
+          <form className="space-y-3 px-1" onSubmit={form.handleSubmit}>
             <Input 
               label={t('auth.email')}
-              type="email" 
+              type="email"
+              name="email"
               placeholder={t('auth.emailPlaceholder')}
               compact
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.values.email}
+              onChange={form.handleChange}
             />
 
             <Input 
               label={t('auth.password')}
-              type="password" 
+              type="password"
+              name="password"
               placeholder={t('auth.passwordPlaceholder')}
               compact
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={form.values.password}
+              onChange={form.handleChange}
             />
 
             <div className="pt-1">
-              <Button type="submit" disabled={loading} className="py-3">
-                {loading ? (
+              <Button type="submit" disabled={form.isSubmitting} className="py-3">
+                {form.isSubmitting ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     {t('auth.authInProgress')}

@@ -3,46 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
+import { useForm } from '../utils/hooks';
 
 const ChangePasswordButton = ({ variant = 'settings' }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [previousPassword, setPreviousPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const openModal = () => {
-    setError('');
-    setPreviousPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const normalizedPrevious = String(previousPassword || '').trim();
-    const normalizedNew = String(newPassword || '').trim();
-    const normalizedConfirm = String(confirmPassword || '').trim();
+  const handlePasswordChange = async (values) => {
+    const normalizedPrevious = String(values.previousPassword || '').trim();
+    const normalizedNew = String(values.newPassword || '').trim();
+    const normalizedConfirm = String(values.confirmPassword || '').trim();
 
     if (!normalizedPrevious || !normalizedNew || !normalizedConfirm) {
-      setError(t('settings.changePasswordValidationError'));
-      return;
+      throw new Error(t('settings.changePasswordValidationError'));
     }
 
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      return;
+      throw new Error('No token');
     }
-
-    setError('');
-    setLoading(true);
 
     try {
       const response = await api.post(
@@ -65,7 +47,7 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
       if (response.status === 401) {
         removeAuthToken();
         navigate('/login');
-        return;
+        throw new Error('Unauthorized');
       }
 
       if (response.status < 200 || response.status >= 300) {
@@ -73,17 +55,24 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
         const apiErrors = Array.isArray(response?.data?.errors)
           ? response.data.errors.map((item) => String(item || '').trim()).filter(Boolean)
           : [];
-        setError(apiMessage || apiErrors.join(' ') || t('settings.changePasswordError'));
-        return;
+        throw new Error(apiMessage || apiErrors.join(' ') || t('settings.changePasswordError'));
       }
 
       setIsModalOpen(false);
     } catch (err) {
       console.error('Błąd zmiany hasła:', err);
-      setError(t('settings.changePasswordError'));
-    } finally {
-      setLoading(false);
+      throw err;
     }
+  };
+
+  const form = useForm(
+    { previousPassword: '', newPassword: '', confirmPassword: '' },
+    handlePasswordChange
+  );
+
+  const openModal = () => {
+    form.resetForm();
+    setIsModalOpen(true);
   };
 
   return (
@@ -122,15 +111,16 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
             <h2 className="text-2xl font-bold mb-2 text-slate-900">{t('auth.changePassword')}</h2>
             <p className="text-slate-500 mb-6 text-sm">{t('settings.changePasswordModalDescription')}</p>
 
-            <form onSubmit={handleSubmit} className="space-y-5 text-left">
+            <form onSubmit={form.handleSubmit} className="space-y-5 text-left">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">{t('settings.previousPassword')}</label>
                 <input
                   type="password"
+                  name="previousPassword"
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder={t('auth.passwordPlaceholder')}
-                  value={previousPassword}
-                  onChange={(e) => setPreviousPassword(e.target.value)}
+                  value={form.values.previousPassword}
+                  onChange={form.handleChange}
                   required
                 />
               </div>
@@ -139,10 +129,11 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
                 <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">{t('auth.newPassword')}</label>
                 <input
                   type="password"
+                  name="newPassword"
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder={t('auth.passwordPlaceholder')}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  value={form.values.newPassword}
+                  onChange={form.handleChange}
                   required
                 />
               </div>
@@ -151,17 +142,18 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
                 <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">{t('auth.confirmPassword')}</label>
                 <input
                   type="password"
+                  name="confirmPassword"
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder={t('auth.passwordPlaceholder')}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  value={form.values.confirmPassword}
+                  onChange={form.handleChange}
                   required
                 />
               </div>
 
-              {error && (
+              {form.error && (
                 <div className="bg-rose-50 border border-rose-100 rounded-xl py-3 px-4">
-                  <p className="text-rose-500 text-sm text-center font-medium">{error}</p>
+                  <p className="text-rose-500 text-sm text-center font-medium">{form.error}</p>
                 </div>
               )}
 
@@ -170,7 +162,7 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
                   type="button"
                   onClick={() => {
                     setIsModalOpen(false);
-                    setError('');
+                    form.resetForm();
                   }}
                   className="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-2xl hover:bg-slate-200 transition-colors border border-slate-200"
                 >
@@ -178,10 +170,10 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={form.isSubmitting}
                   className="w-full bg-violet-700 text-white font-bold py-3 rounded-2xl hover:bg-violet-800 transition-colors shadow-lg shadow-violet-200 disabled:bg-slate-300"
                 >
-                  {loading ? t('auth.changingPassword') : t('auth.changePassword')}
+                  {form.isSubmitting ? t('auth.changingPassword') : t('auth.changePassword')}
                 </button>
               </div>
             </form>
