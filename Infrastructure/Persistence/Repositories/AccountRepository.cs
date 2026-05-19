@@ -45,10 +45,9 @@ namespace Infrastructure.Persistence.Repositories
         public async Task<bool> TryChangeBalanceAsync(Guid accountId, decimal delta)
         {
             var affectedRows = await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                UPDATE Accounts
-                SET Balance = Balance + {delta}
-                WHERE Id = {accountId}
-                  AND Balance + {delta} >= 0
+                UPDATE public.""Accounts""
+                SET ""Balance"" = ""Balance"" + {delta}
+                WHERE ""Id"" = {accountId}
             ");
 
             return affectedRows > 0;

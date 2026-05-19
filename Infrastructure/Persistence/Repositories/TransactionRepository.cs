@@ -71,7 +71,7 @@ namespace Infrastructure.Persistence.Repositories
         public async Task<bool> TryUpdateTransactionAmountAsync(Guid transactionId, decimal expectedOldAmount, decimal newAmount)
         {
             var affectedRows = await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                UPDATE Transactions
+                UPDATE public.""Transactions""
                 SET Amount = {newAmount}
                 WHERE Id = {transactionId} AND Amount = {expectedOldAmount}
             ");
