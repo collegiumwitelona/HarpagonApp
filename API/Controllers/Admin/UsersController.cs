@@ -53,6 +53,7 @@ namespace Api.Controllers.Admin
         public async Task<IActionResult> GetUserById(Guid userId)
         {
             var response = await _userService.GetUserByIdAsync(userId);
+            _logger.LogInformation($"Admin retrieved user with ID {userId}");
             return Ok(response);
         }
 
@@ -87,6 +88,7 @@ namespace Api.Controllers.Admin
         public async Task<IActionResult> GetUserByEmail(string email)
         {
             var response = await _userService.GetUserByEmailAsync(email);
+            _logger.LogInformation($"Admin retrieved user with email {email}");
             return Ok(response);
         }
 
@@ -129,6 +131,7 @@ namespace Api.Controllers.Admin
         public async Task<IActionResult> GetUsers([FromQuery]DataTableRequest request)
         {
             var response = await _userService.GetFilteredUsersAsync(request);
+            _logger.LogInformation($"Admin retrieved users with filters");
             return Ok(response);
         }
 
@@ -163,6 +166,7 @@ namespace Api.Controllers.Admin
         public async Task<IActionResult> GetAllUsers()
         {
             var response = await _userService.GetAllUsersAsync();
+            _logger.LogInformation($"Admin retrieved all users");
             return Ok(response);
         }
 
@@ -188,6 +192,7 @@ namespace Api.Controllers.Admin
         public async Task<IActionResult> DeleteUser(Guid userId)
         {
             await _userService.DeleteUserByIdAsync(userId);
+            _logger.LogInformation($"Admin deleted user with ID {userId}");
             return NoContent();
         }
     }

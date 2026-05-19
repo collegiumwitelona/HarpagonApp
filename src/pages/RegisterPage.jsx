@@ -102,7 +102,8 @@ const RegisterPage = () => {
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
         <AuthCard
           title={<>{t('auth.registerTitle')} <span className="text-violet-700">Harpagon</span></>}
-          scrollClassName="pr-2"
+          scrollClassName="pr-1"
+          compact
         >
           <AlertCard 
             type="error" 
@@ -111,12 +112,13 @@ const RegisterPage = () => {
             onClose={() => setError('')}
           />
 
-          <form className="space-y-3 px-1" onSubmit={handleRegister}>
-          <div className="flex gap-2">
+          <form className="space-y-2.5 px-1" onSubmit={handleRegister}>
+          <div className="grid grid-cols-2 gap-2">
             <Input 
               label={t('auth.name')}
               name="name"
               placeholder={t('auth.name')}
+              compact
               required
               value={formData.name}
               onChange={(e) => handleFieldChange('name', e.target.value)}
@@ -125,6 +127,7 @@ const RegisterPage = () => {
               label={t('auth.surname')}
               name="surname"
               placeholder={t('auth.surname')}
+              compact
               required
               value={formData.surname}
               onChange={(e) => handleFieldChange('surname', e.target.value)}
@@ -135,6 +138,7 @@ const RegisterPage = () => {
             label={t('auth.email')}
             type="email" 
             placeholder={t('auth.emailPlaceholder')}
+            compact
             required
             value={formData.email}
             onChange={(e) => handleFieldChange('email', e.target.value)}
@@ -144,6 +148,7 @@ const RegisterPage = () => {
             label={t('auth.password')}
             type="password" 
             placeholder={t('auth.createPassword')}
+            compact
             required
             value={formData.password}
             onChange={(e) => handleFieldChange('password', e.target.value)}
@@ -153,19 +158,20 @@ const RegisterPage = () => {
             label={t('auth.confirmPassword')}
             type="password" 
             placeholder={t('auth.confirmPassword')}
+            compact
             required
             value={formData.confirmPassword}
             onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
           />
 
-            <div className="pt-4">
-              <Button type="submit" disabled={loading}>
+            <div className="pt-2">
+              <Button type="submit" disabled={loading} className="py-3">
                 {loading ? t('auth.creatingAccount') : t('common.register')}
               </Button>
             </div>
           </form>
 
-          <div className="mt-8 text-center text-sm text-slate-600">
+          <div className="mt-5 text-center text-sm text-slate-600">
             <p>
               {t('auth.haveAccount')}{' '}
               <Link to="/login" className="text-violet-700 font-bold hover:underline">

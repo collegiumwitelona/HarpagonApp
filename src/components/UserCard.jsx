@@ -18,7 +18,9 @@ const UserCard = ({
       } ${className}`}
     >
       <p className="text-xs font-black uppercase tracking-wide">ID: {user.id}</p>
-      <p className="text-sm font-semibold mt-1 truncate">{user.email}</p>
+      <p className={`text-sm font-semibold mt-1 truncate ${user.emailConfirmed ? 'text-emerald-600' : 'text-amber-600'}`}>
+        {user.email}
+      </p>
     </button>
   );
 };
