@@ -92,30 +92,46 @@
 .dark .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
 
 .dark .history-filters-panel {
-  background-color: rgba(15, 23, 42, 0.85) !important;
-  border-color: #334155 !important;
+  background-color: #1e293b !important;
+  border-color: #0f172a !important;
 }
 
 .dark .history-filters-panel .history-filter-input,
 .dark .history-filters-panel .history-filter-clear {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
 }
 
 .dark .history-filters-panel .history-filter-input::placeholder {
-  color: #64748b !important;
+  color: #94a3b8 !important;
+}
+
+.dark .history-filters-panel .history-filter-input:focus {
+  border-color: #64748b !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .history-filters-panel .history-filter-input[type='date'] {
+  color-scheme: dark;
+}
+
+.dark .history-filters-panel .history-filter-input[type='date']::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.85;
 }
 
 .dark .history-filters-panel select.history-filter-input option,
 .dark .history-filters-panel select.history-filter-input optgroup {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
 }
 
 .dark .history-filters-panel .history-filter-clear:hover {
-  background-color: #e2e8f0 !important;
-  color: #0f172a !important;
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #64748b !important;
 }
 
 .dark .change-password-btn:hover {

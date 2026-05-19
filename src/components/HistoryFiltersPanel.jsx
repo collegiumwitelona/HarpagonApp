@@ -2,10 +2,10 @@ import React from 'react';
 import { NON_NEGATIVE_INPUT_PROPS, sanitizeNonNegativeInput } from '../utils/nonNegativeNumber';
 
 const inputClassName =
-  'history-filter-input w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0';
+  'history-filter-input w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-0 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:border-slate-500';
 
 const defaultPanelClassName =
-  'history-filters-panel mb-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shrink-0 space-y-3';
+  'history-filters-panel mb-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shrink-0 space-y-3 dark:border-slate-950 dark:bg-slate-800';
 
 const HistoryFiltersPanel = ({
   t,
@@ -101,7 +101,7 @@ const HistoryFiltersPanel = ({
           <button
             type="button"
             onClick={onClear}
-            className="history-filter-clear rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            className="history-filter-clear rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-700 dark:hover:text-slate-50"
           >
             {t('history.clearFilters')}
           </button>
