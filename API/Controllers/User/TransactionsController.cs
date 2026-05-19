@@ -76,6 +76,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request, filters);
+            _logger.LogInformation($"User {userId} retrieved transactions with filters");
             return Ok(response);
         }
 

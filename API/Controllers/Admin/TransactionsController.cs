@@ -82,6 +82,7 @@ namespace Api.Controllers.Admin
             [FromQuery] TransactionFilteringRequest filters, Guid userId)
         {
             var response = await _transactionService.GetFilteredTransactionsByUserIdAsync(userId, request, filters);
+            _logger.LogInformation($"Admin retrieved transactions for user {userId}");
             return Ok(response);
         }
 
