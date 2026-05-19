@@ -79,7 +79,7 @@ services:
       PGADMIN_ADD_SERVER__1__USERNAME: ${POSTGRES_USER} 
       PGADMIN_ADD_SERVER__1__PASSWORD: ${POSTGRES_PASSWORD}
       PGADMIN_ADD_SERVER__1__SSLMODE: prefer
-##to gówno nie działa, nie wiem czemu, więc trzeba ręcznie dodać serwer w pgadminie,
+##nie działa, nie wiem czemu, więc trzeba ręcznie dodać serwer w pgadminie,
 ##wystarczy wpisać te same dane co w .env
 
     ports:
