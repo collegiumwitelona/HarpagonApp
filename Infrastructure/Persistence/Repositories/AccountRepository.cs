@@ -10,7 +10,8 @@ namespace Infrastructure.Persistence.Repositories
     public class AccountRepository : IAccountRepository
     {
         private readonly ApplicationDbContext _context;
-        public AccountRepository(ApplicationDbContext context) {
+        public AccountRepository(ApplicationDbContext context)
+        {
             _context = context;
         }
         public async Task<Account> AddAccountAsync(Account account)
@@ -41,6 +42,17 @@ namespace Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<bool> TryChangeBalanceAsync(Guid accountId, decimal delta)
+        {
+            var affectedRows = await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE public.""Accounts""
+                SET ""Balance"" = ""Balance"" + {delta}
+                WHERE ""Id"" = {accountId}
+            ");
+
+            return affectedRows > 0;
+        }
+
         public async Task UpdateAccountAsync(Account account)
         {
             var existing = await _context.Accounts
@@ -50,7 +62,6 @@ namespace Infrastructure.Persistence.Repositories
                 throw new NotFoundException("Account not found");
 
             existing.Name = account.Name;
-            existing.Balance = account.Balance;
             existing.Goal = account.Goal;
 
             await _context.SaveChangesAsync();

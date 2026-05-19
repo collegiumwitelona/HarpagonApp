@@ -31,11 +31,14 @@ namespace Tests.Unit
 
             _service = new TransactionService(
                 _transactionRepositoryMock.Object,
-                _accountRepositoryMock.Object,
+                _account_repository_mock_object(),
                 _categoryRepositoryMock.Object,
                 _unitOfWorkMock.Object
             );
         }
+
+        // small helper to keep constructor tidy and avoid accidental renames
+        private IAccountRepository _account_repository_mock_object() => _accountRepositoryMock.Object;
 
         [Fact]
         public async Task CreateTransactionAsync_ShouldCreateTransactionWithCorrectData()
@@ -69,6 +72,11 @@ namespace Tests.Unit
                 .Setup(x => x.GetAccountByIdAsync(accountId))
                 .ReturnsAsync(account);
 
+            
+            _accountRepositoryMock
+                .Setup(x => x.TryChangeBalanceAsync(accountId, It.IsAny<decimal>()))
+                .ReturnsAsync(true);
+
             Transaction? captured = null;
 
             _transactionRepositoryMock
@@ -93,6 +101,7 @@ namespace Tests.Unit
             Assert.Equal("transaction", captured.Description);
 
             _transactionRepositoryMock.Verify(x => x.AddTransactionAsync(It.IsAny<Transaction>()), Times.Once);
+            _accountRepositoryMock.Verify(x => x.TryChangeBalanceAsync(accountId, It.IsAny<decimal>()), Times.Once);
         }
 
         [Fact]
@@ -108,6 +117,15 @@ namespace Tests.Unit
                 Name = "Test",
                 UserId = userId,
                 Balance = 1000,
+                Goal = 2000
+            };
+
+            var updatedAccount = new Account
+            {
+                Id = accountId,
+                Name = "Test",
+                UserId = userId,
+                Balance = 900, // expected after net delta applied
                 Goal = 2000
             };
 
@@ -131,25 +149,44 @@ namespace Tests.Unit
                 Category = category
             };
 
+            var oldAmount = transaction.Amount;
+
             _transactionRepositoryMock
                 .Setup(x => x.GetTransactionByIdAsync(transaction.Id))
                 .ReturnsAsync(transaction);
 
             _accountRepositoryMock
+                .Setup(x => x.TryChangeBalanceAsync(transaction.AccountId, It.IsAny<decimal>()))
+                .ReturnsAsync(true);
+
+            
+            _transaction_repository_mock_setup_tryupdate(transaction.Id, oldAmount, 300);
+
+            _accountRepositoryMock
                 .Setup(x => x.GetAccountByIdAsync(accountId))
-                .ReturnsAsync(account);
+                .ReturnsAsync(updatedAccount);
 
             var result = await _service.EditTransactionByIdAsync(transaction.Id, 300, userId);
 
             Assert.Equal(300, result.Amount);
-            Assert.Equal(900, result.Account!.Balance); // 1000 - (300-200)
+            Assert.Equal(900, result.Account!.Balance); // reflects reloaded account
 
-            _accountRepositoryMock.Verify(x => x.UpdateAccountAsync(account), Times.Once);
-            _transactionRepositoryMock.Verify(x => x.UpdateTransactionAsync(transaction), Times.Once);
+            _transactionRepositoryMock.Verify(x => x.TryUpdateTransactionAmountAsync(transaction.Id, oldAmount, 300), Times.Once);
+            _accountRepositoryMock.Verify(x => x.TryChangeBalanceAsync(transaction.AccountId, It.IsAny<decimal>()), Times.Once);
+
+            _transactionRepositoryMock.Verify(x => x.UpdateTransactionAsync(It.IsAny<Transaction>()), Times.Never);
+            _accountRepositoryMock.Verify(x => x.UpdateAccountAsync(It.IsAny<Account>()), Times.Never);
+        }
+
+        private void _transaction_repository_mock_setup_tryupdate(Guid id, decimal expectedOld, decimal newAmount)
+        {
+            _transactionRepositoryMock
+                .Setup(x => x.TryUpdateTransactionAmountAsync(id, expectedOld, newAmount))
+                .ReturnsAsync(true);
         }
 
         [Fact]
-        public async Task EditTransactionByIdAsync_ShouldThrowBadRequest_WhenInsufficientFunds()
+        public async Task EditTransactionByIdAsync_ShouldThrowUnprocessableException_WhenInsufficientFunds()
         {
             var userId = Guid.NewGuid();
             var accountId = Guid.NewGuid();
@@ -188,28 +225,20 @@ namespace Tests.Unit
                 .ReturnsAsync(transaction);
 
             _accountRepositoryMock
-                .Setup(x => x.GetAccountByIdAsync(accountId))
-                .ReturnsAsync(account);
+                .Setup(x => x.TryChangeBalanceAsync(transaction.AccountId, It.IsAny<decimal>()))
+                .ReturnsAsync(false);
 
             // Act + Assert
-            var exception = await Assert.ThrowsAsync<UnprocessableException>(() =>
+            await Assert.ThrowsAsync<UnprocessableException>(() =>
                 _service.EditTransactionByIdAsync(transaction.Id, 500, userId));
-            // 500 > 100 + 200 => balance
+            // 500 > 100 + 200 => insufficient funds -> TryChangeBalanceAsync returns false -> exception
 
             _transactionRepositoryMock.Verify(
                 x => x.GetTransactionByIdAsync(transaction.Id),
                 Times.Once);
 
-            _accountRepositoryMock.Verify(
-                x => x.GetAccountByIdAsync(accountId),
-                Times.Once);
-
             _transactionRepositoryMock.Verify(
-                x => x.UpdateTransactionAsync(It.IsAny<Transaction>()),
-                Times.Never);
-
-            _accountRepositoryMock.Verify(
-                x => x.UpdateAccountAsync(It.IsAny<Account>()),
+                x => x.TryUpdateTransactionAmountAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<decimal>()),
                 Times.Never);
         }
 
@@ -253,8 +282,8 @@ namespace Tests.Unit
                 .ReturnsAsync(transaction);
 
             _accountRepositoryMock
-                .Setup(x => x.GetAccountByIdAsync(accountId))
-                .ReturnsAsync(account);
+                .Setup(x => x.TryChangeBalanceAsync(transaction.AccountId, It.IsAny<decimal>()))
+                .ReturnsAsync(true);
 
             _transactionRepositoryMock
                 .Setup(x => x.DeleteTransactionAsync(transaction.Id))
@@ -262,10 +291,10 @@ namespace Tests.Unit
 
             await _service.DeleteTransactionByIdAsync(transaction.Id, userId);
 
-            Assert.Equal(1200, account.Balance);
-
-            _accountRepositoryMock.Verify(x => x.UpdateAccountAsync(account), Times.Once);
+            _accountRepositoryMock.Verify(x => x.TryChangeBalanceAsync(transaction.AccountId, It.IsAny<decimal>()), Times.Once);
             _transactionRepositoryMock.Verify(x => x.DeleteTransactionAsync(transaction.Id), Times.Once);
+
+            _accountRepositoryMock.Verify(x => x.UpdateAccountAsync(It.IsAny<Account>()), Times.Never);
         }
 
         [Fact]
@@ -284,11 +313,13 @@ namespace Tests.Unit
                 Goal = 2000
             };
 
-            var category = new Category { 
+            var category = new Category
+            {
                 Id = Guid.NewGuid(),
                 Name = "Test",
                 UserId = userId,
-                Type = CategoryType.Expense };
+                Type = CategoryType.Expense
+            };
 
             var transaction = new Transaction
             {
