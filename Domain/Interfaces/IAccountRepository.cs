@@ -9,6 +9,6 @@ namespace Domain.Interfaces
         Task<List<Account>> GetAccountsByUserIdAsync(Guid userId);
         Task UpdateAccountAsync(Account account);
         Task DeleteAccountAsync(Guid accountId);
-        //Task<int> CountTransactionsByAccountIdAsync(Guid accountId, Guid userId);
+        Task<bool> TryChangeBalanceAsync(Guid accountId, decimal delta);
     }
 }

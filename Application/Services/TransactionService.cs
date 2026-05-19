@@ -52,11 +52,6 @@ namespace Application.Services
                 _ => 0
             };
 
-            var newBalance = account.Balance + delta;
-
-            if (category.Type == CategoryType.Expense && newBalance < 0)
-                throw new UnprocessableException("Transaction_InsufficientFunds");
-
             var transaction = new Transaction
             {
                 Id = Guid.NewGuid(),
@@ -67,13 +62,17 @@ namespace Application.Services
                 Description = request.Description
             };
 
-            account.Balance = newBalance;
-
             await _unitOfWork.ExecuteAsync(async () =>
             {
-                await _accountRepository.UpdateAccountAsync(account);
+                var success = await _accountRepository.TryChangeBalanceAsync(account.Id, delta);
+
+                if (!success)
+                    throw new UnprocessableException("Transaction_InsufficientFunds");
+
                 await _transactionRepository.AddTransactionAsync(transaction);
             });
+
+            account.Balance += delta;
 
             return new TransactionResponse
             {
@@ -106,57 +105,62 @@ namespace Application.Services
             if (transaction == null || transaction.Account?.UserId != userId)
                 throw new NotFoundException("Transaction_NotFound");
 
-            var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
-
-            if (account == null)
-            {
-                throw new NotFoundException("Account_NotFound");
-            }
-
-            var delta = transaction.Category?.Type switch
+            var delta = transaction.Category!.Type switch
             {
                 CategoryType.Expense => transaction.Amount,
                 CategoryType.Income => -transaction.Amount,
                 _ => 0
             };
 
-            account.Balance += delta;
-
             await _unitOfWork.ExecuteAsync(async () =>
             {
-                await _accountRepository.UpdateAccountAsync(account);
+                var success = await _accountRepository.TryChangeBalanceAsync(transaction.AccountId, delta);
+
+                if (!success)
+                    throw new UnprocessableException("Account_InvalidState");
+
                 await _transactionRepository.DeleteTransactionAsync(transactionId);
             });
         }
 
-        public async Task<TransactionResponse> EditTransactionByIdAsync(Guid transactionId, decimal newAmount, Guid userId)
+        public async Task<TransactionResponse> EditTransactionByIdAsync(Guid transactionId,decimal newAmount, Guid userId)
         {
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
 
             if (transaction == null || transaction.Account?.UserId != userId)
                 throw new NotFoundException("Transaction_NotFound");
 
-            var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
+            var oldCategoryType = transaction.Category!.Type;
 
-            if (account == null)
+            var oldDelta = oldCategoryType switch
             {
-                throw new NotFoundException("Account_NotFound");
-            }
+                CategoryType.Expense => transaction.Amount,
+                CategoryType.Income => -transaction.Amount,
+                _ => 0
+            };
 
-            var diff = newAmount - transaction.Amount;
-            var newBalance = account.Balance - diff;
+            var newDelta = oldCategoryType switch
+            {
+                CategoryType.Expense => -newAmount,
+                CategoryType.Income => newAmount,
+                _ => 0
+            };
 
-            if (transaction.Category?.Type == CategoryType.Expense && newBalance < 0)
-                throw new UnprocessableException("Transaction_InsufficientFunds");
-
-            account.Balance = newBalance;
-            transaction.Amount = newAmount;
+            var netDelta = newDelta + oldDelta;
 
             await _unitOfWork.ExecuteAsync(async () =>
             {
-                await _accountRepository.UpdateAccountAsync(account);
+                var success = await _accountRepository.TryChangeBalanceAsync(transaction.AccountId, netDelta);
+
+                if (!success)
+                    throw new UnprocessableException("Transaction_InsufficientFunds");
+
+                transaction.Amount = newAmount;
+
                 await _transactionRepository.UpdateTransactionAsync(transaction);
             });
+
+            transaction.Amount = newAmount;
 
             return new TransactionResponse
             {
@@ -164,7 +168,6 @@ namespace Application.Services
                 Amount = transaction.Amount,
                 Date = transaction.Date,
                 Description = transaction.Description,
-
                 Account = new AccountResponse
                 {
                     Id = transaction.Account.Id,
@@ -172,10 +175,9 @@ namespace Application.Services
                     Name = transaction.Account.Name,
                     Balance = transaction.Account.Balance
                 },
-
                 Category = new CategoryResponse
                 {
-                    Id = transaction.Category!.Id,
+                    Id = transaction.Category.Id,
                     Name = transaction.Category.Name,
                     Type = transaction.Category.Type
                 }
@@ -388,6 +390,5 @@ namespace Application.Services
             }
             return query;
         }
-
     }
 }
