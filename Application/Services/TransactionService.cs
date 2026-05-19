@@ -52,6 +52,11 @@ namespace Application.Services
                 _ => 0
             };
 
+            if(account.Balance + delta < 0)
+            {
+                throw new UnprocessableException("Transaction_InsufficientFunds");
+            }
+
             var transaction = new Transaction
             {
                 Id = Guid.NewGuid(),
@@ -147,6 +152,11 @@ namespace Application.Services
             };
 
             var netDelta = newDelta + oldDelta;
+
+            if(transaction.Account.Balance + netDelta < 0)
+            {
+                throw new UnprocessableException("Transaction_InsufficientFunds");
+            }
 
             await _unitOfWork.ExecuteAsync(async () =>
             {
