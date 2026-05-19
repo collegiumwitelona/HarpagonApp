@@ -4,7 +4,6 @@ using Domain.Interfaces;
 using Domain.Models;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Principal;
 
 namespace Infrastructure.Persistence.Repositories
 {
@@ -33,7 +32,7 @@ namespace Infrastructure.Persistence.Repositories
         }
 
         public async Task<List<Transaction>> GetAllTransactionsByUserIdAsync(Guid userId)
-        { 
+        {
             return await _context.Transactions.AsNoTracking()
                 .Include(t => t.Account)
                 .Include(t => t.Category)
@@ -69,13 +68,24 @@ namespace Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task<bool> TryUpdateTransactionAmountAsync(Guid transactionId, decimal expectedOldAmount, decimal newAmount)
+        {
+            var affectedRows = await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE Transactions
+                SET Amount = {newAmount}
+                WHERE Id = {transactionId} AND Amount = {expectedOldAmount}
+            ");
+
+            return affectedRows > 0;
+        }
+
         public async Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to)
         {
             var endDateExclusive = to.AddDays(1);
 
             return await _context.Transactions
                 .AsNoTracking()
-                .Where(t => t.Account!.UserId == userId && 
+                .Where(t => t.Account!.UserId == userId &&
                 t.Date >= from && t.Date < endDateExclusive)
                 .CountAsync();
         }

@@ -123,7 +123,7 @@ namespace Application.Services
             });
         }
 
-        public async Task<TransactionResponse> EditTransactionByIdAsync(Guid transactionId,decimal newAmount, Guid userId)
+        public async Task<TransactionResponse> EditTransactionByIdAsync(Guid transactionId, decimal newAmount, Guid userId)
         {
             var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
 
@@ -155,10 +155,15 @@ namespace Application.Services
                 if (!success)
                     throw new UnprocessableException("Transaction_InsufficientFunds");
 
-                transaction.Amount = newAmount;
+                // Conditional update to avoid lost update race: only update when DB Amount equals the old amount we read.
+                var updated = await _transactionRepository.TryUpdateTransactionAmountAsync(transaction.Id, transaction.Amount, newAmount);
 
-                await _transactionRepository.UpdateTransactionAsync(transaction);
+                if (!updated)
+                    throw new UnprocessableException("Transaction_Conflict");
             });
+
+            // Reload account to reflect balance after successful commit
+            var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
 
             transaction.Amount = newAmount;
 
@@ -173,7 +178,7 @@ namespace Application.Services
                     Id = transaction.Account.Id,
                     UserId = transaction.Account.UserId,
                     Name = transaction.Account.Name,
-                    Balance = transaction.Account.Balance
+                    Balance = account?.Balance ?? transaction.Account.Balance
                 },
                 Category = new CategoryResponse
                 {
@@ -223,29 +228,29 @@ namespace Application.Services
                 .GetAllTransactionsByUserIdAsync(userId);
 
             return transactions.Select(t => new TransactionResponse
+            {
+                Id = t.Id,
+                Amount = t.Amount,
+                Date = t.Date,
+                Description = t.Description,
+                Category = new CategoryResponse
                 {
-                    Id = t.Id,
-                    Amount = t.Amount,
-                    Date = t.Date,
-                    Description = t.Description,
-                    Category = new CategoryResponse
-                    {
-                        Id = t.Category!.Id,
-                        Description = t.Category.Description,
-                        Name = language == "pl" && t.Category.NamePl != null ? t.Category.NamePl : t.Category.Name,
-                        Type = t.Category.Type
-                    },
-                    Account = new AccountResponse
-                    {
-                        Id = t.Account!.Id,
-                        UserId = userId,
-                        Name = t.Account.Name,
-                        Balance = t.Account.Balance,
-                    }
-                }).ToList();
+                    Id = t.Category!.Id,
+                    Description = t.Category.Description,
+                    Name = language == "pl" && t.Category.NamePl != null ? t.Category.NamePl : t.Category.Name,
+                    Type = t.Category.Type
+                },
+                Account = new AccountResponse
+                {
+                    Id = t.Account!.Id,
+                    UserId = userId,
+                    Name = t.Account.Name,
+                    Balance = t.Account.Balance,
+                }
+            }).ToList();
         }
 
-        public async Task<DataTableResponse<TransactionResponse>> GetFilteredTransactionsByUserIdAsync(Guid userId, 
+        public async Task<DataTableResponse<TransactionResponse>> GetFilteredTransactionsByUserIdAsync(Guid userId,
             DataTableRequest? request = null, TransactionFilteringRequest? filters = null)
         {
             var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
@@ -355,7 +360,8 @@ namespace Application.Services
             );
         }
 
-        private IQueryable<Transaction> ApplyFiltering(IQueryable<Transaction> query, TransactionFilteringRequest? request) {
+        private IQueryable<Transaction> ApplyFiltering(IQueryable<Transaction> query, TransactionFilteringRequest? request)
+        {
 
             if (request is null)
             {
