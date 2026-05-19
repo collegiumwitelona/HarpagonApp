@@ -51,7 +51,7 @@ namespace API.Controllers
         public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
         {
             var response = await _authService.LoginAsync(request);
-            //_logger.LogInformation($"User: {response.User}");
+            _logger.LogInformation($"User {response.User.Id} logged in.");
             return Ok(response);
         }
 
@@ -67,6 +67,7 @@ namespace API.Controllers
         public async Task<ActionResult<RefreshResponse>> Refresh([FromBody] RefreshRequest request)
         {
             var response = await _authService.RefreshAccessTokenAsync(request);
+            _logger.LogInformation($"Access token refreshed for user {response.User.Id}.");
             return Ok(response);
         }
 
@@ -80,6 +81,7 @@ namespace API.Controllers
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
             await _authService.LogoutAsync(request);
+            _logger.LogInformation($"User {User.GetUserId()} logged out.");
             return Ok();
         }
 
@@ -93,6 +95,7 @@ namespace API.Controllers
         public async Task<IActionResult> ForgotPassword([FromQuery]string email)
         {
             await _authService.SendResetPasswordEmailAsync(email);
+            _logger.LogInformation($"Password reset link sent to {email}, for user {User.GetUserId()}.");
             return Ok(new { message = _localizer["ResetPassword_LinkWasSent"].Value });
         }
 
@@ -109,6 +112,7 @@ namespace API.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
             await _authService.ResetPasswordAsync(request);
+            _logger.LogInformation($"Password reset for user {request.UserId}.");
             return Ok(new {message = _localizer["ResetPassword_Success"].Value });
         }   
 
@@ -122,7 +126,7 @@ namespace API.Controllers
         public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailRequest request)
         {
             await _authService.ConfirmEmailAsync(request);
-            _logger.LogInformation("Email confirmed");
+            _logger.LogInformation($"Email confirmed for user {request.UserId}.");
             return Ok(new { message = _localizer["EmailConfirmed"].Value});
         }
 
@@ -139,7 +143,7 @@ namespace API.Controllers
         {
             var userId = User.GetUserId();
             await _authService.ChangePasswordAsync(userId, request);
-            _logger.LogInformation("Password changed");
+            _logger.LogInformation($"Password changed for user {userId}.");
             return Ok(new { message = _localizer["PasswordChanged"].Value});
         }
     }

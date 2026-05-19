@@ -37,6 +37,7 @@ const DashboardPage = () => {
     incomesByCategory: {},
   });
   const hasLoadedDashboardRef = useRef(false);
+  const loadDashboardDataRequestRef = useRef(0);
 
   const buildSummaryFromTransactions = useCallback((transactionsList = []) => {
     const summary = {
@@ -95,24 +96,29 @@ const DashboardPage = () => {
         transaction.account?.accountId ||
         '',
       type: normalizeTransactionType(transactionType),
-      category:
+      category: String(
         transaction.categoryName ||
+        transaction.category?.name ||
         transaction.category?.categoryName ||
         matchedCategory?.categoryName ||
-        transaction.category ||
+        (typeof transaction.category === 'string' ? transaction.category : null) ||
         transaction.title ||
-        'Inne',
+        'Inne'),
       amount: Number(transaction.amount || transaction.value || 0),
       date: normalizeDate(transaction.date || transaction.transactionDate || transaction.createdAt),
     };
   }, []);
 
   const loadDashboardData = useCallback(async () => {
+    const requestId = loadDashboardDataRequestRef.current + 1;
+    loadDashboardDataRequestRef.current = requestId;
+
     setError('');
     setLoading(true);
 
     const token = getAuthToken();
     if (!token) {
+      setLoading(false);
       navigate('/login');
       return;
     }
@@ -123,13 +129,21 @@ const DashboardPage = () => {
         'Accept': 'application/json',
       };
 
-      const fetchFirstSuccessfulGet = async (requests, errorMessage) => {
+      const fetchFirstSuccessfulGet = async (requests, errorMessage, requestConfig = {}) => {
         let unauthorizedDetected = false;
 
         for (const request of requests) {
+          const mergedParams = {
+            ...(requestConfig.params || {}),
+            ...(request.params || {}),
+          };
+
           const response = await api.get(request.url, {
-            headers,
-            params: request.params,
+            headers: {
+              ...headers,
+              ...(requestConfig.headers || {}),
+            },
+            params: mergedParams,
             validateStatus: () => true,
           });
 
@@ -153,6 +167,10 @@ const DashboardPage = () => {
       };
 
       const accountsResponse = await api.get('/Me/Accounts', { headers, validateStatus: () => true });
+      if (requestId !== loadDashboardDataRequestRef.current) {
+        return;
+      }
+
       if (accountsResponse.status === 401) {
         removeAuthToken();
         navigate('/login');
@@ -188,6 +206,10 @@ const DashboardPage = () => {
         'Nie udało się pobrać transakcji.'
       );
 
+      if (requestId !== loadDashboardDataRequestRef.current) {
+        return;
+      }
+
       if (!transactionsResponse) {
         return;
       }
@@ -197,8 +219,19 @@ const DashboardPage = () => {
           { url: '/Me/Categories' },
           { url: '/Categories' },
         ],
-        'Nie udało się pobrać kategorii.'
+        'Nie udało się pobrać kategorii.',
+        {
+          params: { _ts: Date.now() },
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+          },
+        }
       );
+
+      if (requestId !== loadDashboardDataRequestRef.current) {
+        return;
+      }
 
       if (!categoriesResponse) {
         return;
@@ -222,6 +255,10 @@ const DashboardPage = () => {
             type: normalizeCategoryType(category.type || category.categoryType),
           }))
         : [];
+
+      if (requestId !== loadDashboardDataRequestRef.current) {
+        return;
+      }
 
       setCategories(normalizedCategories);
 
@@ -256,10 +293,16 @@ const DashboardPage = () => {
       setTransactions(accountTransactions);
       setDashboardSummary(buildSummaryFromTransactions(accountTransactions));
     } catch (err) {
+      if (requestId !== loadDashboardDataRequestRef.current) {
+        return;
+      }
+
       console.error('Błąd ładowania dashboardu:', err);
       setError(t('dashboard.dashboardError'));
     } finally {
-      setLoading(false);
+      if (requestId === loadDashboardDataRequestRef.current) {
+        setLoading(false);
+      }
     }
   }, [buildSummaryFromTransactions, navigate, normalizeTransaction, t]);
 
@@ -560,17 +603,31 @@ const DashboardPage = () => {
                 title={t('dashboard.savingsGoal')} value={goal} color="blue" 
                 tempValue={tempGoal} onTempChange={setTempGoal}
                 onSave={async () => {
+                  setError('');
                   const parsedGoal = Number(String(tempGoal || '').trim().replace(',', '.'));
                   if (Number.isNaN(parsedGoal) || parsedGoal <= 0) return;
                   const token = getAuthToken();
                   if (!token) { navigate('/login'); return; }
-                  if (!accountId) return;
+                  if (!accountId) { setError(t('dashboard.missingAccountOrCategory')); return; }
                   try {
                     let response = await api.patch('/Me/Accounts/goal', { accountId, newGoal: parsedGoal }, {
                       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                       validateStatus: () => true,
                     });
+
+                    if (response.status === 404 || response.status === 405) {
+                      response = await api.patch('/Accounts/goal', { accountId, newGoal: parsedGoal }, {
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+                        validateStatus: () => true,
+                      });
+                    }
+
                     if (response.status === 401) { removeAuthToken(); navigate('/login'); return; }
+
+                    if (response.status < 200 || response.status >= 300) {
+                      throw new Error(`Nie udało się zapisać celu (status ${response.status}).`);
+                    }
+
                     if (response.status >= 200 && response.status < 300) {
                       const responseGoal = Number(response.data?.goal ?? parsedGoal);
                       setGoal(Number.isNaN(responseGoal) ? parsedGoal : responseGoal);
@@ -578,6 +635,7 @@ const DashboardPage = () => {
                     }
                   } catch (err) {
                     console.error('Błąd zapisu celu oszczędzania:', err);
+                    setError(t('dashboard.dashboardError'));
                   }
                 }}
               />

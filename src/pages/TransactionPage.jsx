@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -43,6 +43,7 @@ const TransactionPage = () => {
   const [categorySuccess, setCategorySuccess] = useState('');
   const [addingCategory, setAddingCategory] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const loadFormDataRequestRef = useRef(0);
 
   const normalizeTransaction = (transaction, index, categoriesList = []) => {
     const transactionCategoryId =
@@ -195,6 +196,9 @@ const TransactionPage = () => {
   ]);
 
   const loadFormData = useCallback(async () => {
+    const requestId = loadFormDataRequestRef.current + 1;
+    loadFormDataRequestRef.current = requestId;
+
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
@@ -207,9 +211,13 @@ const TransactionPage = () => {
         Accept: 'application/json',
       };
 
-      const getFirstSuccessful = async (endpoints) => {
+      const getFirstSuccessful = async (endpoints, requestConfig = {}) => {
         for (const endpoint of endpoints) {
-          const response = await api.get(endpoint, { headers, validateStatus: () => true });
+          const response = await api.get(endpoint, {
+            headers,
+            validateStatus: () => true,
+            ...requestConfig,
+          });
 
           if (response.status === 401) {
             removeAuthToken();
@@ -227,8 +235,19 @@ const TransactionPage = () => {
 
       const [accountsResponse, categoriesResponse] = await Promise.all([
         api.get('/Me/Accounts', { headers, validateStatus: () => true }),
-        getFirstSuccessful(['/Me/Categories', '/Categories']),
+        getFirstSuccessful(['/Me/Categories', '/Categories'], {
+          params: { _ts: Date.now() },
+          headers: {
+            ...headers,
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+          },
+        }),
       ]);
+
+      if (requestId !== loadFormDataRequestRef.current) {
+        return;
+      }
 
       if (!categoriesResponse) {
         throw new Error('Nie udało się pobrać kategorii.');
@@ -260,8 +279,27 @@ const TransactionPage = () => {
           }))
         : [];
 
-      setCategories(normalizedCategories);
+      setCategories((previousCategories) => {
+        const byId = new Map();
+
+        previousCategories.forEach((category) => {
+          byId.set(String(category.id), category);
+        });
+
+        normalizedCategories.forEach((category) => {
+          byId.set(String(category.id), {
+            ...byId.get(String(category.id)),
+            ...category,
+          });
+        });
+
+        return Array.from(byId.values());
+      });
     } catch (err) {
+      if (requestId !== loadFormDataRequestRef.current) {
+        return;
+      }
+
       console.error('Błąd ładowania danych formularza transakcji:', err);
       setError(t('history.historyError'));
     }
@@ -508,6 +546,7 @@ const TransactionPage = () => {
         setNewCategoryName('');
         setCategorySuccess(t('history.categoryRemoved'));
         setTimeout(() => setCategorySuccess(''), 3000);
+        await loadFormData();
       } else {
         const apiType = newCategoryType === 'wpływ' ? 'Income' : 'Expense';
         const payload = { categoryName: name, type: apiType, description: '' };
@@ -553,6 +592,7 @@ const TransactionPage = () => {
         setNewCategoryName('');
         setCategorySuccess(t('history.categoryAdded'));
         setTimeout(() => setCategorySuccess(''), 3000);
+        await loadFormData();
       }
     } catch (err) {
       console.error('Błąd dodawania kategorii:', err);

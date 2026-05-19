@@ -204,10 +204,18 @@ const AdminPage = () => {
     const normalizedTransactions = transactionsData.map((transaction, txIndex) =>
       normalizeTransaction(transaction, user?.id || index, txIndex)
     );
+    const emailConfirmedRaw =
+      user?.emailConfirmed ??
+      user?.EmailConfirmed ??
+      user?.isEmailConfirmed ??
+      user?.IsEmailConfirmed ??
+      user?.emailVerified ??
+      user?.EmailVerified;
 
     return {
       id: user?.id || user?.userId || user?.accountId || `user-${index}`,
       email: user?.email || user?.mail || '',
+      emailConfirmed: emailConfirmedRaw === true,
       name: user?.name || user?.firstName || '',
       surname: user?.surname || user?.lastName || '',
       transactions: sortTransactionsNewestFirst(normalizedTransactions),
@@ -604,7 +612,9 @@ const AdminPage = () => {
                 <div className="mb-2 shrink-0 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <h2 className="text-lg font-black tracking-tight text-slate-900 shrink-0">{t('admin.adminPanel')}</h2>
-                    <span className="hidden lg:block truncate text-xs text-slate-400">{selectedUser.email}</span>
+                    <span className={`hidden lg:block truncate text-xs font-semibold ${selectedUser.emailConfirmed ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {selectedUser.email}
+                    </span>
                     <span className="hidden lg:block truncate text-xs font-semibold text-slate-600">{`${selectedUser.name} ${selectedUser.surname}`.trim()}</span>
                     <button
                       type="button"

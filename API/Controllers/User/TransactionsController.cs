@@ -112,6 +112,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _transactionService.GetAllTransactionsByUserIdAsync(userId);
+            _logger.LogInformation($"User {userId} retrieved all transactions");
             return Ok(response);
         }
 
@@ -147,6 +148,7 @@ namespace Api.Controllers.User
         {
             var userId = User.GetUserId();
             var response = await _transactionService.GetTransactionByIdAsync(id, userId);
+            _logger.LogInformation($"User {userId} retrieved transaction {id}");
             return Ok(response);
         }
 
@@ -194,6 +196,7 @@ namespace Api.Controllers.User
             var userId = User.GetUserId();
             var response = await _transactionService.CreateTransactionAsync(request, userId);
             await _cache.InvalidateDashboardAsync(userId);
+            _logger.LogInformation($"Transaction {response.Id} created for user {userId}");
             return Ok(response);
         }
 
@@ -241,6 +244,7 @@ namespace Api.Controllers.User
             var userId = User.GetUserId();
             var response = await _transactionService.EditTransactionByIdAsync(request.TransactionId, request.Amount, userId);
             await _cache.InvalidateDashboardAsync(userId);
+            _logger.LogInformation($"Transaction {request.TransactionId} updated for user {userId}");
             return Ok(response);
         }
 
@@ -269,6 +273,7 @@ namespace Api.Controllers.User
             var userId = User.GetUserId();
             await _transactionService.DeleteTransactionByIdAsync(id, userId);
             await _cache.InvalidateDashboardAsync(userId);
+            _logger.LogInformation($"Transaction {id} deleted for user {userId}");
             return Ok();
         }
     }
