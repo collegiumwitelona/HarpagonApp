@@ -79,11 +79,8 @@ namespace Tests.Unit
             Assert.Equal(existingAccount.UserId, result.UserId);
 
             repositoryMock.Verify(r =>
-                r.UpdateAccountAsync(It.Is<Account>(a =>
-                    a.Id == existingAccount.Id &&
-                    a.Balance == newBalance &&
-                    a.UserId == existingAccount.UserId
-                    )), Times.Once);
+                r.TryChangeBalanceAsync(existingAccount.Id, newBalance - existingAccount.Balance),
+                Times.Once);
         }
 
         [Fact]

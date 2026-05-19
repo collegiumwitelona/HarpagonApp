@@ -52,10 +52,10 @@ namespace Application.Services
                 _ => 0
             };
 
-            var newBalance = account.Balance + delta;
-
-            if (category.Type == CategoryType.Expense && newBalance < 0)
+            if(account.Balance + delta < 0)
+            {
                 throw new UnprocessableException("Transaction_InsufficientFunds");
+            }
 
             var transaction = new Transaction
             {
@@ -67,13 +67,17 @@ namespace Application.Services
                 Description = request.Description
             };
 
-            account.Balance = newBalance;
-
             await _unitOfWork.ExecuteAsync(async () =>
             {
-                await _accountRepository.UpdateAccountAsync(account);
+                var success = await _accountRepository.TryChangeBalanceAsync(account.Id, delta);
+
+                if (!success)
+                    throw new UnprocessableException("Transaction_InsufficientFunds");
+
                 await _transactionRepository.AddTransactionAsync(transaction);
             });
+
+            account.Balance += delta;
 
             return new TransactionResponse
             {
@@ -106,25 +110,20 @@ namespace Application.Services
             if (transaction == null || transaction.Account?.UserId != userId)
                 throw new NotFoundException("Transaction_NotFound");
 
-            var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
-
-            if (account == null)
-            {
-                throw new NotFoundException("Account_NotFound");
-            }
-
-            var delta = transaction.Category?.Type switch
+            var delta = transaction.Category!.Type switch
             {
                 CategoryType.Expense => transaction.Amount,
                 CategoryType.Income => -transaction.Amount,
                 _ => 0
             };
 
-            account.Balance += delta;
-
             await _unitOfWork.ExecuteAsync(async () =>
             {
-                await _accountRepository.UpdateAccountAsync(account);
+                var success = await _accountRepository.TryChangeBalanceAsync(transaction.AccountId, delta);
+
+                if (!success)
+                    throw new UnprocessableException("Account_InvalidState");
+
                 await _transactionRepository.DeleteTransactionAsync(transactionId);
             });
         }
@@ -136,27 +135,45 @@ namespace Application.Services
             if (transaction == null || transaction.Account?.UserId != userId)
                 throw new NotFoundException("Transaction_NotFound");
 
-            var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
+            var oldCategoryType = transaction.Category!.Type;
 
-            if (account == null)
+            var oldDelta = oldCategoryType switch
             {
-                throw new NotFoundException("Account_NotFound");
-            }
+                CategoryType.Expense => transaction.Amount,
+                CategoryType.Income => -transaction.Amount,
+                _ => 0
+            };
 
-            var diff = newAmount - transaction.Amount;
-            var newBalance = account.Balance - diff;
+            var newDelta = oldCategoryType switch
+            {
+                CategoryType.Expense => -newAmount,
+                CategoryType.Income => newAmount,
+                _ => 0
+            };
 
-            if (transaction.Category?.Type == CategoryType.Expense && newBalance < 0)
+            var netDelta = newDelta + oldDelta;
+
+            if(transaction.Account.Balance + netDelta < 0)
+            {
                 throw new UnprocessableException("Transaction_InsufficientFunds");
-
-            account.Balance = newBalance;
-            transaction.Amount = newAmount;
+            }
 
             await _unitOfWork.ExecuteAsync(async () =>
             {
-                await _accountRepository.UpdateAccountAsync(account);
-                await _transactionRepository.UpdateTransactionAsync(transaction);
+                var success = await _accountRepository.TryChangeBalanceAsync(transaction.AccountId, netDelta);
+
+                if (!success)
+                    throw new UnprocessableException("Transaction_InsufficientFunds");
+
+                var updated = await _transactionRepository.TryUpdateTransactionAmountAsync(transaction.Id, transaction.Amount, newAmount);
+
+                if (!updated)
+                    throw new UnprocessableException("Transaction_Conflict");
             });
+
+            var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
+
+            transaction.Amount = newAmount;
 
             return new TransactionResponse
             {
@@ -164,18 +181,16 @@ namespace Application.Services
                 Amount = transaction.Amount,
                 Date = transaction.Date,
                 Description = transaction.Description,
-
                 Account = new AccountResponse
                 {
                     Id = transaction.Account.Id,
                     UserId = transaction.Account.UserId,
                     Name = transaction.Account.Name,
-                    Balance = transaction.Account.Balance
+                    Balance = account?.Balance ?? transaction.Account.Balance
                 },
-
                 Category = new CategoryResponse
                 {
-                    Id = transaction.Category!.Id,
+                    Id = transaction.Category.Id,
                     Name = transaction.Category.Name,
                     Type = transaction.Category.Type
                 }
@@ -221,29 +236,29 @@ namespace Application.Services
                 .GetAllTransactionsByUserIdAsync(userId);
 
             return transactions.Select(t => new TransactionResponse
+            {
+                Id = t.Id,
+                Amount = t.Amount,
+                Date = t.Date,
+                Description = t.Description,
+                Category = new CategoryResponse
                 {
-                    Id = t.Id,
-                    Amount = t.Amount,
-                    Date = t.Date,
-                    Description = t.Description,
-                    Category = new CategoryResponse
-                    {
-                        Id = t.Category!.Id,
-                        Description = t.Category.Description,
-                        Name = language == "pl" && t.Category.NamePl != null ? t.Category.NamePl : t.Category.Name,
-                        Type = t.Category.Type
-                    },
-                    Account = new AccountResponse
-                    {
-                        Id = t.Account!.Id,
-                        UserId = userId,
-                        Name = t.Account.Name,
-                        Balance = t.Account.Balance,
-                    }
-                }).ToList();
+                    Id = t.Category!.Id,
+                    Description = t.Category.Description,
+                    Name = language == "pl" && t.Category.NamePl != null ? t.Category.NamePl : t.Category.Name,
+                    Type = t.Category.Type
+                },
+                Account = new AccountResponse
+                {
+                    Id = t.Account!.Id,
+                    UserId = userId,
+                    Name = t.Account.Name,
+                    Balance = t.Account.Balance,
+                }
+            }).ToList();
         }
 
-        public async Task<DataTableResponse<TransactionResponse>> GetFilteredTransactionsByUserIdAsync(Guid userId, 
+        public async Task<DataTableResponse<TransactionResponse>> GetFilteredTransactionsByUserIdAsync(Guid userId,
             DataTableRequest? request = null, TransactionFilteringRequest? filters = null)
         {
             var language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
@@ -353,7 +368,8 @@ namespace Application.Services
             );
         }
 
-        private IQueryable<Transaction> ApplyFiltering(IQueryable<Transaction> query, TransactionFilteringRequest? request) {
+        private IQueryable<Transaction> ApplyFiltering(IQueryable<Transaction> query, TransactionFilteringRequest? request)
+        {
 
             if (request is null)
             {
@@ -388,6 +404,5 @@ namespace Application.Services
             }
             return query;
         }
-
     }
 }

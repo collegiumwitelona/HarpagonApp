@@ -13,5 +13,6 @@ namespace Domain.Interfaces
         Task<int> GetTransactionsCountByUserIdAsync(Guid userId, DateTime from, DateTime to);
         Task DeleteTransactionAsync(Guid transactionId);
         Task UpdateTransactionAsync(Transaction transaction);
+        Task<bool> TryUpdateTransactionAmountAsync(Guid transactionId, decimal expectedOldAmount, decimal newAmount);
     }
 }

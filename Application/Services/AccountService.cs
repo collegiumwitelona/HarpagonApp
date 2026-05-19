@@ -59,13 +59,13 @@ namespace Application.Services
             {
                 throw new ForbiddenException("Account_EditPermissionDenied");
             }
-            account.Balance = newBalance;
-            await _accountRepository.UpdateAccountAsync(account);
+            var delta = newBalance - account.Balance;
+            await _accountRepository.TryChangeBalanceAsync(account.Id, delta);
             return new AccountResponse
             {
                 Id = account.Id,
                 Name = account.Name,
-                Balance = account.Balance,
+                Balance = newBalance,
                 UserId = userId,
             };
         }
