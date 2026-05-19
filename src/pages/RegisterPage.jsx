@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Input from '../components/Input';
@@ -8,96 +8,61 @@ import AlertCard from '../components/AlertCard';
 import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
-
-const getRegisterErrorMessage = (data, fallbackMessage) => {
-  const errors = data?.errors;
-
-  if (!errors) {
-    return fallbackMessage;
-  }
-
-  if (typeof errors === 'string') {
-    return errors;
-  }
-
-  if (Array.isArray(errors)) {
-    return errors.filter(Boolean).join(' ') || fallbackMessage;
-  }
-
-  if (typeof errors === 'object') {
-    const messages = Object.values(errors)
-      .flatMap((value) => (Array.isArray(value) ? value : [value]))
-      .filter((value) => typeof value === 'string' && value.trim().length > 0);
-
-    return messages.join(' ') || fallbackMessage;
-  }
-
-  return fallbackMessage;
-};
+import { useForm } from '../utils/hooks';
+import { getResponseErrorMessage } from '../utils/feedbackMessages';
+import PageSeo from '../components/PageSeo';
+import { getEmailFieldHint, getPasswordRegisterHint } from '../utils/fieldHints';
+import { USER_NAME_MAX_LENGTH, PASSWORD_RULES } from '../constants/validationRules';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    name: '',
-    surname: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const [success, setSuccess] = useState('');
 
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const handleRegister = async (values) => {
+    setSuccess('');
 
-  
-  const handleFieldChange = (name, value) => {
-    setFormData({ ...formData, [name]: value });
-  };
+    if (values.password !== values.confirmPassword) {
+      throw new Error(t('auth.passwordsMismatch'));
+    }
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError('');
+    const response = await api.post(
+      '/Auth/register',
+      {
+        email: values.email,
+        name: values.name,
+        surname: values.surname,
+        password: values.password,
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+        validateStatus: () => true,
+      }
+    );
 
-    
-    if (formData.password !== formData.confirmPassword) {
-      setError(t('auth.passwordsMismatch'));
+    if (response.status >= 200 && response.status < 300) {
+      setSuccess(t('auth.joinSuccess'));
+      setTimeout(() => navigate('/login'), 3000);
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const response = await api.post('/Auth/register', {
-          email: formData.email,
-          name: formData.name,
-          surname: formData.surname,
-          password: formData.password
-        }, {
-          headers: { 'Content-Type': 'application/json' },
-          validateStatus: () => true,
-        }
-      );
-
-      if (response.status >= 200 && response.status < 300) {
-        
-        alert(t('auth.joinSuccess'));
-        navigate("/login");
-      } else {
-        const data = response.data;
-        setError(getRegisterErrorMessage(data, t('auth.registerError')));
-      }
-    } catch (err) {
-      console.error(err);
-      setError(t('auth.connectionError'));
-    } finally {
-      setLoading(false);
-    }
+    throw new Error(getResponseErrorMessage(t, response, 'auth.registerError'));
   };
+
+  const form = useForm(
+    {
+      email: '',
+      name: '',
+      surname: '',
+      password: '',
+      confirmPassword: '',
+    },
+    handleRegister
+  );
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
+      <PageSeo pageKey="register" />
       <Navbar />
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
         <AuthCard
@@ -105,68 +70,82 @@ const RegisterPage = () => {
           scrollClassName="pr-1"
           compact
         >
-          <AlertCard 
-            type="error" 
-            message={error} 
-            show={!!error}
-            onClose={() => setError('')}
+          <AlertCard
+            type="error"
+            message={form.error}
+            show={!!form.error}
+            onClose={() => form.setError('')}
           />
 
-          <form className="space-y-2.5 px-1" onSubmit={handleRegister}>
-          <div className="grid grid-cols-2 gap-2">
-            <Input 
-              label={t('auth.name')}
-              name="name"
-              placeholder={t('auth.name')}
+          <AlertCard type="success" message={success} show={!!success} />
+
+          <form className="space-y-2.5 px-1" onSubmit={form.handleSubmit}>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                label={t('auth.name')}
+                name="name"
+                placeholder={t('auth.name')}
+                title={t('hints.nameMax', { max: USER_NAME_MAX_LENGTH })}
+                maxLength={USER_NAME_MAX_LENGTH}
+                compact
+                required
+                value={form.values.name}
+                onChange={form.handleChange}
+              />
+              <Input
+                label={t('auth.surname')}
+                name="surname"
+                placeholder={t('auth.surname')}
+                title={t('hints.surnameMax', { max: USER_NAME_MAX_LENGTH })}
+                maxLength={USER_NAME_MAX_LENGTH}
+                compact
+                required
+                value={form.values.surname}
+                onChange={form.handleChange}
+              />
+            </div>
+
+            <Input
+              label={t('auth.email')}
+              type="email"
+              name="email"
+              placeholder={t('auth.emailPlaceholder')}
+              title={getEmailFieldHint(t)}
               compact
               required
-              value={formData.name}
-              onChange={(e) => handleFieldChange('name', e.target.value)}
+              value={form.values.email}
+              onChange={form.handleChange}
             />
-            <Input 
-              label={t('auth.surname')}
-              name="surname"
-              placeholder={t('auth.surname')}
+
+            <Input
+              label={t('auth.password')}
+              type="password"
+              name="password"
+              placeholder={t('auth.createPassword')}
+              title={getPasswordRegisterHint(t)}
+              maxLength={PASSWORD_RULES.maxLength}
               compact
               required
-              value={formData.surname}
-              onChange={(e) => handleFieldChange('surname', e.target.value)}
+              value={form.values.password}
+              onChange={form.handleChange}
             />
-          </div>
 
-          <Input 
-            label={t('auth.email')}
-            type="email" 
-            placeholder={t('auth.emailPlaceholder')}
-            compact
-            required
-            value={formData.email}
-            onChange={(e) => handleFieldChange('email', e.target.value)}
-          />
-
-          <Input 
-            label={t('auth.password')}
-            type="password" 
-            placeholder={t('auth.createPassword')}
-            compact
-            required
-            value={formData.password}
-            onChange={(e) => handleFieldChange('password', e.target.value)}
-          />
-
-          <Input 
-            label={t('auth.confirmPassword')}
-            type="password" 
-            placeholder={t('auth.confirmPassword')}
-            compact
-            required
-            value={formData.confirmPassword}
-            onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
-          />
+            <Input
+              label={t('auth.confirmPassword')}
+              type="password"
+              name="confirmPassword"
+              placeholder={t('auth.confirmPassword')}
+              title={getPasswordRegisterHint(t)}
+              maxLength={PASSWORD_RULES.maxLength}
+              compact
+              required
+              value={form.values.confirmPassword}
+              onChange={form.handleChange}
+            />
 
             <div className="pt-2">
-              <Button type="submit" disabled={loading} className="py-3">
-                {loading ? t('auth.creatingAccount') : t('common.register')}
+              <Button type="submit" disabled={form.isSubmitting || !!success} className="py-3">
+                {form.isSubmitting ? t('auth.creatingAccount') : t('common.register')}
               </Button>
             </div>
           </form>

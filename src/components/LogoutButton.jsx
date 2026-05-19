@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
-import { removeAuthToken } from '../utils/tokenHelper';
+import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 
 const LogoutButton = () => {
   const navigate = useNavigate();
@@ -11,11 +11,12 @@ const LogoutButton = () => {
   const handleLogout = async () => {
     try {
       const refreshToken = localStorage.getItem('refreshToken');
+      const token = getAuthToken();
 
       await api.post('/Auth/logout', { refreshToken: refreshToken || "" }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         validateStatus: () => true,
       });

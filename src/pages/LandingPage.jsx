@@ -4,12 +4,14 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Link } from "react-router-dom";
 import { useLanguage } from '../context/LanguageContext';
+import PageSeo from '../components/PageSeo';
 
 const LandingPage = () => {
   const { t } = useLanguage();
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
+      <PageSeo pageKey="landing" />
       <Navbar>
         <Link to="/login" className="px-5 py-2.5 font-medium hover:text-violet-700">
           {t('common.login')}

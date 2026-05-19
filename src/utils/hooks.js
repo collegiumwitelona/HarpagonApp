@@ -1,5 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { getAuthToken } from './tokenHelper';
+
+import { isActionThrottledError } from './actionThrottle';
+import { sanitizeNonNegativeInput } from './nonNegativeNumber';
 
 
 export const useDataFetch = (fetchFn) => {
@@ -14,14 +17,21 @@ export const useDataFetch = (fetchFn) => {
       const result = await fetchFn(...args);
       setData(result);
     } catch (err) {
-      setError(err.message || 'Błąd podczas pobierania danych');
+      if (isActionThrottledError(err)) {
+        return;
+      }
+      setError(err.message || '');
       console.error('DataFetch error:', err);
     } finally {
       setLoading(false);
     }
   }, [fetchFn]);
 
-  return { data, loading, error, fetchData, setData, setError };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, retry: fetchData, fetchData, setData, setError };
 };
 
 
@@ -30,10 +40,12 @@ export const useForm = (initialValues, onSubmit) => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setValues(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    const nextValue = type === 'number' ? sanitizeNonNegativeInput(value) : value;
+    setValues((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const handleBlur = (e) => {
@@ -43,10 +55,15 @@ export const useForm = (initialValues, onSubmit) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setIsSubmitting(true);
     try {
       await onSubmit(values);
     } catch (err) {
+      if (isActionThrottledError(err)) {
+        return;
+      }
+      setError(err.message || '');
       console.error('Form submission error:', err);
     } finally {
       setIsSubmitting(false);
@@ -57,6 +74,7 @@ export const useForm = (initialValues, onSubmit) => {
     setValues(initialValues);
     setErrors({});
     setTouched({});
+    setError('');
   };
 
   return {
@@ -64,12 +82,14 @@ export const useForm = (initialValues, onSubmit) => {
     errors,
     touched,
     isSubmitting,
+    error,
     handleChange,
     handleBlur,
     handleSubmit,
     resetForm,
     setValues,
     setErrors,
+    setError,
   };
 };
 
