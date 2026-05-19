@@ -155,14 +155,12 @@ namespace Application.Services
                 if (!success)
                     throw new UnprocessableException("Transaction_InsufficientFunds");
 
-                // Conditional update to avoid lost update race: only update when DB Amount equals the old amount we read.
                 var updated = await _transactionRepository.TryUpdateTransactionAmountAsync(transaction.Id, transaction.Amount, newAmount);
 
                 if (!updated)
                     throw new UnprocessableException("Transaction_Conflict");
             });
 
-            // Reload account to reflect balance after successful commit
             var account = await _accountRepository.GetAccountByIdAsync(transaction.AccountId);
 
             transaction.Amount = newAmount;
