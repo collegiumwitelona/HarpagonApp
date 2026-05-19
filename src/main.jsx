@@ -1,10 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./router/router";
 import { DarkModeProvider } from "./context/DarkModeContext";
 import { LanguageProvider } from "./context/LanguageContext";
+import { installGlobalClickThrottle } from "./utils/actionThrottle";
 import "./index.css";
+
+installGlobalClickThrottle();
 
 const mountNode =
   document.getElementById("dashboard") ||
@@ -17,9 +21,11 @@ const mountNode =
   })();
 
 ReactDOM.createRoot(mountNode).render(
-  <DarkModeProvider>
-    <LanguageProvider>
-      <RouterProvider router={router} />
-    </LanguageProvider>
-  </DarkModeProvider>
+  <HelmetProvider>
+    <DarkModeProvider>
+      <LanguageProvider>
+        <RouterProvider router={router} />
+      </LanguageProvider>
+    </DarkModeProvider>
+  </HelmetProvider>
 );

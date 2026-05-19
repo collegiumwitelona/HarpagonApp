@@ -163,7 +163,7 @@ const TransactionPage = () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      throw new Error('No auth token');
+      throw new Error(t('common.sessionExpired'));
     }
 
     try {
@@ -173,7 +173,7 @@ const TransactionPage = () => {
       };
 
       const [accountsResponse, categoriesResponse] = await Promise.all([
-        api.get('/Me/Accounts', { headers, validateStatus: () => true }),
+        api.get('/Me/Accounts', { skipActionThrottle: true, headers, validateStatus: () => true }),
         fetchFirstSuccessfulGet({
           requests: ['/Me/Categories', '/Categories'],
           headers,
@@ -196,7 +196,7 @@ const TransactionPage = () => {
       if (accountsResponse.status === 401) {
         removeAuthToken();
         navigate('/login');
-        throw new Error('Unauthorized');
+        throw new Error(t('common.sessionExpired'));
       }
 
       const accountsData = accountsResponse.data;
@@ -241,7 +241,7 @@ const TransactionPage = () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      throw new Error('No auth token');
+      throw new Error(t('common.sessionExpired'));
     }
 
     try {
@@ -292,7 +292,7 @@ const TransactionPage = () => {
       });
 
       if (!transactionsResponse) {
-        throw new Error('Transactions fetch failed');
+        throw new Error(t('history.historyError'));
       }
 
       return Array.isArray(transactionsResponse.data) ? transactionsResponse.data : [];
@@ -359,7 +359,10 @@ const TransactionPage = () => {
   const handleAddCategory = async (e) => {
     e.preventDefault();
     const name = newCategoryName.trim();
-    if (!name) return;
+    if (!name) {
+      setCategoryError(t('history.categoryNameRequired'));
+      return;
+    }
 
     setCategoryError('');
     setCategorySuccess('');
@@ -380,6 +383,7 @@ const TransactionPage = () => {
 
         if (delResponse.status === 404 || delResponse.status === 405) {
           delResponse = await api.delete(`/Categories/${existing.id}`, {
+            skipActionThrottle: true,
             headers,
             validateStatus: () => true,
           });
@@ -392,7 +396,7 @@ const TransactionPage = () => {
         }
 
         if (delResponse.status < 200 || delResponse.status >= 300) {
-          setCategoryError(`${t('history.deleteCategoryError')} (status ${delResponse.status}).`);
+          setCategoryError(t('history.deleteCategoryError'));
           return;
         }
 
@@ -415,6 +419,7 @@ const TransactionPage = () => {
 
         if (response.status === 404 || response.status === 405) {
           response = await api.post('/Categories', payload, {
+            skipActionThrottle: true,
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
@@ -430,7 +435,7 @@ const TransactionPage = () => {
         }
 
         if (response.status < 200 || response.status >= 300) {
-          setCategoryError(`${t('history.addCategoryError')} (status ${response.status}).`);
+          setCategoryError(t('history.addCategoryError'));
           return;
         }
 
@@ -578,7 +583,6 @@ const TransactionPage = () => {
               setCurrentPage(1);
             }}
             onClear={handleClearFilters}
-            panelClassName="mb-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-700/40 p-3 shrink-0 space-y-3"
           />
 
           {transactionsHook.error && (

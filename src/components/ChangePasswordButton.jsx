@@ -4,12 +4,16 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 import { useForm } from '../utils/hooks';
+import { getResponseErrorMessage } from '../utils/feedbackMessages';
+import { getPasswordLoginHint, getPasswordRegisterHint } from '../utils/fieldHints';
+import { PASSWORD_RULES } from '../constants/validationRules';
 
 const ChangePasswordButton = ({ variant = 'settings' }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handlePasswordChange = async (values) => {
     const normalizedPrevious = String(values.previousPassword || '').trim();
@@ -23,7 +27,7 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      throw new Error('No token');
+      throw new Error(t('common.sessionExpired'));
     }
 
     try {
@@ -47,17 +51,16 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
       if (response.status === 401) {
         removeAuthToken();
         navigate('/login');
-        throw new Error('Unauthorized');
+        throw new Error(t('common.sessionExpired'));
       }
 
       if (response.status < 200 || response.status >= 300) {
-        const apiMessage = String(response?.data?.message || '').trim();
-        const apiErrors = Array.isArray(response?.data?.errors)
-          ? response.data.errors.map((item) => String(item || '').trim()).filter(Boolean)
-          : [];
-        throw new Error(apiMessage || apiErrors.join(' ') || t('settings.changePasswordError'));
+        throw new Error(
+          getResponseErrorMessage(t, response, 'settings.changePasswordError')
+        );
       }
 
+      setSuccessMessage(t('settings.changePasswordSuccess'));
       setIsModalOpen(false);
     } catch (err) {
       console.error('Błąd zmiany hasła:', err);
@@ -72,36 +75,48 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
 
   const openModal = () => {
     form.resetForm();
+    form.setError('');
+    setSuccessMessage('');
     setIsModalOpen(true);
   };
 
   return (
-    <>
+    <div className={variant === 'navbar' ? 'relative' : undefined}>
+      {successMessage && (
+        <p
+          className={`text-sm font-medium text-emerald-600 ${
+            variant === 'navbar' ? 'absolute top-full right-0 mt-1 whitespace-nowrap' : 'mb-3 text-center'
+          }`}
+        >
+          {successMessage}
+        </p>
+      )}
+
       {variant === 'navbar' ? (
         <button
           type="button"
           onClick={openModal}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-violet-50 transition-all group active:scale-95 text-slate-600"
+          className="change-password-btn flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-slate-200 dark:hover:border-violet-300 transition-all group active:scale-95 text-slate-600"
           title={t('auth.changePassword')}
           aria-label={t('auth.changePassword')}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 group-hover:text-violet-600 transition-colors shrink-0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="change-password-btn-icon text-slate-400 group-hover:text-violet-600 dark:group-hover:text-black transition-colors shrink-0">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          <span className="text-xs font-bold text-slate-700 group-hover:text-violet-700 transition-colors whitespace-nowrap">{t('auth.changePassword')}</span>
+          <span className="change-password-btn-label text-xs font-bold text-slate-700 group-hover:text-violet-700 dark:group-hover:text-black transition-colors whitespace-nowrap">{t('auth.changePassword')}</span>
         </button>
       ) : (
         <button
           type="button"
           onClick={openModal}
-          className="w-full max-w-56 flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-slate-200 hover:border-violet-300 hover:bg-violet-50 transition-all group active:scale-95"
+          className="change-password-btn w-full max-w-56 flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-slate-200 hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-slate-200 dark:hover:border-violet-300 transition-all group active:scale-95"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 group-hover:text-violet-600 transition-colors">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="change-password-btn-icon text-slate-400 group-hover:text-violet-600 dark:group-hover:text-black transition-colors">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          <span className="font-bold text-slate-700 text-sm">{t('auth.changePassword')}</span>
+          <span className="change-password-btn-label font-bold text-slate-700 text-sm group-hover:text-violet-700 dark:group-hover:text-black transition-colors">{t('auth.changePassword')}</span>
         </button>
       )}
 
@@ -119,6 +134,8 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
                   name="previousPassword"
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder={t('auth.passwordPlaceholder')}
+                  title={getPasswordLoginHint(t)}
+                  maxLength={PASSWORD_RULES.maxLength}
                   value={form.values.previousPassword}
                   onChange={form.handleChange}
                   required
@@ -132,6 +149,8 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
                   name="newPassword"
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder={t('auth.passwordPlaceholder')}
+                  title={getPasswordRegisterHint(t)}
+                  maxLength={PASSWORD_RULES.maxLength}
                   value={form.values.newPassword}
                   onChange={form.handleChange}
                   required
@@ -145,6 +164,8 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
                   name="confirmPassword"
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder={t('auth.passwordPlaceholder')}
+                  title={getPasswordRegisterHint(t)}
+                  maxLength={PASSWORD_RULES.maxLength}
                   value={form.values.confirmPassword}
                   onChange={form.handleChange}
                   required
@@ -180,7 +201,7 @@ const ChangePasswordButton = ({ variant = 'settings' }) => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

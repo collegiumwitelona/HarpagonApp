@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /login
+Allow: /register
+
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /history
+Disallow: /analysis
+Disallow: /settings
+Disallow: /setup
+Disallow: /forgot-password
+Disallow: /confirm-email
+Disallow: /reset-password
+
+Sitemap: /sitemap.xml

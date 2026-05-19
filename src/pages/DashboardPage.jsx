@@ -14,6 +14,10 @@ import { normalizeCategoryType, formatCurrencyByLanguage } from '../utils/format
 import { normalizeTransactionRecord } from '../utils/transactions';
 import { fetchAllFromFirstSuccessfulEndpoint, fetchFirstSuccessfulGet } from '../utils/apiFallbacks';
 import { useDataFetch } from '../utils/hooks';
+import { hasAnyAccount } from '../utils/accounts';
+import { NON_NEGATIVE_INPUT_PROPS, parseNonNegativeNumber } from '../utils/nonNegativeNumber';
+import { getCommentFieldHint } from '../utils/fieldHints';
+import { TRANSACTION_DESCRIPTION_MAX_LENGTH } from '../constants/validationRules';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -63,17 +67,20 @@ const DashboardPage = () => {
         }
 
         if (response.status >= 200 && response.status < 300) {
-          const accounts = response.data;
-          if (!Array.isArray(accounts) || accounts.length === 0) {
+          if (!hasAnyAccount(response.data)) {
             navigate('/setup', { replace: true });
-            return;
           }
-        } else {
-          navigate('/setup', { replace: true });
+          return;
+        }
+
+        if (response.status !== 401) {
+          console.warn('Nie udało się zweryfikować kont, status:', response.status);
         }
       } catch (err) {
+        if (err?.code === 'ACTION_THROTTLED') {
+          return;
+        }
         console.error('Błąd weryfikacji konta na dashboardzie:', err);
-        navigate('/setup', { replace: true });
       }
     };
 
@@ -117,7 +124,7 @@ const DashboardPage = () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      throw new Error('No auth token');
+      throw new Error(t('common.sessionExpired'));
     }
 
     try {
@@ -131,11 +138,11 @@ const DashboardPage = () => {
       if (accountsResponse.status === 401) {
         removeAuthToken();
         navigate('/login');
-        throw new Error('Unauthorized');
+        throw new Error(t('common.sessionExpired'));
       }
 
       if (accountsResponse.status < 200 || accountsResponse.status >= 300) {
-        throw new Error(`Nie udało się pobrać konta (status ${accountsResponse.status}).`);
+        throw new Error(t('dashboard.dashboardError'));
       }
 
       const [transactionsResponse, categoriesResponse] = await Promise.all([
@@ -239,6 +246,9 @@ const DashboardPage = () => {
 
       return { categories: normalizedCategories, transactions: accountTransactions };
     } catch (err) {
+      if (err?.code === 'ACTION_THROTTLED') {
+        return;
+      }
       console.error('Błąd ładowania dashboardu:', err);
       throw err;
     }
@@ -281,10 +291,9 @@ const DashboardPage = () => {
   const handleSaveBalance = async () => {
     setError('');
 
-    const normalizedTempBalance = String(tempBalance || '').trim().replace(',', '.');
-    const parsedBalance = Number(normalizedTempBalance);
+    const parsedBalance = parseNonNegativeNumber(tempBalance);
 
-    if (!normalizedTempBalance || Number.isNaN(parsedBalance)) {
+    if (Number.isNaN(parsedBalance)) {
       setError(t('dashboard.saveBalanceInvalid'));
       return;
     }
@@ -320,6 +329,7 @@ const DashboardPage = () => {
           accountId,
           newBalance: parsedBalance,
         }, {
+          skipActionThrottle: true,
           headers,
           validateStatus: () => true,
         });
@@ -332,7 +342,7 @@ const DashboardPage = () => {
       }
 
       if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Nie udało się zapisać salda (status ${response.status}).`);
+        throw new Error(t('dashboard.saveBalanceError'));
       }
 
       const responseData = response.data || {};
@@ -345,8 +355,12 @@ const DashboardPage = () => {
 
       setBalance(Number.isNaN(responseBalance) ? parsedBalance : responseBalance);
       setTempBalance('');
+      setError('');
       dashboardDataHook.retry();
     } catch (err) {
+      if (err?.code === 'ACTION_THROTTLED') {
+        return;
+      }
       console.error('Błąd zapisu salda konta:', err);
       setError(t('dashboard.saveBalanceError'));
     }
@@ -379,12 +393,15 @@ const DashboardPage = () => {
     setError('');
 
     const formData = new FormData(e.target);
-    const amount = parseFloat(formData.get('amount'));
+    const amount = parseNonNegativeNumber(formData.get('amount'));
     const type = formData.get('type');
     const categoryId = formData.get('categoryId');
     const description = formData.get('description');
 
-    if (isNaN(amount) || amount <= 0) return;
+    if (Number.isNaN(amount) || amount <= 0) {
+      setError(t('dashboard.transactionAmountInvalid'));
+      return;
+    }
 
     const token = getAuthToken();
     if (!token) {
@@ -419,6 +436,7 @@ const DashboardPage = () => {
 
       if (response.status === 404 || response.status === 405) {
         response = await api.post('/Transactions', payload, {
+          skipActionThrottle: true,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
@@ -434,7 +452,7 @@ const DashboardPage = () => {
       }
 
       if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Nie udało się dodać transakcji (status ${response.status}).`);
+        throw new Error(t('dashboard.addTransactionError'));
       }
 
       setBalance((prev) => (type === 'wpływ' ? prev + amount : prev - amount));
@@ -507,7 +525,7 @@ const DashboardPage = () => {
               </div>
 
               <div className="flex flex-wrap gap-2 min-w-0">
-                <input name="amount" type="number" placeholder={t('dashboard.amountPlaceholder')} className="flex-1 basis-48 min-w-0 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 text-sm outline-none focus:ring-2 focus:ring-violet-500" required />
+                <input name="amount" type="number" {...NON_NEGATIVE_INPUT_PROPS} placeholder={t('dashboard.amountPlaceholder')} className="flex-1 basis-48 min-w-0 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 text-sm outline-none focus:ring-2 focus:ring-violet-500" required />
                 <button type="submit" disabled={!accountId || !selectedCategoryId} className="shrink-0 whitespace-nowrap bg-violet-600 text-white px-5 rounded-xl font-bold text-sm hover:bg-violet-700 transition-all shadow-sm active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed">{t('common.add')}</button>
               </div>
 
@@ -515,6 +533,8 @@ const DashboardPage = () => {
                 name="description"
                 type="text"
                 placeholder={t('dashboard.descriptionPlaceholder')}
+                title={getCommentFieldHint(t)}
+                maxLength={TRANSACTION_DESCRIPTION_MAX_LENGTH}
                 className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 text-sm outline-none focus:ring-2 focus:ring-violet-500"
               />
             </form>
@@ -542,8 +562,15 @@ const DashboardPage = () => {
                 tempValue={tempGoal} onTempChange={setTempGoal}
                 onSave={async () => {
                   setError('');
-                  const parsedGoal = Number(String(tempGoal || '').trim().replace(',', '.'));
-                  if (Number.isNaN(parsedGoal) || parsedGoal <= 0) return;
+                  const parsedGoal = parseNonNegativeNumber(tempGoal);
+                  if (Number.isNaN(parsedGoal)) {
+                    setError(t('dashboard.saveGoalInvalid'));
+                    return;
+                  }
+                  if (parsedGoal <= 0) {
+                    setError(t('dashboard.saveGoalInvalid'));
+                    return;
+                  }
                   const token = getAuthToken();
                   if (!token) { navigate('/login'); return; }
                   if (!accountId) { setError(t('dashboard.missingAccountOrCategory')); return; }
@@ -555,6 +582,7 @@ const DashboardPage = () => {
 
                     if (response.status === 404 || response.status === 405) {
                       response = await api.patch('/Accounts/goal', { accountId, newGoal: parsedGoal }, {
+                        skipActionThrottle: true,
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                         validateStatus: () => true,
                       });
@@ -563,7 +591,7 @@ const DashboardPage = () => {
                     if (response.status === 401) { removeAuthToken(); navigate('/login'); return; }
 
                     if (response.status < 200 || response.status >= 300) {
-                      throw new Error(`Nie udało się zapisać celu (status ${response.status}).`);
+                      throw new Error(t('dashboard.saveGoalError'));
                     }
 
                     if (response.status >= 200 && response.status < 300) {
@@ -573,7 +601,7 @@ const DashboardPage = () => {
                     }
                   } catch (err) {
                     console.error('Błąd zapisu celu oszczędzania:', err);
-                    setError(t('dashboard.dashboardError'));
+                    setError(err?.message || t('dashboard.saveGoalError'));
                   }
                 }}
               />

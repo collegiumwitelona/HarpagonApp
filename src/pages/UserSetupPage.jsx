@@ -9,6 +9,9 @@ import { useLanguage } from '../context/LanguageContext';
 import { isAdmin } from '../services/auth';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 import { useForm } from '../utils/hooks';
+import { hasAnyAccount } from '../utils/accounts';
+import { NON_NEGATIVE_INPUT_PROPS, parseNonNegativeNumber } from '../utils/nonNegativeNumber';
+import { getResponseErrorMessage } from '../utils/feedbackMessages';
 
 const UserSetupPage = () => {
   const navigate = useNavigate();
@@ -21,11 +24,18 @@ const UserSetupPage = () => {
       throw new Error(t('setup.authError'));
     }
 
+    const initialBalance = parseNonNegativeNumber(values.initialBalance);
+    const initialGoal = parseNonNegativeNumber(values.initialGoal, { allowEmpty: true }) ?? 0;
+
+    if (Number.isNaN(initialBalance) || Number.isNaN(initialGoal)) {
+      throw new Error(t('setup.validationError'));
+    }
+
     try {
       const response = await api.post('/Me/Accounts', {
         accountName: values.accountName,
-        initialBalance: Number(values.initialBalance),
-        initialGoal: Number(values.initialGoal)
+        initialBalance,
+        initialGoal,
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -43,8 +53,7 @@ const UserSetupPage = () => {
           removeAuthToken();
           throw new Error(t('setup.authError'));
         } else {
-          const data = response.data || {};
-          throw new Error(data.message || t('setup.createError'));
+          throw new Error(getResponseErrorMessage(t, response, 'setup.createError'));
         }
       }
     } catch (err) {
@@ -87,16 +96,8 @@ const UserSetupPage = () => {
           return;
         }
 
-        if (response.status >= 200 && response.status < 300) {
-          const accounts = response.data;
-          if (Array.isArray(accounts) && accounts.length > 0) {
-            const account = accounts[0];
-            const hasBalanceConfigured =
-              account && account.balance !== null && account.balance !== undefined;
-            if (hasBalanceConfigured) {
-              navigate('/dashboard', { replace: true });
-            }
-          }
+        if (response.status >= 200 && response.status < 300 && hasAnyAccount(response.data)) {
+          navigate('/dashboard', { replace: true });
         }
       } catch (err) {
         console.error('Błąd weryfikacji konta:', err);
@@ -142,6 +143,7 @@ const UserSetupPage = () => {
               <input
                 type="number"
                 name="initialBalance"
+                {...NON_NEGATIVE_INPUT_PROPS}
                 className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                 placeholder="0"
                 value={form.values.initialBalance}
@@ -155,6 +157,7 @@ const UserSetupPage = () => {
               <input
                 type="number"
                 name="initialGoal"
+                {...NON_NEGATIVE_INPUT_PROPS}
                 className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                 placeholder="0"
                 value={form.values.initialGoal}

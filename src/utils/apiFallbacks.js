@@ -27,6 +27,7 @@ export const fetchFirstSuccessfulGet = async ({
     try {
       const normalizedRequest = typeof request === 'string' ? { url: request } : request;
       const response = await api.get(normalizedRequest.url, {
+        skipActionThrottle: true,
         headers: {
           ...headers,
           ...baseHeaders,
@@ -73,6 +74,7 @@ export const fetchAllFromFirstSuccessfulEndpoint = async ({
     if (!shouldPaginate) {
       try {
         const response = await api.get(normalizedRequest.url, {
+          skipActionThrottle: true,
           headers: {
             ...headers,
             ...baseHeaders,
@@ -117,6 +119,7 @@ export const fetchAllFromFirstSuccessfulEndpoint = async ({
 
       try {
         const response = await api.get(normalizedRequest.url, {
+          skipActionThrottle: true,
           headers: {
             ...headers,
             ...baseHeaders,

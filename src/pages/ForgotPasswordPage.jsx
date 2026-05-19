@@ -9,6 +9,9 @@ import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { useForm } from '../utils/hooks';
+import { getCaughtErrorMessage } from '../utils/feedbackMessages';
+import PageSeo from '../components/PageSeo';
+import { getEmailFieldHint } from '../utils/fieldHints';
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -17,6 +20,8 @@ const ForgotPasswordPage = () => {
   const [success, setSuccess] = useState('');
 
   const handleForgotPassword = async (values) => {
+    setSuccess('');
+
     try {
       const response = await api.post('/Auth/forgot-password', null, {
         params: {
@@ -28,20 +33,22 @@ const ForgotPasswordPage = () => {
         validateStatus: () => true,
       });
 
-      if (response.status >= 200 && response.status < 300) {
-        setSuccess(t('auth.forgotPasswordSuccess'));
-      } else {
-        const data = response.data || {};
-        const msg = typeof data === 'string' ? data : (data.message || '');
-        if (response.status === 404 || /nie.*znale|not found/i.test(msg)) {
-          throw new Error(t('auth.forgotPasswordNotFound'));
-        } else {
-          throw new Error(t('auth.forgotPasswordError'));
-        }
+      if (response.status >= 500) {
+        throw new Error(t('auth.forgotPasswordError'));
       }
+
+      setSuccess(t('auth.forgotPasswordInfo'));
     } catch (err) {
-      console.error("Błąd krytyczny:", err);
-      throw err;
+      if (err?.code === 'ACTION_THROTTLED') {
+        setSuccess(t('auth.forgotPasswordInfo'));
+        return;
+      }
+
+      console.error('Błąd resetowania hasła:', err);
+      const message = getCaughtErrorMessage(t, err, 'auth.forgotPasswordError');
+      if (message) {
+        throw new Error(message);
+      }
     }
   };
 
@@ -64,6 +71,7 @@ const ForgotPasswordPage = () => {
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
+      <PageSeo pageKey="forgotPassword" noindex />
       <Navbar />
 
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
@@ -83,10 +91,11 @@ const ForgotPasswordPage = () => {
             onClose={() => form.setError('')}
           />
 
-          <AlertCard 
-            type="success" 
-            message={success} 
+          <AlertCard
+            type="info"
+            message={success}
             show={!!success}
+            onClose={() => setSuccess('')}
           />
 
           <form className="space-y-4 px-1" onSubmit={form.handleSubmit}>
@@ -95,6 +104,7 @@ const ForgotPasswordPage = () => {
               type="email" 
               name="email"
               placeholder={t('auth.emailPlaceholder')}
+              title={getEmailFieldHint(t)}
               required
               value={form.values.email}
               onChange={form.handleChange}

@@ -9,8 +9,12 @@ import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { isAdmin } from '../services/auth';
-import { setRefreshToken, setStoredUserProfile } from '../utils/tokenHelper';
+import { removeAuthToken, setRefreshToken, setStoredUserProfile } from '../utils/tokenHelper';
 import { useForm } from '../utils/hooks';
+import { hasAnyAccount } from '../utils/accounts';
+import { getResponseErrorMessage } from '../utils/feedbackMessages';
+import PageSeo from '../components/PageSeo';
+import { getEmailFieldHint, getPasswordLoginHint } from '../utils/fieldHints';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -53,7 +57,7 @@ const LoginPage = () => {
               .replace(/^"|"$/g, '')
               .replace(/^Bearer\s+/i, '');
           } else {
-            throw new Error('Invalid token format received from server.');
+            throw new Error(t('auth.loginFailed'));
           }
 
           localStorage.setItem('token', token);
@@ -75,44 +79,50 @@ const LoginPage = () => {
 
           try {
             const accountsResponse = await api.get('/Me/Accounts', {
+              skipActionThrottle: true,
               validateStatus: () => true,
             });
 
+            if (accountsResponse.status === 401) {
+              removeAuthToken();
+              navigate('/login', { replace: true });
+              return;
+            }
+
             if (accountsResponse.status >= 200 && accountsResponse.status < 300) {
-              const accounts = accountsResponse.data;
-
-              if (Array.isArray(accounts) && accounts.length > 0) {
-                const account = accounts[0];
-                const hasBalanceConfigured =
-                  account && account.balance !== null && account.balance !== undefined;
-
-                navigate(hasBalanceConfigured ? "/dashboard" : "/setup", { replace: true });
-              } else {
-                navigate("/setup", { replace: true });
-              }
+              navigate(hasAnyAccount(accountsResponse.data) ? '/dashboard' : '/setup', { replace: true });
             } else {
-              console.warn("Błąd podczas pobierania kont, status:", accountsResponse.status);
-              navigate("/setup", { replace: true });
+              console.warn('Błąd podczas pobierania kont, status:', accountsResponse.status);
+              navigate('/dashboard', { replace: true });
             }
           } catch (accountsErr) {
-            console.error("Błąd podczas weryfikacji kont:", accountsErr);
-            navigate("/setup", { replace: true });
+            if (accountsErr?.code === 'ACTION_THROTTLED') {
+              return;
+            }
+            console.error('Błąd podczas weryfikacji kont:', accountsErr);
+            navigate('/dashboard', { replace: true });
           }
         } else {
           const errorText =
             typeof response.data === 'string' ? response.data : JSON.stringify(response.data || {});
-          console.error("Serwer odrzucił logowanie:", errorText);
-          form.setError(t('auth.invalidCredentials'));
+          console.error('Serwer odrzucił logowanie:', errorText);
+          form.setError(
+            getResponseErrorMessage(t, response, 'auth.invalidCredentials')
+          );
         }
       } catch (err) {
-        console.error("Błąd krytyczny logowania:", err);
-        form.setError(t('auth.connectionError'));
+        if (err?.code === 'ACTION_THROTTLED') {
+          return;
+        }
+        console.error('Błąd krytyczny logowania:', err);
+        form.setError(err?.message || t('common.networkError'));
       }
     }
   );
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
+      <PageSeo pageKey="login" />
       <Navbar />
 
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
@@ -134,6 +144,7 @@ const LoginPage = () => {
               type="email"
               name="email"
               placeholder={t('auth.emailPlaceholder')}
+              title={getEmailFieldHint(t)}
               compact
               required
               value={form.values.email}
@@ -145,6 +156,7 @@ const LoginPage = () => {
               type="password"
               name="password"
               placeholder={t('auth.passwordPlaceholder')}
+              title={getPasswordLoginHint(t)}
               compact
               required
               value={form.values.password}

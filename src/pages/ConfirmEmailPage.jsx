@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import PageSeo from '../components/PageSeo';
 
 const ConfirmEmailPage = () => {
   const [searchParams] = useSearchParams();
@@ -16,8 +17,8 @@ const ConfirmEmailPage = () => {
 
       
       if (!userId || !token) {
-        console.error("Brak userId lub tokenu w adresie URL");
-        setStatus('error');
+        console.error('Brak userId lub tokenu w adresie URL');
+        setStatus('missing');
         return;
       }
 
@@ -60,6 +61,7 @@ const ConfirmEmailPage = () => {
 
   return (
     <div className="h-screen flex items-center justify-center bg-slate-50 px-6">
+      <PageSeo pageKey="confirmEmail" noindex />
       <div className="max-w-md w-full bg-white rounded-[2.5rem] p-10 shadow-2xl border border-slate-100 text-center">
         <h2 className="text-2xl font-bold mb-6 text-slate-900">{t('auth.confirmTitle')}</h2>
 
@@ -77,6 +79,12 @@ const ConfirmEmailPage = () => {
             </svg>
             <p className="font-bold text-lg">{t('auth.confirmSuccess')}</p>
             <p className="text-slate-500 mt-2 text-sm">{t('common.redirecting')}</p>
+          </div>
+        )}
+
+        {status === 'missing' && (
+          <div className="text-amber-600">
+            <p className="font-bold text-lg">{t('auth.confirmMissingParams')}</p>
           </div>
         )}
 

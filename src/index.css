@@ -45,6 +45,10 @@
 .dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.15) !important; }
 .dark .border-emerald-100 { border-color: #10b981 !important; }
 .dark .text-emerald-600 { color: #10b981 !important; }
+.dark .text-emerald-500 { color: #34d399 !important; }
+
+.dark .text-amber-600 { color: #fbbf24 !important; }
+.dark .text-amber-500 { color: #f59e0b !important; }
 
 .dark .recharts-default-tooltip {
   background-color: #1e293b !important;
@@ -86,6 +90,52 @@
 }
 
 .dark .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
+
+.dark .history-filters-panel {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  border-color: #334155 !important;
+}
+
+.dark .history-filters-panel .history-filter-input,
+.dark .history-filters-panel .history-filter-clear {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.dark .history-filters-panel .history-filter-input::placeholder {
+  color: #64748b !important;
+}
+
+.dark .history-filters-panel select.history-filter-input option,
+.dark .history-filters-panel select.history-filter-input optgroup {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.dark .history-filters-panel .history-filter-clear:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.dark .change-password-btn:hover {
+  background-color: #e2e8f0 !important;
+  border-color: #7c3aed !important;
+}
+
+.dark .change-password-btn:hover .change-password-btn-label,
+.dark .change-password-btn:hover .change-password-btn-icon {
+  color: #000000 !important;
+}
+
+.dark .language-menu-item:hover {
+  background-color: #e2e8f0 !important;
+}
+
+.dark .language-menu-item:hover,
+.dark .language-menu-item:hover span {
+  color: #000000 !important;
+}
 
 :root {
   --text: #6b6375;

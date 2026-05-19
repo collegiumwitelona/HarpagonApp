@@ -1,5 +1,6 @@
 import { useLanguage } from '../context/LanguageContext';
 import { formatCurrencyByLanguage } from '../utils/formatters';
+import { NON_NEGATIVE_INPUT_PROPS, sanitizeNonNegativeInput } from '../utils/nonNegativeNumber';
 
 const CashStatCard = ({ title, value, color, tempValue, onTempChange, onSave }) => {
   const { language, t } = useLanguage();
@@ -17,12 +18,13 @@ const CashStatCard = ({ title, value, color, tempValue, onTempChange, onSave }) 
       <p className="text-xl font-black text-slate-900">{title}</p>
       <h3 className="text-xl font-black text-slate-900">{formatCurrencyByLanguage(value, language)}</h3>
       <div className="flex gap-2 mt-1 max-w-50 mx-auto">
-        <input 
-          value={tempValue} 
-          onChange={(e) => onTempChange(e.target.value)} 
-          type="number" 
-          className="flex-1 text-[10px] p-1 rounded-lg border border-opacity-50 outline-none" 
-          placeholder={t('dashboard.editPlaceholder')} 
+        <input
+          value={tempValue}
+          onChange={(e) => onTempChange(sanitizeNonNegativeInput(e.target.value))}
+          type="number"
+          {...NON_NEGATIVE_INPUT_PROPS}
+          className="flex-1 text-[10px] p-1 rounded-lg border border-opacity-50 outline-none"
+          placeholder={t('dashboard.editPlaceholder')}
         />
         <button 
           onClick={onSave}

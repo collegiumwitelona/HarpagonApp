@@ -9,6 +9,9 @@ import AuthCard from '../components/AuthCard';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { useForm } from '../utils/hooks';
+import PageSeo from '../components/PageSeo';
+import { getPasswordRegisterHint } from '../utils/fieldHints';
+import { PASSWORD_RULES } from '../constants/validationRules';
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -100,6 +103,7 @@ const ResetPasswordPage = () => {
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
+      <PageSeo pageKey="resetPassword" noindex />
       <Navbar />
 
       <main className="grow flex flex-col justify-center items-center px-6 bg-hero-blur w-full relative">
@@ -130,6 +134,8 @@ const ResetPasswordPage = () => {
               type="password"
               name="password"
               placeholder={t('auth.newPasswordPlaceholder')}
+              title={getPasswordRegisterHint(t)}
+              maxLength={PASSWORD_RULES.maxLength}
               required
               value={form.values.password}
               onChange={form.handleChange}

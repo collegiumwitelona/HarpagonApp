@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useLanguage } from '../context/LanguageContext';
+import PageSeo from '../components/PageSeo';
 
 
 export default function About() {
@@ -9,6 +10,7 @@ export default function About() {
     
   return (
       <div className="min-h-screen lg:h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-x-hidden overflow-y-auto lg:overflow-hidden">
+          <PageSeo pageKey="about" />
           <Navbar />
           <main className="grow flex flex-col justify-center items-center px-6 py-4 lg:py-6 bg-hero-blur w-full text-center text-white [&_h1]:text-white! [&_h2]:text-white! [&_p]:text-white! [&_li]:text-white! space-y-12 min-h-0 overflow-y-auto">
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight">

@@ -1,6 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getAuthToken } from './tokenHelper';
 
+import { isActionThrottledError } from './actionThrottle';
+import { sanitizeNonNegativeInput } from './nonNegativeNumber';
+
 
 export const useDataFetch = (fetchFn) => {
   const [data, setData] = useState(null);
@@ -14,7 +17,10 @@ export const useDataFetch = (fetchFn) => {
       const result = await fetchFn(...args);
       setData(result);
     } catch (err) {
-      setError(err.message || 'Błąd podczas pobierania danych');
+      if (isActionThrottledError(err)) {
+        return;
+      }
+      setError(err.message || '');
       console.error('DataFetch error:', err);
     } finally {
       setLoading(false);
@@ -37,8 +43,9 @@ export const useForm = (initialValues, onSubmit) => {
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setValues(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    const nextValue = type === 'number' ? sanitizeNonNegativeInput(value) : value;
+    setValues((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const handleBlur = (e) => {
@@ -53,8 +60,10 @@ export const useForm = (initialValues, onSubmit) => {
     try {
       await onSubmit(values);
     } catch (err) {
-      const errorMessage = err.message || 'Form submission error';
-      setError(errorMessage);
+      if (isActionThrottledError(err)) {
+        return;
+      }
+      setError(err.message || '');
       console.error('Form submission error:', err);
     } finally {
       setIsSubmitting(false);

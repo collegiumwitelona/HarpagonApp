@@ -86,7 +86,7 @@ const AnalysisPage = () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      throw new Error('No auth token');
+      throw new Error(t('common.sessionExpired'));
     }
 
     try {
@@ -103,7 +103,7 @@ const AnalysisPage = () => {
       if (accountsResponse.status === 401) {
         removeAuthToken();
         navigate('/login');
-        throw new Error('Unauthorized');
+        throw new Error(t('common.sessionExpired'));
       }
 
       const accounts = Array.isArray(accountsResponse.data) ? accountsResponse.data : [];

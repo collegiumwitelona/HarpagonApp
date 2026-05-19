@@ -82,7 +82,7 @@ const AdminPage = () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      throw new Error('No authentication token');
+      throw new Error(t('common.sessionExpired'));
     }
 
     try {
@@ -97,7 +97,7 @@ const AdminPage = () => {
       if (response.status === 401) {
         removeAuthToken();
         navigate('/login');
-        throw new Error('Unauthorized');
+        throw new Error(t('common.sessionExpired'));
       }
 
       if (response.status < 200 || response.status >= 300) {
@@ -129,7 +129,7 @@ const AdminPage = () => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
-      throw new Error('No authentication token');
+      throw new Error(t('common.sessionExpired'));
     }
 
     const userIdEncoded = encodeURIComponent(String(selectedUserId));
@@ -254,7 +254,9 @@ const AdminPage = () => {
       return;
     }
 
-    const confirmed = window.confirm(`${t('admin.deleteConfirm')} ${selectedUser.email || selectedUser.id}?`);
+    const confirmed = window.confirm(
+      t('admin.deleteConfirm', { email: selectedUser.email || selectedUser.id })
+    );
     if (!confirmed) {
       return;
     }
@@ -284,7 +286,7 @@ const AdminPage = () => {
       }
 
       if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Nie udało się usunąć użytkownika (status ${response.status}).`);
+        throw new Error(t('admin.deleteError'));
       }
 
       setDeleteFeedback(t('admin.deleteSuccess'));
@@ -329,8 +331,10 @@ const AdminPage = () => {
     try {
       let deleteSucceeded = false;
 
-      for (const endpoint of deleteEndpoints) {
+      for (let endpointIndex = 0; endpointIndex < deleteEndpoints.length; endpointIndex += 1) {
+        const endpoint = deleteEndpoints[endpointIndex];
         const response = await api.delete(endpoint, {
+          skipActionThrottle: endpointIndex > 0,
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: 'application/json',
@@ -355,7 +359,7 @@ const AdminPage = () => {
       }
 
       if (!deleteSucceeded) {
-        throw new Error('Nie znaleziono działającego endpointu usuwania transakcji.');
+        throw new Error(t('admin.deleteTransactionError'));
       }
 
       setTransactionFeedback(t('admin.deleteTransactionSuccess'));
@@ -453,7 +457,13 @@ const AdminPage = () => {
                 <div className="mb-2 shrink-0 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <h2 className="text-lg font-black tracking-tight text-slate-900 shrink-0">{t('admin.adminPanel')}</h2>
-                    <span className={`hidden lg:block truncate text-xs font-semibold ${selectedUser.emailConfirmed ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    <span
+                      className={`hidden lg:block truncate text-xs font-semibold ${
+                        selectedUser.emailConfirmed
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
                       {selectedUser.email}
                     </span>
                     <span className="hidden lg:block truncate text-xs font-semibold text-slate-600">{`${selectedUser.name} ${selectedUser.surname}`.trim()}</span>

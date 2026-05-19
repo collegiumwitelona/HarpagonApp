@@ -9,6 +9,8 @@ import { isAdmin, getUserName, getUserSurname } from '../services/auth';
 import { getAuthToken, getStoredUserProfile, removeAuthToken } from '../utils/tokenHelper';
 import ChangePasswordButton from '../components/ChangePasswordButton';
 import { useForm } from '../utils/hooks';
+import { NON_NEGATIVE_INPUT_PROPS, parseNonNegativeNumber } from '../utils/nonNegativeNumber';
+import { getCaughtErrorMessage, getResponseErrorMessage } from '../utils/feedbackMessages';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -27,6 +29,7 @@ const SettingsPage = () => {
   const [accountActionLoading, setAccountActionLoading] = useState(false);
   const [activeAccountId, setActiveAccountId] = useState(() => localStorage.getItem('activeAccountId') || '');
   const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
+  const [accountActionSuccess, setAccountActionSuccess] = useState('');
 
   const loadAccounts = useCallback(async () => {
     const token = getAuthToken();
@@ -54,7 +57,7 @@ const SettingsPage = () => {
       }
 
       if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Accounts loading failed with status ${response.status}`);
+        throw new Error(t('settings.accountsLoadError'));
       }
 
       const normalizedAccounts = Array.isArray(response.data)
@@ -98,13 +101,13 @@ const SettingsPage = () => {
   };
 
   const addAccountForm = useForm(
-    { newAccountName: '', newAccountBalance: '0' },
+    { newAccountName: '', newAccountBalance: '0', newAccountGoal: '' },
     async (values) => {
       const accountName = String(values.newAccountName || '').trim();
-      const normalizedBalance = String(values.newAccountBalance || '0').trim().replace(',', '.');
-      const initialBalance = Number(normalizedBalance);
+      const initialBalance = parseNonNegativeNumber(values.newAccountBalance || '0');
+      const initialGoal = parseNonNegativeNumber(values.newAccountGoal, { allowEmpty: true }) ?? 0;
 
-      if (!accountName || Number.isNaN(initialBalance)) {
+      if (!accountName || Number.isNaN(initialBalance) || Number.isNaN(initialGoal)) {
         addAccountForm.setError(t('settings.addAccountValidationError'));
         return;
       }
@@ -121,7 +124,7 @@ const SettingsPage = () => {
           {
             accountName,
             initialBalance,
-            initialGoal: 0,
+            initialGoal,
           },
           {
             headers: {
@@ -140,15 +143,20 @@ const SettingsPage = () => {
         }
 
         if (response.status < 200 || response.status >= 300) {
-          throw new Error(`Account create failed with status ${response.status}`);
+          throw new Error(
+            getResponseErrorMessage(t, response, 'settings.accountCreateError')
+          );
         }
 
         await loadAccounts();
         setIsAddAccountModalOpen(false);
         addAccountForm.resetForm();
+        setAccountActionSuccess(t('settings.accountCreateSuccess'));
       } catch (error) {
         console.error('Błąd dodawania konta:', error);
-        addAccountForm.setError(t('settings.accountCreateError'));
+        addAccountForm.setError(
+          getCaughtErrorMessage(t, error, 'settings.accountCreateError')
+        );
       }
     }
   );
@@ -173,6 +181,7 @@ const SettingsPage = () => {
     }
 
     setAccountActionLoading(true);
+    setAccountActionSuccess('');
 
     try {
       const response = await api.delete(`/Me/Accounts/${account.id}`, {
@@ -190,12 +199,16 @@ const SettingsPage = () => {
       }
 
       if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Account delete failed with status ${response.status}`);
+        throw new Error(
+          getResponseErrorMessage(t, response, 'settings.accountDeleteError')
+        );
       }
 
       await loadAccounts();
+      setAccountActionSuccess(t('settings.accountDeleteSuccess'));
     } catch (error) {
       console.error('Błąd usuwania konta:', error);
+      setAccountsError(getCaughtErrorMessage(t, error, 'settings.accountDeleteError'));
     } finally {
       setAccountActionLoading(false);
     }
@@ -259,6 +272,12 @@ const SettingsPage = () => {
               {accountsError && (
                 <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
                   {accountsError}
+                </div>
+              )}
+
+              {accountActionSuccess && (
+                <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-600">
+                  {accountActionSuccess}
                 </div>
               )}
 
@@ -336,13 +355,28 @@ const SettingsPage = () => {
               <ChangePasswordButton />
 
               <div className="relative">
-                <button 
+                <button
+                  type="button"
                   onClick={() => setIsLangOpen(!isLangOpen)}
-                  className="w-full max-w-56 flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-slate-200 hover:border-violet-300 hover:bg-violet-50 transition-all group active:scale-95"
+                  className="change-password-btn w-full max-w-56 flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-slate-200 hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-slate-200 dark:hover:border-violet-300 transition-all group active:scale-95"
                 >
                   <span className="text-base">{languageOptions.find((option) => option.code === language)?.flag}</span>
-                  <span className="font-bold text-slate-700 text-sm">{t('settings.languageLabel')}: {language.toUpperCase()}</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`text-slate-300 transition-transform ${isLangOpen ? 'rotate-90' : ''}`}><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  <span className="change-password-btn-label font-bold text-slate-700 text-sm group-hover:text-violet-700 dark:group-hover:text-black transition-colors">
+                    {t('settings.languageLabel')}: {language.toUpperCase()}
+                  </span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`change-password-btn-icon text-slate-300 group-hover:text-violet-600 dark:group-hover:text-black transition-transform transition-colors ${isLangOpen ? 'rotate-90' : ''}`}
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
                 </button>
 
                 {isLangOpen && (
@@ -351,7 +385,7 @@ const SettingsPage = () => {
                       <button 
                         key={lang.code}
                         onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
-                        className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left"
+                        className="language-menu-item w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left"
                       >
                         <span>{lang.flag}</span>
                         <span className="font-bold text-slate-600 text-sm">{lang.name}</span>
@@ -404,11 +438,25 @@ const SettingsPage = () => {
                 <input
                   type="number"
                   name="newAccountBalance"
+                  {...NON_NEGATIVE_INPUT_PROPS}
                   className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                   placeholder="0"
                   value={addAccountForm.values.newAccountBalance}
                   onChange={addAccountForm.handleChange}
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">{t('setup.goal')}</label>
+                <input
+                  type="number"
+                  name="newAccountGoal"
+                  {...NON_NEGATIVE_INPUT_PROPS}
+                  className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
+                  placeholder="0"
+                  value={addAccountForm.values.newAccountGoal}
+                  onChange={addAccountForm.handleChange}
                 />
               </div>
 

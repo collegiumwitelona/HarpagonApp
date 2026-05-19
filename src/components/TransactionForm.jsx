@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { getCommentFieldHint } from '../utils/fieldHints';
+import { TRANSACTION_DESCRIPTION_MAX_LENGTH } from '../constants/validationRules';
 import { api } from '../services/api';
 import { getAuthToken, removeAuthToken } from '../utils/tokenHelper';
 import { useForm } from '../utils/hooks';
+import { NON_NEGATIVE_INPUT_PROPS, parseNonNegativeNumber } from '../utils/nonNegativeNumber';
 
 const normalizeDate = (dateValue) => {
   const d = new Date(dateValue);
@@ -40,10 +43,13 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
   const form = useForm(
     { amount: '', description: '' },
     async (values) => {
-      const amount = parseFloat(values.amount);
+      const amount = parseNonNegativeNumber(values.amount);
       const description = values.description;
 
-      if (Number.isNaN(amount) || amount <= 0) return;
+      if (Number.isNaN(amount) || amount <= 0) {
+        form.setError(t('dashboard.transactionAmountInvalid'));
+        return;
+      }
 
       const token = getAuthToken();
       if (!token) {
@@ -76,6 +82,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
 
         if (response.status === 404 || response.status === 405) {
           response = await api.post('/Transactions', payload, {
+            skipActionThrottle: true,
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
@@ -91,7 +98,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
         }
 
         if (response.status < 200 || response.status >= 300) {
-          throw new Error(`Nie udało się dodać transakcji (status ${response.status}).`);
+          throw new Error(t('history.addTransactionError'));
         }
 
         const data = response.data || {};
@@ -112,6 +119,9 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
         form.resetForm();
         setFormType('wydatek');
       } catch (err) {
+        if (err?.code === 'ACTION_THROTTLED') {
+          return;
+        }
         console.error('Błąd dodawania transakcji:', err);
         form.setError(t('history.addTransactionError'));
       }
@@ -160,6 +170,7 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
           <input
             name="amount"
             type="number"
+            {...NON_NEGATIVE_INPUT_PROPS}
             placeholder={t('dashboard.amountPlaceholder')}
             value={form.values.amount}
             onChange={form.handleChange}
@@ -171,10 +182,11 @@ const TransactionForm = ({ accountId, categories = [], onTransactionAdded }) => 
             name="description"
             type="text"
             placeholder={t('history.descriptionPlaceholder')}
+            title={getCommentFieldHint(t)}
             value={form.values.description}
             onChange={form.handleChange}
             className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-violet-500"
-            maxLength={30}
+            maxLength={TRANSACTION_DESCRIPTION_MAX_LENGTH}
           />
         </div>
 

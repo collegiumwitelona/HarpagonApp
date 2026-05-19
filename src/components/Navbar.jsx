@@ -59,9 +59,9 @@ const Navbar = ({ children, onOpenMenu }) => {
                     setLanguage(option.code);
                     setIsLanguageMenuOpen(false);
                   }}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition-colors ${
+                  className={`language-menu-item flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition-colors ${
                     option.code === language
-                      ? 'bg-slate-900 text-white'
+                      ? 'bg-slate-900 text-white dark:bg-violet-700'
                       : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
