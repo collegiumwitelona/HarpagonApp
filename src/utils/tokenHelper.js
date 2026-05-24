@@ -18,6 +18,12 @@ export const getRawAuthToken = () => {
 };
 
 
+export const getRefreshToken = () => {
+  const rawToken = localStorage.getItem('refreshToken') || '';
+  return rawToken.trim().replace(/^"|"$/g, '');
+};
+
+
 export const getStoredUserProfile = () => {
   try {
     const rawProfile = localStorage.getItem('userProfile');
