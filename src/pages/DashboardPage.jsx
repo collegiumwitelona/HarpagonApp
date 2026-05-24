@@ -19,6 +19,8 @@ import { NON_NEGATIVE_INPUT_PROPS, parseNonNegativeNumber } from '../utils/nonNe
 import { getCommentFieldHint } from '../utils/fieldHints';
 import { TRANSACTION_DESCRIPTION_MAX_LENGTH } from '../constants/validationRules';
 
+const DASHBOARD_TRANSACTION_LIST_LIMIT = 10;
+
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { language, t } = useLanguage();
@@ -241,7 +243,7 @@ const DashboardPage = () => {
 
       accountTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      setTransactions(accountTransactions);
+      setTransactions(accountTransactions.slice(0, DASHBOARD_TRANSACTION_LIST_LIMIT));
       setDashboardSummary(buildSummaryFromTransactions(accountTransactions));
 
       return { categories: normalizedCategories, transactions: accountTransactions };
