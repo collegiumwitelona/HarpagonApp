@@ -1,5 +1,14 @@
 # HarpagonApp
 
+## Live demo
+
+- Frontend: <https://harpagonapp.site>
+- API / Swagger: <https://api.harpagonapp.site/swagger>
+
+> The test stand uses free hosting, so the API and the frontend may be asleep
+> after a period of inactivity. On the first visit, allow 30-60 seconds for both
+> services to wake up and warm up before using the application.
+
 ## Tech Stack
 
 - .NET 8 (ASP.NET Core)
