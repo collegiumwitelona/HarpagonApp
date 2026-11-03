@@ -2,7 +2,7 @@
 
 ## Live demo
 
-- Frontend: <https://harpagonapp.site>
+- Frontend: <https://harpagonapp.site> or <https://dev.harpagonapp.site/>
 - API / Swagger: <https://api.harpagonapp.site/swagger>
 
 > The test stand uses free hosting, so the API and the frontend may be asleep
